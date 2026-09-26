@@ -7,13 +7,12 @@ Depends on: 00 (deployed dev workers). Implemented right after spec 00; flows ar
   Satisfies: E2E-1.1, E2E-1.2, E2E-1.3, E2E-1.4, E2E-1.5
   Tests: suite aborts when `/healthz` reports another environment (pointed at a stub URL); `F-FND-1` passes on dev.
 
-- [ ] **2. `e2e-inbox` worker + Email Routing (dev)**
+- [x] **2. `e2e-inbox` worker + Email Routing (dev)**
   Worker (email handler + `/messages` route group with bearer auth), KV, secret; harness `waitForEmail`. Email Routing rule for `E2E_INBOX_ADDRESS` + subaddressing is set up by the operator in the dashboard after the first deploy (the wrangler token has no `email_routing:write`).
   Satisfies: E2E-2.1, E2E-2.2, E2E-2.3, E2E-2.4, E2E-2.5
-  Status: worker, KV, token and `F-E2E-1` are done and deployed; tick once the operator has created the Email Routing rule and `F-E2E-1` passes on dev.
   Tests: unit — parse + store + list/filter + 401 without token; e2e — send a message to `<local>+probe@<domain>` from any mailbox and see it via `waitForEmail` (manual once), then covered by `F-AUTH-1`.
 
-- [ ] **3. Flow catalog + coverage check**
+- [x] **3. Flow catalog + coverage check**
   Satisfies: E2E-3.1, E2E-3.2, E2E-3.3
   Tests: coverage test fails when an implemented flow lacks a tagged test (verified by temporarily flipping a flag).
 
