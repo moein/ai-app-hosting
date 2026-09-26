@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
+    "@repo/app-contract": "workspace:*",
     "@repo/http": "workspace:*",
     "@repo/shared": "workspace:*",
     "agents": "0.24.0",

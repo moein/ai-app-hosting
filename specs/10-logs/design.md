@@ -67,7 +67,7 @@ CREATE INDEX logs_ts ON logs (ts DESC);
 ```
 
 - `append(entries)`: insert in one transaction; per-minute counter in DO storage for LOG-2.7; if row count > `LOG_BUFFER_MAX_ENTRIES` delete oldest.
-- Alarm every hour: delete `ts < now - LOG_BUFFER_MAX_AGE`.
+- Alarm every hour: delete `ts < now - LOG_BUFFER_MAX_AGE_MS`.
 - `query(filter)`: SQL with bound params; cursor = last `seq` returned; `ORDER BY ts DESC, seq DESC LIMIT ?`.
 
 ### `get_logs` contract
@@ -84,7 +84,7 @@ out: { entries: (Omit<LogEntry,'ts'> & { ts: string })[]; next_cursor: string | 
 | Constant | Value |
 |---|---|
 | `LOG_BUFFER_MAX_ENTRIES` | 5_000 |
-| `LOG_BUFFER_MAX_AGE` | 7 days |
+| `LOG_BUFFER_MAX_AGE_MS` | 7 days |
 | `LOG_INGEST_MAX_PER_MINUTE` | 3_000 |
 | `LOG_MESSAGE_MAX_BYTES` | 2_048 |
 | `LOG_STACK_MAX_BYTES` | 4_096 |

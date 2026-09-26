@@ -6,7 +6,15 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/node_modules", "!**/dist", "!**/.wrangler", "!specs", "!**/worker-configuration.d.ts"]
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/.wrangler",
+      "!specs",
+      "!**/worker-configuration.d.ts",
+      "!**/*.generated.ts"
+    ]
   },
   "formatter": {
     "enabled": true,

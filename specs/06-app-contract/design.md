@@ -4,11 +4,13 @@
 
 ```
 packages/app-contract/
-├── version.ts                 # CONTRACT_VERSION = "1"; SUPPORTED_VERSIONS = ["1"]
-├── rules.ts                   # rule table (id, description, fix) — single source for validator + guide
+├── src/version.ts             # CONTRACT_VERSION = "1"; SUPPORTED_VERSIONS; compatibility-date window; required deps
+├── src/rules.ts               # rule table (id, description, fix) — single source for validator + guide
 ├── validate.ts                # validate(files: Map<string, string | { bytes: number }>) → Violation[]
 ├── cli.ts                     # bundled to dist/validator.mjs (no deps), `node validator.mjs <dir>`
-├── denylist.ts                # package → { reason, alternative }
+├── src/denylist.ts            # package → { reason, alternative }
+├── src/guide.ts               # renderGuide(topic, { appsDomain }) — fills placeholders, joins topics for "all"
+├── src/guide-sources.generated.ts   # generated from guide/*.md by scripts/build-guide.mjs (committed; a test fails if stale)
 ├── guide/
 │   ├── workflow.md  contract.md  database.md  email.md  secrets.md  limits.md  troubleshooting.md
 └── managed/

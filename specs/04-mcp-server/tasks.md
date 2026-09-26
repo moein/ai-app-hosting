@@ -16,7 +16,7 @@ Depends on: 00. Feature tools are implemented in their own specs; this spec prov
   Satisfies: MCP-2.1
   Tests: `initialize` result contains instructions ≤ 2,000 chars mentioning `get_platform_guide`, `request_login_code`, `write_files`, `get_deployment`.
 
-- [ ] **4. Guide assembly + `get_platform_guide`** (content written in spec 06 task 1)
+- [x] **4. Guide assembly + `get_platform_guide`** (content written in spec 06 task 1)
   Satisfies: MCP-2.2, MCP-2.3, MCP-2.4, MCP-2.5
   Tests: every topic returns non-empty Markdown; no unreplaced `{{…}}`; limit values equal `limits.ts`; `contract_version` equals validator version; guide contains the "no templates / you write all files" statement.
 
@@ -29,6 +29,6 @@ Depends on: 00. Feature tools are implemented in their own specs; this spec prov
   Satisfies: MCP non-functional
   Tests: checklist recorded in PR description.
 
-- [ ] **7. E2E on dev** (spec 12)
+- [x] **7. E2E on dev** — `F-MCP-1` re-asserts full catalog equality once every feature has landed (spec 12)
   Flows: `F-MCP-1`, `F-MCP-2`, `F-MCP-3`.
   Satisfies: E2E-3.3

@@ -1,21 +1,21 @@
 {
-  "name": "@repo/shared",
+  "name": "@repo/app-contract",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./limits": "./src/limits.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
+    "build:guide": "node scripts/build-guide.mjs",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },
   "dependencies": {
-    "nanoid": "6.0.1",
-    "zod": "4.6.5"
+    "@repo/shared": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20260926.1",
+    "@types/node": "24.19.0",
     "typescript": "7.0.2",
     "vitest": "4.1.11"
   }

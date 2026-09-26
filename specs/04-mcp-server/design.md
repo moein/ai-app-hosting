@@ -104,7 +104,19 @@ Every error includes a `hint` telling you what to do next.
 
 ## Platform guide (MCP-2.2 – 2.5)
 
-Source: `packages/app-contract/guide/*.md` (one file per topic), assembled at build time into a module; `{{LIMIT_NAME}}` placeholders replaced from `limits.ts`; `{{CONTRACT_VERSION}}` from `packages/app-contract/version.ts`.
+Source: `packages/app-contract/guide/*.md` (one file per topic). `pnpm -F @repo/app-contract build:guide` compiles them into `src/guide-sources.generated.ts` (committed; a unit test fails if it is stale), so no bundler text-module rules are needed. At request time `renderGuide(topic, { appsDomain })` replaces placeholders:
+
+| Placeholder | Replaced with |
+|---|---|
+| `{{LIMIT_NAME}}` | the constant from `packages/shared/limits.ts` (numbers formatted with separators) |
+| `{{bytes:LIMIT_NAME}}` | the constant as a human size (e.g. `1 MB`) |
+| `{{CONTRACT_VERSION}}` | `packages/app-contract/src/version.ts` |
+| `{{APPS_DOMAIN}}` | the worker's `APPS_DOMAIN` var |
+| `{{RULES}}` | the rule table from `rules.ts` |
+| `{{DENYLIST}}` | the table from `denylist.ts` |
+| `{{REQUIRED_DEPENDENCIES}}` | the minimum-version table from `version.ts` |
+
+Topic `all` (default) is every topic in the order below, joined.
 
 | Topic | Content |
 |---|---|

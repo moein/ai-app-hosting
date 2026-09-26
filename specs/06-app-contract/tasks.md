@@ -2,12 +2,12 @@
 
 Depends on: 00.
 
-- [ ] **1. Guide content (`packages/app-contract/guide/*.md`)**
+- [x] **1. Guide content (`packages/app-contract/guide/*.md`)** — the "reference `wrangler.jsonc` passes the validator" test lands with task 3
   Write all topics; `contract.md` generated sections from `rules.ts` + exact `wrangler.jsonc` / `vite.config.ts` reference text; explicit "the platform provides no templates — you write every file except managed ones".
   Satisfies: CON-1.2, CON-1.3, CON-1.4, MCP-2.4
   Tests: every rule ID in `rules.ts` appears in `contract.md`; reference `wrangler.jsonc` in the guide passes the validator (parse from Markdown code block).
 
-- [ ] **2. `rules.ts`, `version.ts`, `denylist.ts`**
+- [x] **2. `rules.ts`, `version.ts`, `denylist.ts`**
   Satisfies: CON-3.2 (data), CON-4.6 (data)
   Tests: rule IDs unique and all have `fix`.
 

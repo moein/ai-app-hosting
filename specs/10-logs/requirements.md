@@ -19,7 +19,7 @@ As an AI client, I want to see recent requests, console output and exceptions of
 - **LOG-2.2** WHEN the tail Worker receives trace events THE SYSTEM SHALL normalize each invocation into one `request` entry (`method`, `path`, `status`, `outcome`, `duration_ms`) plus one entry per console message (`level`, `message`) and per exception (`name`, `message`, `stack`).
 - **LOG-2.3** THE SYSTEM SHALL NOT store request headers, cookies, query strings, request/response bodies or client IP addresses.
 - **LOG-2.4** THE SYSTEM SHALL truncate each console message to 2 KB and each stack to 4 KB.
-- **LOG-2.5** THE SYSTEM SHALL store entries in a per-app `AppLogBuffer` Durable Object (keyed by app ID from the script's tags), retaining at most `LOG_BUFFER_MAX_ENTRIES` entries and nothing older than `LOG_BUFFER_MAX_AGE`.
+- **LOG-2.5** THE SYSTEM SHALL store entries in a per-app `AppLogBuffer` Durable Object (keyed by app ID from the script's tags), retaining at most `LOG_BUFFER_MAX_ENTRIES` entries and nothing older than `LOG_BUFFER_MAX_AGE_MS`.
 - **LOG-2.6** THE SYSTEM SHALL also send every entry to the `app-logs-<env>` pipeline (R2 table `app_logs`) for archival.
 - **LOG-2.7** IF an app produces more than `LOG_INGEST_MAX_PER_MINUTE` entries in a minute THEN THE SYSTEM SHALL drop further `console` entries for that minute (keeping `request` and `exception` entries) and record one `dropped` entry with the count.
 - **LOG-2.8** THE SYSTEM SHALL never let the tail Worker throw; failures are logged and counted.
