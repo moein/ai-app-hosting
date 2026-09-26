@@ -1,0 +1,35 @@
+// PlatformMail (Resend) + AppMail (SES) entrypoints and the SES tenant job consumer (spec 11).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "email",
+  "account_id": "ebdcbd8e905ff028ba30a0104288f65e",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-22",
+  "observability": { "enabled": true },
+  "env": {
+    "dev": {
+      "name": "email-dev",
+      "workers_dev": false,
+      "preview_urls": false,
+      "vars": {
+        "ENVIRONMENT": "dev",
+        "PLATFORM_MAIL_DOMAIN": "ideep.app",
+        "APPS_MAIL_DOMAIN": "mail.dev.motad.app",
+        "AWS_REGION": "eu-central-1"
+      }
+      // secrets: RESEND_API_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (scripts/set-secrets.mjs)
+    },
+    "prod": {
+      "name": "email-prod",
+      "workers_dev": false,
+      "preview_urls": false,
+      "vars": {
+        "ENVIRONMENT": "prod",
+        "PLATFORM_MAIL_DOMAIN": "ideep.app",
+        "APPS_MAIL_DOMAIN": "mail.motad.app",
+        "AWS_REGION": "eu-central-1"
+      }
+      // secrets: RESEND_API_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (scripts/set-secrets.mjs)
+    }
+  }
+}

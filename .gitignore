@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.wrangler/
+coverage/
+*.log
+.DS_Store
+# Never used (no local environment), ignored as a safety net against committing secrets
+.dev.vars
+.env
+.env.*

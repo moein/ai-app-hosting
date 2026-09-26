@@ -1,0 +1,35 @@
+// Platform API + MCP server. Resources and placeholder values: specs/00-foundation/design.md, specs/values.md
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "api",
+  "account_id": "ebdcbd8e905ff028ba30a0104288f65e",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-22",
+  "observability": { "enabled": true },
+  "env": {
+    "dev": {
+      "name": "api-dev",
+      "workers_dev": true,
+      "preview_urls": false,
+      "vars": {
+        "ENVIRONMENT": "dev",
+        "CF_ACCOUNT_ID": "ebdcbd8e905ff028ba30a0104288f65e",
+        "PLATFORM_API_ORIGIN": "https://api-dev.ai-app-hosting.workers.dev",
+        "APPS_DOMAIN": "dev.motad.app",
+        "GITHUB_ORG": "AI-app-hosting"
+      }
+    },
+    "prod": {
+      "name": "api-prod",
+      "workers_dev": true,
+      "preview_urls": false,
+      "vars": {
+        "ENVIRONMENT": "prod",
+        "CF_ACCOUNT_ID": "ebdcbd8e905ff028ba30a0104288f65e",
+        "PLATFORM_API_ORIGIN": "https://api-prod.ai-app-hosting.workers.dev",
+        "APPS_DOMAIN": "motad.app",
+        "GITHUB_ORG": "AI-app-hosting"
+      }
+    }
+  }
+}

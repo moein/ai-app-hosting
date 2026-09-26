@@ -1,0 +1,136 @@
+# 04 — MCP Server: Design
+
+## Architecture
+
+```
+apps/api (Worker, Hono — route groups mounted in src/http/app.ts, see 00 design "HTTP routing")
+  /mcp           → mcpRoutes → McpSession.serve('/mcp')   agents SDK, Streamable HTTP
+                    └─ McpSession (Durable Object, one per Mcp-Session-Id)
+                         init(): registers tools from the registry
+                         state: { auth, client } (spec 02, spec 05)
+  /v1/builds/*   → buildsRoutes (spec 08)
+  /v1/contract/* → contractRoutes (spec 06)
+  /v1/ses/*      → sesRoutes (spec 11)
+  /healthz       → healthRoutes
+```
+
+## Tool registry
+
+```ts
+defineTool({
+  name: 'get_app',
+  description: '…',
+  public: false,                                   // true ⇒ allowed without login (AUTH-3.3)
+  annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  input: z.object({ app: AppSlug }),
+  output: AppDetail,
+  handler: async (input, ctx) => { … },           // ctx: { env, userId?, orgId?, sessionId, client, clock, integrations }
+});
+```
+
+Middleware chain (MCP-3.7), each a function `(ctx, next) => Promise<Result>`:
+
+```
+track       — starts timer; always emits one event after completion (spec 05)
+authGuard   — spec 02
+rateLimit   — Workers Rate Limiting binding `TOOL_RATE_LIMITER` keyed by userId (60 s window)
+validateIn  — Zod parse → INVALID_INPUT {issues}
+handler
+validateOut — Zod parse of output → INTERNAL on failure (MCP-3.9)
+serialize   — { structuredContent: out, content: [{ type:'text', text: JSON.stringify(out) }] }
+              or on PlatformError: { isError: true, content: [{ type:'text', text: JSON.stringify({ error }) }],
+                                     structuredContent: { error } }
+              + 100 KB cap check (MCP-3.6)
+```
+
+## Tool catalog (MCP-3.1)
+
+Annotations: R = readOnly, D = destructive, I = idempotent, O = openWorld.
+
+| Tool | Public | Ann. | Spec | Purpose |
+|---|---|---|---|---|
+| `get_platform_guide` | ✓ | R I | 04 | How to build/ship apps here (contract, workflow, limits) |
+| `request_login_code` | ✓ | O | 02 | Email a 6-digit login code |
+| `verify_login_code` | ✓ | — | 02 | Sign in / sign up with the code |
+| `whoami` | ✓ | R I | 02 | Current login state |
+| `logout` |  | I | 02 | Unbind the session |
+| `get_usage` |  | R I | 03 | Quotas and usage |
+| `check_slug` |  | R I | 01 | Is an app address valid/available |
+| `create_app` |  | — | 03 | Create app (repo, DB, placeholder Worker, subdomain) |
+| `retry_provisioning` |  | I | 03 | Retry failed setup |
+| `list_apps` |  | R I | 03 | List active apps |
+| `get_app` |  | R I | 03 | App details + deployment state |
+| `delete_app` |  | D | 03 | Take app offline (deletes Worker only) |
+| `list_files` |  | R I | 07 | List repo files (paths, sizes) |
+| `read_file` |  | R I | 07 | Read file contents |
+| `write_files` |  | D | 07 | Create/update/delete files in one commit; triggers a deploy |
+| `list_deployments` |  | R I | 08 | Deployment history |
+| `get_deployment` |  | R I | 08/10 | Status, errors, build log excerpt; optional wait |
+| `redeploy` |  | — | 08 | Rebuild + deploy current `main` |
+| `rollback` |  | — | 08 | Re-ship a previous successful artifact |
+| `get_logs` |  | R I | 10 | Runtime logs of the live app |
+| `set_secret` |  | I | 09 | Set an env secret |
+| `list_secrets` |  | R I | 09 | Secret names (never values) |
+| `delete_secret` |  | D I | 09 | Remove a secret |
+| `query_database` |  | D | 09 | Run SQL against the app's D1 |
+
+`write_files`, `delete_app`, `delete_secret`, `query_database` descriptions tell the AI when to confirm with the user.
+
+## Server `instructions` (draft, MCP-2.1)
+
+```
+This server hosts full-stack web apps. You (the AI) write ALL of the app's code; the platform
+stores, builds, deploys and runs it at https://<app>.APPS_DOMAIN. The platform never generates code.
+
+1. Login: call whoami. If not authenticated, ask the user for their email, call request_login_code,
+   ask the user for the 6-digit code from their inbox, then call verify_login_code.
+2. Before writing any code, call get_platform_guide and follow its app contract exactly
+   (Hono API + React SPA on one Cloudflare Worker, D1 database, wrangler.jsonc).
+3. create_app (or list_apps to continue an existing one).
+4. write_files to commit code. Every commit to main is built and deployed automatically.
+5. get_deployment with wait_seconds to follow the build. If it fails, read the errors, fix the
+   files, and write again. When live, give the user the URL.
+6. Use get_logs, query_database, set_secret to debug and operate the app.
+Every error includes a `hint` telling you what to do next.
+```
+
+## Platform guide (MCP-2.2 – 2.5)
+
+Source: `packages/app-contract/guide/*.md` (one file per topic), assembled at build time into a module; `{{LIMIT_NAME}}` placeholders replaced from `limits.ts`; `{{CONTRACT_VERSION}}` from `packages/app-contract/version.ts`.
+
+| Topic | Content |
+|---|---|
+| `workflow` | Login → create → write → deploy → verify loop; batching writes (`deploy: false` until ready); reading build errors; rollback |
+| `contract` | Spec 06 in full: required files, `wrangler.jsonc` rules, bindings, allowed deps, forbidden APIs, versions |
+| `database` | D1 + Drizzle usage, `migrations/NNNN_name.sql` rules, `query_database` |
+| `email` | `env.EMAIL.send()` API and limits (spec 11) |
+| `secrets` | `set_secret`, reading via `env`, naming rules |
+| `limits` | All quotas and sizes |
+| `troubleshooting` | Common build/runtime errors → fixes |
+
+Output: `{ contract_version: string; topic: string; markdown: string }`.
+
+## Result conventions
+
+- Timestamps in outputs: ISO 8601 strings.
+- Apps referenced by `app` (slug) everywhere; deployments by `deployment` (`dep_…`).
+- `next_step` is a plain imperative sentence addressed to the AI.
+- Truncation: `{ …, truncated: true, next_step: "Call read_file with offset=…" }`.
+
+## Limits
+
+| Constant | Value |
+|---|---|
+| `TOOL_CALLS_PER_USER_PER_MINUTE` | 120 |
+| `TOOL_RESULT_MAX_BYTES` | 100_000 |
+| `TOOL_MAX_DURATION_MS` | 30_000 |
+
+## Error codes
+
+Uses the shared catalog; no new codes.
+
+## Open questions
+
+1. Should we also expose the guide as an MCP resource for clients that surface resources well (optional, never required)?
+2. Tool-count budget: if some clients degrade with ~24 tools, consider merging (`secrets` into one tool with `action`).
+3. MCP protocol version pinning vs. following the SDK default.

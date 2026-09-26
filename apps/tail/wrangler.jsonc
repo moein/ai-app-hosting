@@ -1,0 +1,13 @@
+// Tail consumer for user Workers; hosts the AppLogBuffer Durable Object (spec 10).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tail",
+  "account_id": "ebdcbd8e905ff028ba30a0104288f65e",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-22",
+  "observability": { "enabled": true },
+  "env": {
+    "dev": { "name": "tail-dev", "workers_dev": false, "preview_urls": false, "vars": { "ENVIRONMENT": "dev" } },
+    "prod": { "name": "tail-prod", "workers_dev": false, "preview_urls": false, "vars": { "ENVIRONMENT": "prod" } }
+  }
+}
