@@ -2,21 +2,22 @@
 
 Depends on: 00 (deployed dev workers). Implemented right after spec 00; flows are added as features land (each feature's E2E task).
 
-- [ ] **1. `e2e/` workspace skeleton**
+- [x] **1. `e2e/` workspace skeleton**
   Env parsing, runId/factories, MCP client wrapper, `flow()` tagging, global setup with healthz guard.
   Satisfies: E2E-1.1, E2E-1.2, E2E-1.3, E2E-1.4, E2E-1.5
   Tests: suite aborts when `/healthz` reports another environment (pointed at a stub URL); `F-FND-1` passes on dev.
 
 - [ ] **2. `e2e-inbox` worker + Email Routing (dev)**
-  Worker (email handler + `/messages` route group with bearer auth), KV, secret, catch-all rule on `E2E_INBOX_DOMAIN`; harness `waitForEmail`.
-  Satisfies: E2E-2.1, E2E-2.2, E2E-2.3, E2E-2.4
-  Tests: unit — parse + store + list/filter + 401 without token; e2e — send a message to `probe@E2E_INBOX_DOMAIN` from any mailbox and see it via `waitForEmail` (manual once), then covered by `F-AUTH-1`.
+  Worker (email handler + `/messages` route group with bearer auth), KV, secret; harness `waitForEmail`. Email Routing rule for `E2E_INBOX_ADDRESS` + subaddressing is set up by the operator in the dashboard after the first deploy (the wrangler token has no `email_routing:write`).
+  Satisfies: E2E-2.1, E2E-2.2, E2E-2.3, E2E-2.4, E2E-2.5
+  Status: worker, KV, token and `F-E2E-1` are done and deployed; tick once the operator has created the Email Routing rule and `F-E2E-1` passes on dev.
+  Tests: unit — parse + store + list/filter + 401 without token; e2e — send a message to `<local>+probe@<domain>` from any mailbox and see it via `waitForEmail` (manual once), then covered by `F-AUTH-1`.
 
 - [ ] **3. Flow catalog + coverage check**
   Satisfies: E2E-3.1, E2E-3.2, E2E-3.3
   Tests: coverage test fails when an implemented flow lacks a tagged test (verified by temporarily flipping a flag).
 
-- [ ] **4. Run e2e from `pnpm deploy:dev`**
+- [x] **4. Run e2e from `pnpm deploy:dev`**
   `scripts/deploy.mjs` runs `pnpm e2e` after deploying dev.
   Satisfies: E2E-1.6
   Tests: `pnpm deploy:dev` exits non-zero on a failing e2e test (verified once).

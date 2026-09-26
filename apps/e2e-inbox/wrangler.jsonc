@@ -1,0 +1,20 @@
+// Dev-only inbox for e2e tests (spec 12, E2E-2). Receives mail for E2E_INBOX_ADDRESS (+ subaddresses) via
+// Email Routing and lists it over HTTP for the harness. Intentionally no "prod" environment (E2E-2.4).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "e2e-inbox",
+  "account_id": "ebdcbd8e905ff028ba30a0104288f65e",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-22",
+  "observability": { "enabled": true },
+  "env": {
+    "dev": {
+      "name": "e2e-inbox-dev",
+      "workers_dev": true,
+      "preview_urls": false,
+      "vars": { "ENVIRONMENT": "dev" },
+      "kv_namespaces": [{ "binding": "INBOX", "id": "f75ea4216f77425998d92b8f514b2311" }]
+      // secret: E2E_INBOX_TOKEN (scripts/set-secrets.mjs dev)
+    }
+  }
+}

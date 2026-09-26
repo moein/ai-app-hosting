@@ -29,7 +29,8 @@
 │   ├── email/                   # PlatformMail (Resend) + AppMail (SES)
 │   └── e2e-inbox/               # dev-only: receives e2e test emails (spec 12)
 ├── packages/
-│   ├── shared/                  # ids.ts, errors.ts, limits.ts, time.ts, slugs.ts, schemas/
+│   ├── shared/                  # ids.ts, errors.ts, limits.ts, time.ts, logger.ts, env.ts, slugs.ts, schemas/
+│   ├── http/                    # Hono helpers shared by workers: requestId, errorHandler, notFoundHandler, errorResponse
 │   └── app-contract/            # guide.md, validator, managed files (deploy.yml, platform.json)
 ├── fixtures/
 │   └── contract-app/            # test-only minimal app satisfying the contract
@@ -78,6 +79,8 @@ export default {
   scheduled,
 } satisfies ExportedHandler<Env>;
 ```
+
+Global middleware and error handling come from `@repo/http` (`requestId()`, `errorHandler()`, `notFoundHandler()`, `errorResponse()`), so every worker's HTTP errors look identical.
 
 Rules:
 - One file per group in `src/http/routes/`, exporting `<group>Routes`. Handlers may live in the same file or in feature modules; the group file is the single place that lists the group's routes.
@@ -205,14 +208,16 @@ Hosts: the platform has no custom domain for now. `api-<env>` is served on its C
 
 Each worker validates `env` with a Zod schema (`createEnvParser`, memoized per env object) in its entry point `src/index.ts`, **before** the request reaches Hono or any other handler. Missing/invalid → the entry point responds with `PlatformError(INTERNAL)` JSON (500) without calling the app; the log line names the variables only (FND-2.5). Route groups, middleware and handlers never parse `env` themselves — they read the already validated `c.env`.
 
-Secrets (per env, via `wrangler secret put`):
+Secrets (per env, via `pnpm secrets:<env>` → `wrangler secret bulk`) are invisible to `wrangler types`, so each worker declares them in `src/secrets.d.ts` (global `Env` and `Cloudflare.Env`).
+
+Secrets:
 
 | Worker | Secrets |
 |---|---|
 | api | `CF_API_TOKEN`, `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_INSTALLATION_ID`, `LOGIN_CODE_PEPPER` |
 | email | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `RESEND_API_KEY` (vars: `AWS_REGION`, `SES_CONFIGURATION_SET`, `APPS_MAIL_DOMAIN`, `PLATFORM_MAIL_DOMAIN`) |
 | e2e-inbox (dev only) | `E2E_INBOX_TOKEN` |
-| api (vars) | `SES_EVENTS_TOPIC_ARN`, `APPS_DOMAIN`, `GITHUB_ORG`, `ENVIRONMENT`, `PLATFORM_API_ORIGIN`, `E2E_INBOX_DOMAIN` (dev only) |
+| api (vars) | `SES_EVENTS_TOPIC_ARN`, `APPS_DOMAIN`, `GITHUB_ORG`, `ENVIRONMENT`, `PLATFORM_API_ORIGIN`, `E2E_INBOX_ADDRESS` (dev only) |
 
 ## `packages/shared`
 
@@ -299,7 +304,7 @@ Deploy order: `email` → `tail` → `api` → `dispatcher` (service-binding tar
 
 1. Create Cloudflare resources from the naming table; put their IDs into `wrangler.jsonc`.
 2. Create the GitHub App (spec 07), install it on `GITHUB_ORG`.
-3. Email: SES — verify `APPS_MAIL_DOMAIN`, configuration set, SNS topic → `/v1/ses/events` (spec 11). Resend — verify `PLATFORM_MAIL_DOMAIN`, API key (spec 11). Dev only — Email Routing catch-all on `E2E_INBOX_DOMAIN` → `e2e-inbox-dev` (spec 12).
+3. Email: SES — verify `APPS_MAIL_DOMAIN`, configuration set, SNS topic → `/v1/ses/events` (spec 11). Resend — verify `PLATFORM_MAIL_DOMAIN`, API key (spec 11). Dev only — Email Routing on the `APPS_DOMAIN` apex with subaddressing and a rule `E2E_INBOX_ADDRESS` → `e2e-inbox-dev` (spec 12).
 4. DNS: add `APPS_DOMAIN` as a Cloudflare zone; wildcard `*.APPS_DOMAIN` route to dispatcher (spec 09); SES DNS records (DKIM, MAIL FROM, DMARC) for `APPS_MAIL_DOMAIN`; Resend DNS records for `PLATFORM_MAIL_DOMAIN`. The API needs no DNS (workers.dev).
 
 ## Open questions

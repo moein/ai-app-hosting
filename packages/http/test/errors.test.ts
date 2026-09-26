@@ -1,15 +1,14 @@
 import { PlatformError } from '@repo/shared';
 import { Hono } from 'hono';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { AppEnv } from '../src/http/env';
-import { errorHandler } from '../src/http/middleware/errors';
-import { requestId } from '../src/http/middleware/request-id';
+import { errorHandler, notFoundHandler } from '../src/errors';
+import { type RequestIdVariables, requestId } from '../src/request-id';
 
 const appThatThrows = (error: unknown) => {
-  const app = new Hono<AppEnv>().use('*', requestId()).get('/', () => {
+  const app = new Hono<{ Variables: RequestIdVariables }>().use('*', requestId()).get('/', () => {
     throw error;
   });
-  app.onError(errorHandler);
+  app.onError(errorHandler());
   return app;
 };
 
@@ -40,5 +39,14 @@ describe('errorHandler', () => {
     expect(res.status).toBe(429);
     expect(((await res.json()) as { error: { code: string } }).error.code).toBe('RATE_LIMITED');
     expect(log).not.toHaveBeenCalled();
+  });
+
+  it('returns a NOT_FOUND PlatformError for unknown routes', async () => {
+    const app = new Hono<{ Variables: RequestIdVariables }>().use('*', requestId());
+    app.notFound(notFoundHandler());
+    const res = await app.request('/missing');
+    expect(res.status).toBe(404);
+    expect(((await res.json()) as { error: { code: string } }).error.code).toBe('NOT_FOUND');
+    expect(res.headers.get('x-request-id')).toBeTruthy();
   });
 });

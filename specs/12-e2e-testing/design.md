@@ -9,7 +9,7 @@ developer machine / CI runner
     ├─ fetch ─────────────────────────────▶ https://<slug>.APPS_DOMAIN (dev)       (apps built by the platform)
     └─ fetch (Bearer E2E_INBOX_TOKEN) ────▶ e2e-inbox-dev /messages
                                                 ▲
-            Resend (login codes) ──▶ MX of E2E_INBOX_DOMAIN ──▶ Cloudflare Email Routing (catch-all) ──▶ e2e-inbox-dev (email handler) ──▶ KV
+            Resend (login codes) ──▶ MX of APPS_DOMAIN apex ──▶ Cloudflare Email Routing (rule: E2E_INBOX_ADDRESS + subaddresses) ──▶ e2e-inbox-dev (email handler) ──▶ KV
             SES (app emails)     ──┘
 ```
 
@@ -22,7 +22,8 @@ e2e/
 ├── package.json            # "e2e": "vitest run --config vitest.config.ts"
 ├── vitest.config.ts        # globalSetup: env check + healthz guard (E2E-1.2); testTimeout 10 min; fileParallelism true
 ├── src/
-│   ├── env.ts              # Zod-parsed E2E_* env vars
+│   ├── env.ts              # Zod-parsed E2E_* env vars (environment first, then root .env)
+│   ├── global-setup.ts     # healthz guard (E2E-1.2)
 │   ├── run.ts              # runId (nanoid), email/app name factories
 │   ├── mcp.ts              # connect(): MCP Client + StreamableHTTPClientTransport; callTool() → typed result | PlatformError
 │   ├── inbox.ts            # waitForEmail(), extractLoginCode()
@@ -64,12 +65,13 @@ The deploy-related tests write `fixtures/contract-app` (repo root, spec 06) thro
 
 - `email(message)` handler: parse with `postal-mime`; key `msg:<to>:<received_at>:<id>`; TTL 86,400 s.
 - HTTP: single route group `messagesRoutes` at `/messages` with `bearerAuth(E2E_INBOX_TOKEN)` inside the group (FND-8); `GET /` lists by prefix `msg:<to>:` filtered by `since`.
-- Email Routing: catch-all rule on `E2E_INBOX_DOMAIN` → worker `e2e-inbox-dev`.
+- Email Routing (dashboard, `APPS_DOMAIN` zone): enable Email Routing on the apex, enable **Subaddressing** in its settings, and add one custom-address rule `E2E_INBOX_ADDRESS` → *Send to a Worker* → `e2e-inbox-dev`. The Worker only appears in that dropdown once it's deployed with an `email()` handler.
 
 ## Flow catalog (E2E-3.1)
 
 | ID | Flow | Spec |
 |---|---|---|
+| `F-E2E-1` | Inbox self-test: a probe sent via Resend to a fresh `E2E_INBOX_ADDRESS` subaddress arrives in the e2e inbox | 12 |
 | `F-FND-1` | `GET /healthz` on the dev API reports `status: "ok"`, `environment: "dev"` | 00 |
 | `F-MCP-1` | `initialize` returns instructions; `tools/list` equals the catalog | 04 |
 | `F-MCP-2` | `get_platform_guide` returns every topic without login | 04 |
@@ -106,7 +108,7 @@ The deploy-related tests write `fixtures/contract-app` (repo root, spec 06) thro
 
 ## Purge (E2E-4.2)
 
-Dev-only branch of the api worker's daily cron: select users `WHERE email LIKE '%@' || E2E_INBOX_DOMAIN AND created_at < now - 24h`; for each app: delete Worker script, KV route, D1 database, GitHub repo, R2 artifacts, log buffer; then delete rows (deployments, app_secrets, apps, usage_counters, memberships, organizations, login_codes, users). `E2E_INBOX_DOMAIN` is a var set only in `env.dev`.
+Dev-only branch of the api worker's daily cron: select users `WHERE email LIKE '<local>+%@<domain>' AND created_at < now - 24h` (built from `E2E_INBOX_ADDRESS`); for each app: delete Worker script, KV route, D1 database, GitHub repo, R2 artifacts, log buffer; then delete rows (deployments, app_secrets, apps, usage_counters, memberships, organizations, login_codes, users). `E2E_INBOX_ADDRESS` is a var set only in `env.dev`.
 
 ## Running
 

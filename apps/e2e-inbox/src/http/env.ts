@@ -1,4 +1,3 @@
-/** Typed context shared by the main app and every route group (FND-8.4). */
 import type { RequestIdVariables } from '@repo/http';
 
 export type AppEnv = {

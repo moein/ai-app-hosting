@@ -1,14 +1,20 @@
 // Uploads Worker secrets for one environment from the root .env: node scripts/set-secrets.mjs <dev|prod>
-// Values go to wrangler via stdin and are never printed.
+// Values go to wrangler via stdin and are never printed. Secrets marked `generate` are created (random) and
+// appended to .env when missing, so tools that need them (e.g. the e2e harness) can read them too.
 import { execFileSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
+import { appendFileSync, existsSync } from 'node:fs';
 import { readEnvFile } from './env-file.mjs';
 
-// worker -> { SECRET_NAME: KEY_IN_.env }
+// worker -> { SECRET_NAME: { key: KEY_IN_.env, envs?: [...], generate?: true } }
 const SECRETS = {
   email: {
-    RESEND_API_KEY: 'RESEND_API_KEY',
-    AWS_ACCESS_KEY_ID: 'AWS_ACCESS_KEY',
-    AWS_SECRET_ACCESS_KEY: 'AWS_SECRET_ACCESS_KEY',
+    RESEND_API_KEY: { key: 'RESEND_API_KEY' },
+    AWS_ACCESS_KEY_ID: { key: 'AWS_ACCESS_KEY' },
+    AWS_SECRET_ACCESS_KEY: { key: 'AWS_SECRET_ACCESS_KEY' },
+  },
+  'e2e-inbox': {
+    E2E_INBOX_TOKEN: { key: 'E2E_INBOX_TOKEN', envs: ['dev'], generate: true },
   },
 };
 
@@ -19,9 +25,16 @@ if (env !== 'dev' && env !== 'prod') {
 }
 
 const values = readEnvFile();
-for (const [worker, mapping] of Object.entries(SECRETS)) {
+for (const [worker, secrets] of Object.entries(SECRETS)) {
+  if (!existsSync(`apps/${worker}/wrangler.jsonc`)) continue;
   const payload = {};
-  for (const [secret, key] of Object.entries(mapping)) {
+  for (const [secret, { key, envs, generate }] of Object.entries(secrets)) {
+    if (envs && !envs.includes(env)) continue;
+    if (!values[key] && generate) {
+      values[key] = randomBytes(32).toString('hex');
+      appendFileSync('.env', `\n${key}=${values[key]}\n`);
+      process.stdout.write(`generated ${key} and saved it to .env\n`);
+    }
     if (!values[key]) {
       process.stderr.write(`skipping ${worker}.${secret}: ${key} is not set in .env\n`);
       continue;

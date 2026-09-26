@@ -48,6 +48,6 @@
 - [x] **10. Fill in CLAUDE.md "Commands"** with the real commands.
   Satisfies: (docs)
 
-- [ ] **11. E2E on dev** (spec 12, after spec 12 task 1)
+- [x] **11. E2E on dev** (spec 12, after spec 12 task 1)
   Flows: `F-FND-1`.
   Satisfies: E2E-3.3

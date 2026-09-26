@@ -14,11 +14,12 @@ This is the only place for the concrete values behind the placeholders used in s
 | `PLATFORM_WEBSITE_URL` | Where the apex and `www.` of `APPS_DOMAIN` redirect. Empty means those hosts get the 404 page. | _(empty)_ | _(empty)_ |
 | `GITHUB_ORG` | GitHub organization that owns all app repos (dev repos are prefixed `dev-`). | `AI-app-hosting` | `AI-app-hosting` |
 | `AWS_REGION` | AWS region for SES (customer app email). | `eu-central-1` (Frankfurt) | `eu-central-1` (Frankfurt) |
-| `E2E_INBOX_DOMAIN` | Domain whose mail is routed (Cloudflare Email Routing catch-all) to the dev-only `e2e-inbox` worker (spec 12). | `e2e.motad.app` | — (never set) |
+| `E2E_INBOX_ADDRESS` | Address whose mail is routed (one Cloudflare Email Routing rule on the `APPS_DOMAIN` zone apex, **subaddressing enabled**) to the dev-only `e2e-inbox` worker (spec 12). Tests use `<local>+<runId>-<n>@<domain>`. Not a catch-all: no other address on the zone is affected. | `e2e@motad.app` | — (never set) |
 
 Notes:
 - The account's `workers.dev` subdomain is `ai-app-hosting`.
 - `mail`, `dev` and `e2e` are on the reserved-slug list (spec 01), so no app can claim `mail.motad.app`, `dev.motad.app` or `e2e.motad.app`; `mail` also protects `mail.dev.motad.app`.
+- Email Routing can't be enabled on a subdomain here, which is why the e2e inbox is a single subaddressed address on the apex rather than a whole domain.
 - `motad.app` (user apps) and `ideep.app` (platform email) are temporary domains.
 
 ## Derived endpoints

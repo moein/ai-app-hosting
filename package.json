@@ -14,7 +14,8 @@
     "deploy:dev": "node scripts/deploy.mjs dev",
     "deploy:prod": "node scripts/deploy.mjs prod",
     "secrets:dev": "node scripts/set-secrets.mjs dev",
-    "secrets:prod": "node scripts/set-secrets.mjs prod"
+    "secrets:prod": "node scripts/set-secrets.mjs prod",
+    "e2e": "pnpm --filter @repo/e2e run e2e"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

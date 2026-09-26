@@ -76,7 +76,7 @@ Deferred work: [backlog.md](backlog.md).
 
 ## Placeholders
 
-Specs never contain concrete domains or account names. They use placeholders (`PLATFORM_API_ORIGIN`, `APPS_DOMAIN`, `APPS_MAIL_DOMAIN`, `PLATFORM_MAIL_DOMAIN`, `PLATFORM_WEBSITE_URL`, `GITHUB_ORG`, `E2E_INBOX_DOMAIN`); their meanings and current values live in one file: [values.md](values.md).
+Specs never contain concrete domains or account names. They use placeholders (`PLATFORM_API_ORIGIN`, `APPS_DOMAIN`, `APPS_MAIL_DOMAIN`, `PLATFORM_MAIL_DOMAIN`, `PLATFORM_WEBSITE_URL`, `GITHUB_ORG`, `E2E_INBOX_ADDRESS`); their meanings and current values live in one file: [values.md](values.md).
 
 ## Spec conventions
 

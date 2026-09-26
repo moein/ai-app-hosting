@@ -70,7 +70,8 @@ apps/dispatcher     Routes *.APPS_DOMAIN to user Workers in the dispatch namespa
 apps/tail           Tail consumer for user Workers; hosts the AppLogBuffer Durable Object
 apps/email          PlatformMail (Resend) + AppMail (SES) RPC entrypoints; SES tenant queue consumer
 apps/e2e-inbox      Dev-only: receives e2e test emails via Email Routing (spec 12)
-packages/shared     IDs, error codes, limits, Zod schemas, slugs
+packages/shared     IDs, error codes, limits, Logger, env validation, Zod schemas, slugs
+packages/http       Hono helpers shared by workers (requestId, errorHandler, notFoundHandler, errorResponse)
 packages/app-contract  Guide text, contract validator, managed deploy.yml + platform.json
 fixtures/contract-app  Minimal app used ONLY in our tests to exercise build/deploy. Never given to users.
 e2e/                E2E suite, runs against deployed dev (`pnpm e2e`)
@@ -88,7 +89,7 @@ specs/              Specs (source of truth)
 - **Client-agnostic**: use only core MCP features (tools + server `instructions`). No Claude- or ChatGPT-specific behavior.
 - **Secrets**: never in code or `wrangler.jsonc`; only `wrangler secret put --env <env>`.
 - **Hono route groups**: every group of related routes is its own `Hono` instance in `src/http/routes/<group>.ts`, with the group's middleware attached inside it and paths relative to the group. The main app (`src/http/app.ts`) only adds global middleware and mounts groups with `app.route('<prefix>', group)`; it defines no routes itself. See specs/00-foundation/design.md "HTTP routing".
-- **Placeholders**: specs use `PLATFORM_API_ORIGIN`, `APPS_DOMAIN`, `APPS_MAIL_DOMAIN`, `PLATFORM_MAIL_DOMAIN`, `PLATFORM_WEBSITE_URL`, `GITHUB_ORG`, `E2E_INBOX_DOMAIN`; their concrete values live only in `specs/values.md`. Never write concrete domains into specs or code — code reads them from worker `vars` in `wrangler.jsonc`.
+- **Placeholders**: specs use `PLATFORM_API_ORIGIN`, `APPS_DOMAIN`, `APPS_MAIL_DOMAIN`, `PLATFORM_MAIL_DOMAIN`, `PLATFORM_WEBSITE_URL`, `GITHUB_ORG`, `E2E_INBOX_ADDRESS`; their concrete values live only in `specs/values.md`. Never write concrete domains into specs or code — code reads them from worker `vars` in `wrangler.jsonc`.
 - **Limits** (sizes, quotas, rate limits) are constants in `packages/shared/limits.ts`, referenced by specs by name.
 
 ## Commands
@@ -100,6 +101,7 @@ pnpm typecheck            # tsc in every workspace
 pnpm test                 # Vitest in every workspace (unit + vitest-pool-workers)
 pnpm check:wrangler       # fails on wrangler.toml / wrangler.json
 pnpm deploy:dev           # checks → D1 migrations → deploy all workers to dev → e2e (from your terminal, authenticated wrangler)
+pnpm e2e [pattern]        # e2e suite against deployed dev (settings from .env)
 pnpm deploy:prod          # same for prod; requires a clean tree on pushed main
 pnpm secrets:dev          # upload Worker secrets for dev from the git-ignored root .env (values never printed)
 pnpm -F @repo/api db:generate   # Drizzle: generate a SQL migration from src/db/schema.ts

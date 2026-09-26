@@ -1,7 +1,7 @@
+import { errorResponse } from '@repo/http';
 import { toPlatformError } from '@repo/shared';
 import { parseEnv } from './env';
 import { app } from './http/app';
-import { errorResponse } from './http/middleware/errors';
 
 export default {
   fetch(request, env, ctx) {
