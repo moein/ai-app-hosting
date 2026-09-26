@@ -56,7 +56,7 @@ for attempt in 1..5:
 throw PlatformError('INTERNAL')
 ```
 
-`suffix()` draws 4 chars uniformly from `0123456789abcdefghijklmnopqrstuvwxyz` using rejection sampling on `crypto.getRandomValues` (36^4 ≈ 1.7M combinations per base).
+`suffix()` draws 4 chars uniformly from `0123456789abcdefghijklmnopqrstuvwxyz` using rejection sampling (`randomString` in `packages/shared/src/random.ts`, bytes ≥ 252 are discarded) over the injectable `Random` (`cryptoRandom` in production) — 36^4 ≈ 1.7M combinations per base.
 
 Examples:
 

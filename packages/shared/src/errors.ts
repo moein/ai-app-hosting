@@ -42,6 +42,17 @@ export const ERROR_CATALOG = {
     hint: 'Retry shortly.',
     retryable: true,
   },
+  // spec 01 — slugs
+  SLUG_INVALID: {
+    message: "That address isn't valid.",
+    hint: 'The reason is in `details.reason`. Use `details.suggestion` or ask the user for another address.',
+    retryable: false,
+  },
+  SLUG_UNAVAILABLE: {
+    message: 'That address is taken.',
+    hint: 'Offer the user `details.suggestion` or ask for another address.',
+    retryable: false,
+  },
 } as const satisfies Record<string, CatalogEntry>;
 
 export type ErrorCode = keyof typeof ERROR_CATALOG;
@@ -101,4 +112,6 @@ export const ERROR_HTTP_STATUS = {
   QUOTA_EXCEEDED: 429,
   CONFLICT: 409,
   UPSTREAM_ERROR: 502,
+  SLUG_INVALID: 400,
+  SLUG_UNAVAILABLE: 409,
 } as const satisfies Record<ErrorCode, number>;

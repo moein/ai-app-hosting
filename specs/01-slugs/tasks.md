@@ -1,19 +1,19 @@
 # 01 — Slugs: Tasks
 
-- [ ] **1. `validateSlug` + reserved list**
+- [x] **1. `validateSlug` + reserved list**
   Implement in `packages/shared/slugs.ts`; export `RESERVED_SLUGS`.
   Satisfies: SLUG-1.1, SLUG-1.2, SLUG-1.3, SLUG-1.4, SLUG-1.5, SLUG-1.6
   Tests: table-driven cases for each reason incl. boundaries (3 and 63 chars valid, 2 and 64 invalid), `xn--abc` → `double_hyphen`, uppercase → `invalid_chars`, every reserved word → `reserved`, rule precedence.
 
-- [ ] **2. `slugBase`, `randomSuffix`, `orgNameFromEmail`**
+- [x] **2. `slugBase`, `randomSuffix`, `orgNameFromEmail`**
   Satisfies: SLUG-2.1, SLUG-2.2, SLUG-2.3, SLUG-2.4, SLUG-2.7
   Tests: examples table from design.md; diacritics; emoji-only; digit start; 200-char input truncated to ≤ 58 with no trailing hyphen; `+tag` removal; suffix alphabet/length with seeded `Random`.
 
-- [ ] **3. `generateSlug` with injected availability**
+- [x] **3. `generateSlug` with injected availability**
   Satisfies: SLUG-2.5, SLUG-2.6
   Tests: free base returned unchanged; taken base gets suffix; reserved base gets suffix; 5 consecutive collisions → `INTERNAL`; property test: 1,000 random Unicode names always yield valid slugs.
 
-- [ ] **4. Error codes `SLUG_INVALID`, `SLUG_UNAVAILABLE`** in the error catalog.
+- [x] **4. Error codes `SLUG_INVALID`, `SLUG_UNAVAILABLE`** in the error catalog.
   Satisfies: SLUG-4.1, SLUG-4.2 (codes only)
   Tests: catalog entries have hints.
 

@@ -3,4 +3,6 @@ export * from './errors';
 export * from './ids';
 export * from './limits';
 export * from './logger';
+export * from './random';
+export * from './slugs';
 export * from './time';
