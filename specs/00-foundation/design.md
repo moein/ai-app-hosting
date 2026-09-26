@@ -296,7 +296,7 @@ pnpm deploy:dev   → checks → d1 migrations apply platform-db-dev --remote �
 pnpm deploy:prod  → require clean tree on pushed main → checks → d1 migrations apply platform-db-prod --remote → deploy prod workers
 ```
 
-Deploy order: `email` → `tail` → `api` → `dispatcher` (service-binding targets first), then dev-only `e2e-inbox`. Workers or steps that don't exist yet (e.g. no D1 before task 7, no `e2e/` before spec 12) are skipped. Worker secrets are set once per environment from the operator's git-ignored root `.env` with `wrangler secret put` (runbook).
+Deploy order: `email` → `tail` → `api` → `dispatcher` (service-binding targets first), then dev-only `e2e-inbox`. Workers or steps that don't exist yet (e.g. no D1 before task 7, no `e2e/` before spec 12) are skipped. Worker secrets are set per environment from the operator's git-ignored `.env.dev` / `.env.prod` with `pnpm secrets:<env>` (template: `.env.example`).
 
 `check:wrangler` = a script failing if `git ls-files` contains `wrangler.toml` or `wrangler.json` (FND-2.2).
 

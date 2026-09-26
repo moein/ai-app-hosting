@@ -52,7 +52,7 @@ try {
 
   if (env === 'dev' && existsSync('e2e/package.json')) {
     say('e2e against dev');
-    run('pnpm', ['--filter', '@repo/e2e', 'run', 'e2e'], { env: { ...process.env, ...readEnvFile() } });
+    run('pnpm', ['--filter', '@repo/e2e', 'run', 'e2e'], { env: { ...process.env, ...readEnvFile('dev') } });
   }
 
   say(`deployed ${env}`);

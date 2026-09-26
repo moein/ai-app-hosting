@@ -87,7 +87,7 @@ specs/              Specs (source of truth)
 - **Tracking**: every MCP tool call emits exactly one tracking event (spec 05). Never log login codes, secret values or file contents.
 - **Organizations** exist in the data model but are hidden from the MCP API in v1 (no org IDs in tool inputs/outputs).
 - **Client-agnostic**: use only core MCP features (tools + server `instructions`). No Claude- or ChatGPT-specific behavior.
-- **Secrets**: never in code or `wrangler.jsonc`; only `wrangler secret put --env <env>`.
+- **Secrets**: never in code or `wrangler.jsonc`. The operator keeps them in git-ignored `.env.dev` / `.env.prod` (template: `.env.example`) and uploads them with `pnpm secrets:<env>`.
 - **Hono route groups**: every group of related routes is its own `Hono` instance in `src/http/routes/<group>.ts`, with the group's middleware attached inside it and paths relative to the group. The main app (`src/http/app.ts`) only adds global middleware and mounts groups with `app.route('<prefix>', group)`; it defines no routes itself. See specs/00-foundation/design.md "HTTP routing".
 - **Placeholders**: specs use `PLATFORM_API_ORIGIN`, `APPS_DOMAIN`, `APPS_MAIL_DOMAIN`, `PLATFORM_MAIL_DOMAIN`, `PLATFORM_WEBSITE_URL`, `GITHUB_ORG`, `E2E_INBOX_ADDRESS`; their concrete values live only in `specs/values.md`. Never write concrete domains into specs or code — code reads them from worker `vars` in `wrangler.jsonc`.
 - **Limits** (sizes, quotas, rate limits) are constants in `packages/shared/limits.ts`, referenced by specs by name.
@@ -101,9 +101,9 @@ pnpm typecheck            # tsc in every workspace
 pnpm test                 # Vitest in every workspace (unit + vitest-pool-workers)
 pnpm check:wrangler       # fails on wrangler.toml / wrangler.json
 pnpm deploy:dev           # checks → D1 migrations → deploy all workers to dev → e2e (from your terminal, authenticated wrangler)
-pnpm e2e [pattern]        # e2e suite against deployed dev (settings from .env)
+pnpm e2e [pattern]        # e2e suite against deployed dev (settings from .env.dev)
 pnpm deploy:prod          # same for prod; requires a clean tree on pushed main
-pnpm secrets:dev          # upload Worker secrets for dev from .env (values never printed); generates missing dev-only/pepper secrets.
+pnpm secrets:dev          # upload Worker secrets for dev from .env.dev (values never printed); generates missing dev-only/pepper secrets.
                           # Run it BEFORE the deploy that first needs a new secret — workers reject requests while a required secret is missing.
 pnpm -F @repo/api db:generate   # Drizzle: generate a SQL migration from src/db/schema.ts
 pnpm -F @repo/<worker> types    # regenerate worker-configuration.d.ts after changing wrangler.jsonc

@@ -9,7 +9,7 @@ Implemented right after spec 00; every later feature adds its flows here.
 ### E2E-1 — Harness
 As a platform developer, I want one command that exercises every flow on dev, so that I know the deployed system works end to end.
 
-- **E2E-1.1** THE SYSTEM SHALL provide an `e2e/` workspace whose Vitest suite targets the deployed dev environment only, configured solely through environment variables (`E2E_API_ORIGIN`, `E2E_APPS_DOMAIN`, `E2E_INBOX_ORIGIN`, `E2E_INBOX_TOKEN`, `E2E_INBOX_ADDRESS`; plus `RESEND_API_KEY` and `E2E_PROBE_FROM` for the inbox self-test), read from the environment or the git-ignored root `.env`, with no local workers, emulators or `.dev.vars`.
+- **E2E-1.1** THE SYSTEM SHALL provide an `e2e/` workspace whose Vitest suite targets the deployed dev environment only, configured solely through environment variables (`E2E_API_ORIGIN`, `E2E_APPS_DOMAIN`, `E2E_INBOX_ORIGIN`, `E2E_INBOX_TOKEN`, `E2E_INBOX_ADDRESS`; plus `RESEND_API_KEY` and `E2E_PROBE_FROM` for the inbox self-test), read from the environment or the git-ignored `.env.dev`, with no local workers, emulators or `.dev.vars`.
 - **E2E-1.2** WHEN the suite starts IF `GET <E2E_API_ORIGIN>/healthz` does not report `environment: "dev"` THEN THE SYSTEM SHALL abort without running any test.
 - **E2E-1.3** THE SYSTEM SHALL drive the platform through the official MCP TypeScript SDK `Client` with the Streamable HTTP transport against `<E2E_API_ORIGIN>/mcp` — the same path a real AI client uses — with no test-only backdoors in the platform.
 - **E2E-1.4** THE SYSTEM SHALL give every run a unique `runId` and derive all identities from it (emails `<local>+<runId>-<n>@<domain>` derived from `E2E_INBOX_ADDRESS` = `<local>@<domain>`, app names `e2e <runId> <n>`), so runs never collide and can execute concurrently.
@@ -43,7 +43,7 @@ As the operator, I want e2e runs to leave nothing behind, so that dev stays clea
 
 - Full suite (excluding `slow`) completes in < 15 minutes; flows run in parallel files.
 - Tests are resilient to eventual consistency: they poll with explicit timeouts rather than sleeping fixed durations.
-- The harness needs only: Node LTS, `pnpm install`, and the `E2E_*` environment variables (read from the operator's git-ignored root `.env`).
+- The harness needs only: Node LTS, `pnpm install`, and the `E2E_*` environment variables (read from the operator's git-ignored `.env.dev`).
 
 ## Out of scope
 

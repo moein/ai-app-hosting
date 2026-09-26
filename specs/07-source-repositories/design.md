@@ -12,7 +12,7 @@ One GitHub App per environment (`<platform>-dev`, `<platform>-prod`) installed o
 | Actions | write | read job logs (spec 10), `workflow_dispatch` for redeploy (spec 08) |
 | Metadata | read | required |
 
-Secrets: `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY` (PKCS#8 PEM), `GITHUB_INSTALLATION_ID`.
+Secrets: `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY` (PKCS#8 PEM, stored on one line with literal `\n`; the client turns them back into newlines before importing the key), `GITHUB_INSTALLATION_ID`. The dev app is `ai-app-hosting-dev`; webhooks are disabled (the platform only calls GitHub, never listens).
 
 ## `GitHubClient` interface (`apps/api/src/integrations/github.ts`)
 

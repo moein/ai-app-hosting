@@ -1,16 +1,19 @@
-// Uploads Worker secrets for one environment from the root .env: node scripts/set-secrets.mjs <dev|prod>
+// Uploads Worker secrets for one environment from `.env.<env>`: node scripts/set-secrets.mjs <dev|prod>
 // Values go to wrangler via stdin and are never printed. Secrets marked `generate` are created (random) and
-// appended to .env when missing, so tools that need them (e.g. the e2e harness) can read them too.
+// appended to `.env.<env>` when missing, so tools that need them (e.g. the e2e harness) can read them too.
 import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { appendFileSync, existsSync } from 'node:fs';
-import { readEnvFile } from './env-file.mjs';
+import { envFilePath, readEnvFile } from './env-file.mjs';
 
-// worker -> { SECRET_NAME: { key: KEY_IN_.env, envs?: [...], generate?: true } }
-// `{ENV}` in a key is replaced by DEV / PROD, so each environment gets its own value.
+// worker -> { SECRET_NAME: { key: KEY_IN_.env.<env>, envs?: [...], generate?: true } }
 const SECRETS = {
   api: {
-    LOGIN_CODE_PEPPER: { key: 'LOGIN_CODE_PEPPER_{ENV}', generate: true },
+    LOGIN_CODE_PEPPER: { key: 'LOGIN_CODE_PEPPER', generate: true },
+    CF_API_TOKEN: { key: 'CF_API_TOKEN' },
+    GITHUB_APP_ID: { key: 'GITHUB_APP_ID' },
+    GITHUB_INSTALLATION_ID: { key: 'GITHUB_INSTALLATION_ID' },
+    GITHUB_APP_PRIVATE_KEY: { key: 'GITHUB_APP_PRIVATE_KEY' },
   },
   email: {
     RESEND_API_KEY: { key: 'RESEND_API_KEY' },
@@ -28,20 +31,20 @@ if (env !== 'dev' && env !== 'prod') {
   process.exit(1);
 }
 
-const values = readEnvFile();
+const file = envFilePath(env);
+const values = readEnvFile(env);
 for (const [worker, secrets] of Object.entries(SECRETS)) {
   if (!existsSync(`apps/${worker}/wrangler.jsonc`)) continue;
   const payload = {};
-  for (const [secret, { key: template, envs, generate }] of Object.entries(secrets)) {
+  for (const [secret, { key, envs, generate }] of Object.entries(secrets)) {
     if (envs && !envs.includes(env)) continue;
-    const key = template.replace('{ENV}', env.toUpperCase());
     if (!values[key] && generate) {
       values[key] = randomBytes(32).toString('hex');
-      appendFileSync('.env', `\n${key}=${values[key]}\n`);
-      process.stdout.write(`generated ${key} and saved it to .env\n`);
+      appendFileSync(file, `\n${key}=${values[key]}\n`);
+      process.stdout.write(`generated ${key} and saved it to .env.${env}\n`);
     }
     if (!values[key]) {
-      process.stderr.write(`skipping ${worker}.${secret}: ${key} is not set in .env\n`);
+      process.stderr.write(`skipping ${worker}.${secret}: ${key} is not set in .env.${env}\n`);
       continue;
     }
     payload[secret] = values[key];

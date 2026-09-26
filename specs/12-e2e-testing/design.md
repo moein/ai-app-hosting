@@ -22,7 +22,7 @@ e2e/
 ├── package.json            # "e2e": "vitest run --config vitest.config.ts"
 ├── vitest.config.ts        # globalSetup: env check + healthz guard (E2E-1.2); testTimeout 10 min; fileParallelism true
 ├── src/
-│   ├── env.ts              # Zod-parsed E2E_* env vars (environment first, then root .env)
+│   ├── env.ts              # Zod-parsed E2E_* env vars (environment first, then .env.dev)
 │   ├── global-setup.ts     # healthz guard (E2E-1.2)
 │   ├── run.ts              # runId (nanoid), email/app name factories
 │   ├── mcp.ts              # connect(): MCP Client + StreamableHTTPClientTransport; callTool() → typed result | PlatformError
@@ -112,7 +112,7 @@ Dev-only branch of the api worker's daily cron: select users `WHERE email LIKE '
 
 ## Running
 
-`pnpm deploy:dev` runs `pnpm e2e` after deploying (FND-7.2); `pnpm e2e` can also be run on its own. `E2E_*` variables come from the git-ignored root `.env`.
+`pnpm deploy:dev` runs `pnpm e2e` after deploying (FND-7.2); `pnpm e2e` can also be run on its own. `E2E_*` variables come from the git-ignored `.env.dev`.
 
 ## Open questions
 
