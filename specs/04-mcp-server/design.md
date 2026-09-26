@@ -4,15 +4,23 @@
 
 ```
 apps/api (Worker, Hono — route groups mounted in src/http/app.ts, see 00 design "HTTP routing")
-  /mcp           → mcpRoutes → McpSession.serve('/mcp')   agents SDK, Streamable HTTP
-                    └─ McpSession (Durable Object, one per Mcp-Session-Id)
-                         init(): registers tools from the registry
-                         state: { auth, client } (spec 02, spec 05)
+  /mcp           → mcpRoutes → McpSession.serve('/mcp', { binding: 'MCP_SESSION' })   agents SDK, Streamable HTTP
+                    └─ McpSession extends McpAgent (Durable Object, SQLite-backed, one per Mcp-Session-Id)
+                         server: low-level SDK `Server` (tools capability + instructions)
+                         init(): installs tools/list + tools/call handlers backed by the tool registry
+                         session data in this.ctx.storage: { auth, loginCodeRequests } (spec 02);
+                         client info from getInitializeRequest() (spec 05)
   /v1/builds/*   → buildsRoutes (spec 08)
   /v1/contract/* → contractRoutes (spec 06)
   /v1/ses/*      → sesRoutes (spec 11)
   /healthz       → healthRoutes
 ```
+
+## SDK choices
+
+- `agents` `McpAgent` requires `@modelcontextprotocol/sdk` **1.30.0** exactly (peer dependency), so the platform pins 1.30.0 instead of the latest patch (see CLAUDE.md dependency table).
+- The server is the SDK's **low-level `Server`**, not `McpServer`: `tools/list` and `tools/call` are handled by our registry, so input validation, error results (`isError` + `PlatformError`), output validation and the size cap follow MCP-3 exactly instead of the SDK's built-in behavior. Input/output JSON Schemas for `tools/list` come from Zod (`z.toJSONSchema`).
+- Session data lives in the Durable Object's own storage (`this.ctx.storage`), not in Agent `state`, so it is never synced to connected clients.
 
 ## Tool registry
 
@@ -31,16 +39,16 @@ defineTool({
 Middleware chain (MCP-3.7), each a function `(ctx, next) => Promise<Result>`:
 
 ```
-track       — starts timer; always emits one event after completion (spec 05)
+track       — starts timer; always emits one event after completion (spec 05; until then it logs tool, outcome, error code and duration — never arguments)
 authGuard   — spec 02
-rateLimit   — Workers Rate Limiting binding `TOOL_RATE_LIMITER` keyed by userId (60 s window)
+rateLimit   — Workers Rate Limiting binding `TOOL_RATE_LIMITER` keyed by userId (60 s window); skipped for calls without a user
 validateIn  — Zod parse → INVALID_INPUT {issues}
 handler
 validateOut — Zod parse of output → INTERNAL on failure (MCP-3.9)
 serialize   — { structuredContent: out, content: [{ type:'text', text: JSON.stringify(out) }] }
               or on PlatformError: { isError: true, content: [{ type:'text', text: JSON.stringify({ error }) }],
                                      structuredContent: { error } }
-              + 100 KB cap check (MCP-3.6)
+              + 100 KB cap check (MCP-3.6): an oversized result becomes INTERNAL and is logged (tools must truncate their own fields)
 ```
 
 ## Tool catalog (MCP-3.1)

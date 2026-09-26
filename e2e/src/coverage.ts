@@ -19,3 +19,14 @@ export function taggedFlowIds(testsDir: string): Set<string> {
   }
   return tagged;
 }
+
+export type SpecTool = { name: string; public: boolean; flags: string };
+
+/** The tool table in specs/04-mcp-server/design.md: name, public flag and annotation letters (R, D, I, O). */
+export function specTools(designMarkdown: string): SpecTool[] {
+  return [...designMarkdown.matchAll(/^\| `([a-z_]+)` \| (✓?) *\| ([RDIO —]*?) *\|/gm)].map((match) => ({
+    name: match[1] as string,
+    public: match[2] === '✓',
+    flags: (match[3] ?? '').replace(/[^RDIO]/g, ''),
+  }));
+}

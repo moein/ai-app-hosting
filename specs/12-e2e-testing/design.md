@@ -73,7 +73,7 @@ The deploy-related tests write `fixtures/contract-app` (repo root, spec 06) thro
 |---|---|---|
 | `F-E2E-1` | Inbox self-test: a probe sent via Resend to a fresh `E2E_INBOX_ADDRESS` subaddress arrives in the e2e inbox | 12 |
 | `F-FND-1` | `GET /healthz` on the dev API reports `status: "ok"`, `environment: "dev"` | 00 |
-| `F-MCP-1` | `initialize` returns instructions; `tools/list` equals the catalog | 04 |
+| `F-MCP-1` | `initialize` (no auth header) returns a session and instructions; every tool in `tools/list` is in the spec 04 catalog with its public flag reflected in behavior and its annotations; once every feature is implemented, `tools/list` equals the catalog | 04 |
 | `F-MCP-2` | `get_platform_guide` returns every topic without login | 04 |
 | `F-MCP-3` | Invalid tool input → `INVALID_INPUT` with issue paths | 04 |
 | `F-AUTH-1` | Sign up: request code → real email → verify → `is_new_user: true`, `whoami` authenticated | 02, 11 |

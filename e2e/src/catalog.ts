@@ -7,7 +7,7 @@ import type { FlowId } from './flows';
 export const FLOW_CATALOG: Record<FlowId, { implemented: boolean }> = {
   'F-E2E-1': { implemented: true },
   'F-FND-1': { implemented: true },
-  'F-MCP-1': { implemented: false },
+  'F-MCP-1': { implemented: true },
   'F-MCP-2': { implemented: false },
   'F-MCP-3': { implemented: false },
   'F-AUTH-1': { implemented: false },

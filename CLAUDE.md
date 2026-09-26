@@ -55,7 +55,7 @@ Always use the latest stable version. Before adding or upgrading a dependency, c
 | vite | 8.3.1 |
 | @cloudflare/vite-plugin | 1.60.2 |
 | agents | 0.24.0 |
-| @modelcontextprotocol/sdk | 1.30.1 |
+| @modelcontextprotocol/sdk | 1.30.0 (pinned to the exact peer version `agents` 0.24.0 requires) |
 | drizzle-orm | 0.45.3 |
 | zod | 4.6.5 |
 | nanoid | 6.0.1 |
