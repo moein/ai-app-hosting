@@ -7,7 +7,11 @@ import { appendFileSync, existsSync } from 'node:fs';
 import { readEnvFile } from './env-file.mjs';
 
 // worker -> { SECRET_NAME: { key: KEY_IN_.env, envs?: [...], generate?: true } }
+// `{ENV}` in a key is replaced by DEV / PROD, so each environment gets its own value.
 const SECRETS = {
+  api: {
+    LOGIN_CODE_PEPPER: { key: 'LOGIN_CODE_PEPPER_{ENV}', generate: true },
+  },
   email: {
     RESEND_API_KEY: { key: 'RESEND_API_KEY' },
     AWS_ACCESS_KEY_ID: { key: 'AWS_ACCESS_KEY' },
@@ -28,8 +32,9 @@ const values = readEnvFile();
 for (const [worker, secrets] of Object.entries(SECRETS)) {
   if (!existsSync(`apps/${worker}/wrangler.jsonc`)) continue;
   const payload = {};
-  for (const [secret, { key, envs, generate }] of Object.entries(secrets)) {
+  for (const [secret, { key: template, envs, generate }] of Object.entries(secrets)) {
     if (envs && !envs.includes(env)) continue;
+    const key = template.replace('{ENV}', env.toUpperCase());
     if (!values[key] && generate) {
       values[key] = randomBytes(32).toString('hex');
       appendFileSync('.env', `\n${key}=${values[key]}\n`);

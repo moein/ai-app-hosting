@@ -5,7 +5,7 @@ import { runTool } from '../../src/mcp/pipeline';
 import { getPlatformGuide } from '../../src/tools/platform-guide';
 import { testContext } from '../mcp/helpers';
 
-const ctx = () => testContext({ env: { APPS_DOMAIN: 'dev.motad.app' } as Env });
+const ctx = () => testContext();
 type Guide = { contract_version: string; topic: string; markdown: string };
 
 describe('get_platform_guide (MCP-2.2)', () => {

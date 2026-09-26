@@ -9,5 +9,6 @@ export const parseEnv = createEnvParser(
     PLATFORM_API_ORIGIN: z.url(),
     APPS_DOMAIN: z.string().min(1),
     GITHUB_ORG: z.string().min(1),
+    LOGIN_CODE_PEPPER: z.string().min(32),
   }),
 );

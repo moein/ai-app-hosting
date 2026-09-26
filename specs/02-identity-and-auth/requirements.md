@@ -39,7 +39,7 @@ As a user, I want to stay logged in during my conversation, so that the AI doesn
 - **AUTH-3.3** THE SYSTEM SHALL allow exactly these tools without an authenticated session: `request_login_code`, `verify_login_code`, `whoami`, `get_platform_guide`.
 - **AUTH-3.4** WHEN any other tool is called without an authenticated session THE SYSTEM SHALL return `AUTH_REQUIRED` whose hint instructs the AI to ask the user for their email and call `request_login_code`.
 - **AUTH-3.5** WHEN `logout` is called THE SYSTEM SHALL clear the session binding and return `{ authenticated: false }`.
-- **AUTH-3.6** WHEN `whoami` is called THE SYSTEM SHALL return `{ authenticated: true, email, member_since }` for a bound session, otherwise `{ authenticated: false, next_step }`.
+- **AUTH-3.6** WHEN `whoami` is called THE SYSTEM SHALL return `{ authenticated: true, email, member_since }` for a bound session, otherwise `{ authenticated: false, next_step }` (one object shape with optional fields).
 - **AUTH-3.7** WHEN a bound user becomes `blocked` THE SYSTEM SHALL reject their next tool call with `ACCOUNT_BLOCKED` and clear the binding.
 
 ## Non-functional requirements

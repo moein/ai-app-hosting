@@ -21,6 +21,9 @@
         "GITHUB_ORG": "AI-app-hosting"
       },
       "durable_objects": { "bindings": [{ "name": "MCP_SESSION", "class_name": "McpSession" }] },
+      "services": [{ "binding": "MAIL", "service": "email-dev", "entrypoint": "PlatformMail" }],
+      "queues": { "producers": [{ "binding": "EMAIL_JOBS", "queue": "email-jobs-dev" }] },
+      "triggers": { "crons": ["0 3 * * *"] },
       "ratelimits": [{ "name": "TOOL_RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 120, "period": 60 } }],
       "d1_databases": [
         {
@@ -43,6 +46,9 @@
         "GITHUB_ORG": "AI-app-hosting"
       },
       "durable_objects": { "bindings": [{ "name": "MCP_SESSION", "class_name": "McpSession" }] },
+      "services": [{ "binding": "MAIL", "service": "email-prod", "entrypoint": "PlatformMail" }],
+      "queues": { "producers": [{ "binding": "EMAIL_JOBS", "queue": "email-jobs-prod" }] },
+      "triggers": { "crons": ["0 3 * * *"] },
       "ratelimits": [{ "name": "TOOL_RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 120, "period": 60 } }],
       "d1_databases": [
         {

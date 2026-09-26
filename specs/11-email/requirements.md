@@ -32,9 +32,9 @@ As a user, I want my app to send emails (welcome messages, notifications), so th
 ### MAIL-3 — Login-code emails
 As a user, I want my login code to arrive quickly and look trustworthy.
 
-- **MAIL-3.1** WHEN `PlatformMail.sendLoginCode({ to, code })` is called THE SYSTEM SHALL send a plain-text + HTML email through the Resend API from `login@<PLATFORM_MAIL_DOMAIN>`, where `PLATFORM_MAIL_DOMAIN` is a dedicated `vars` entry in the email worker's `wrangler.jsonc`, with content per AUTH-1.8.
+- **MAIL-3.1** WHEN `PlatformMail.sendLoginCode({ to, code, codeId })` is called THE SYSTEM SHALL send a plain-text + HTML email through the Resend API from `login@<PLATFORM_MAIL_DOMAIN>`, where `PLATFORM_MAIL_DOMAIN` is a dedicated `vars` entry in the email worker's `wrangler.jsonc`, with content per AUTH-1.8.
 - **MAIL-3.2** THE SYSTEM SHALL NOT log the code or include it in metrics or events.
-- **MAIL-3.3** IF Resend responds with 429 or 5xx, or the request fails THEN `sendLoginCode` SHALL fail with `UPSTREAM_ERROR` (retryable); other 4xx responses SHALL fail with `INTERNAL` and be logged (configuration problem).
+- **MAIL-3.3** IF Resend responds with 429 or 5xx, or the request fails THEN `sendLoginCode` SHALL fail with `UPSTREAM_ERROR` (retryable); other 4xx responses SHALL fail with `INTERNAL` and be logged (configuration problem). Because error properties don't survive Workers RPC, the entrypoint returns `{ ok: true, id } | { ok: false, error: PlatformErrorJson }` instead of throwing, and callers rethrow it as a `PlatformError`.
 - **MAIL-3.4** THE SYSTEM SHALL send each login-code email with an `Idempotency-Key` equal to the login code's ID, so retries never send duplicates.
 
 ### MAIL-4 — Bounces and complaints

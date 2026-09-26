@@ -18,7 +18,7 @@ The AWS IAM user is limited to `ses:SendEmail`, `ses:CreateTenant`, `ses:GetTena
 ```ts
 // apps/email/src/index.ts
 export class PlatformMail extends WorkerEntrypoint<Env> {
-  sendLoginCode(p: { to: string; code: string }): Promise<{ id: string }>;
+  sendLoginCode(p: { to: string; code: string; codeId: string }): Promise<{ ok: true; id: string } | { ok: false; error: PlatformErrorJson }>;
 }
 
 export class AppMail extends WorkerEntrypoint<Env, { appId: string; orgId: string; slug: string }> {
@@ -87,7 +87,7 @@ failure → message.retry({ delaySeconds: backoff }); on final attempt (max_retr
 ```
 POST https://api.resend.com/emails
 Authorization: Bearer RESEND_API_KEY
-Idempotency-Key: <login code id>                      (MAIL-3.4)
+Idempotency-Key: login-code/<codeId>                  (MAIL-3.4)
 { "from": "Login <login@${PLATFORM_MAIL_DOMAIN}>", "to": [to], "subject": "Your login code: 482913",
   "text": "…", "html": "…", "tags": [{ "name": "env", "value": env }, { "name": "kind", "value": "login_code" }] }
 ```

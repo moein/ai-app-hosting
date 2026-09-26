@@ -1,5 +1,7 @@
-import type { Clock, Logger, OrgId, UserId } from '@repo/shared';
+import type { Clock, EmailJob, Logger, OrgId, PlatformMailRpc, Random, UserId } from '@repo/shared';
 import type { z } from 'zod';
+import type { SessionStore } from '../auth/session-store';
+import type { Db } from '../db/client';
 
 export type ToolAnnotations = {
   readOnlyHint: boolean;
@@ -9,6 +11,7 @@ export type ToolAnnotations = {
 };
 
 export type RateLimiter = { limit(options: { key: string }): Promise<{ success: boolean }> };
+export type JobQueue<T> = { send(message: T): Promise<unknown> };
 
 /** Everything a tool handler may use. `userId`/`orgId` are set by the auth guard (spec 02). */
 export type ToolContext = {
@@ -16,7 +19,12 @@ export type ToolContext = {
   sessionId: string;
   logger: Logger;
   clock: Clock;
+  random: Random;
   rateLimiter: RateLimiter;
+  db: Db;
+  session: SessionStore;
+  mailer: PlatformMailRpc;
+  emailJobs: JobQueue<EmailJob>;
   userId?: UserId;
   orgId?: OrgId;
 };

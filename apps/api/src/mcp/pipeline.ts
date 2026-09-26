@@ -1,17 +1,12 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { PlatformError, TOOL_RESULT_MAX_BYTES, toPlatformError } from '@repo/shared';
 import type { z } from 'zod';
+import { authGuard } from '../auth/guard';
 import type { AnyTool, ToolContext } from './tool';
 
 export type ToolCall = { tool: AnyTool; args: unknown; ctx: ToolContext; input?: unknown };
 export type ToolOutcome = { ok: true; output: Record<string, unknown> } | { ok: false; error: PlatformError };
 export type ToolMiddleware = (call: ToolCall, next: () => Promise<ToolOutcome>) => Promise<ToolOutcome>;
-
-/** Spec 02 replaces this stub with the session lookup; until then only public tools can run. */
-export const authGuard: ToolMiddleware = async (call, next) => {
-  if (!call.tool.public && call.ctx.userId === undefined) throw new PlatformError('AUTH_REQUIRED');
-  return next();
-};
 
 /** Per-user limit (MCP-3.8); anonymous calls (public tools) aren't limited here. */
 export const rateLimit: ToolMiddleware = async (call, next) => {

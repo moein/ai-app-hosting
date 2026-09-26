@@ -53,6 +53,32 @@ export const ERROR_CATALOG = {
     hint: 'Offer the user `details.suggestion` or ask for another address.',
     retryable: false,
   },
+  // spec 02 — identity & auth
+  CODE_INVALID: {
+    message: 'The login code is wrong.',
+    hint: 'Ask the user to re-check the latest email (`details.attempts_remaining` tries left). If 0, call `request_login_code` again.',
+    retryable: false,
+  },
+  CODE_EXPIRED: {
+    message: 'The login code has expired.',
+    hint: 'Call `request_login_code` again and ask the user for the new code.',
+    retryable: false,
+  },
+  CODE_ATTEMPTS_EXCEEDED: {
+    message: 'Too many wrong login codes.',
+    hint: 'Call `request_login_code` to send a new code.',
+    retryable: false,
+  },
+  EMAIL_UNDELIVERABLE: {
+    message: "We can't deliver email to this address.",
+    hint: 'It bounced before. Ask the user for a different email address.',
+    retryable: false,
+  },
+  ACCOUNT_BLOCKED: {
+    message: 'This account is blocked.',
+    hint: 'Tell the user to contact support.',
+    retryable: false,
+  },
 } as const satisfies Record<string, CatalogEntry>;
 
 export type ErrorCode = keyof typeof ERROR_CATALOG;
@@ -114,4 +140,18 @@ export const ERROR_HTTP_STATUS = {
   UPSTREAM_ERROR: 502,
   SLUG_INVALID: 400,
   SLUG_UNAVAILABLE: 409,
+  CODE_INVALID: 400,
+  CODE_EXPIRED: 400,
+  CODE_ATTEMPTS_EXCEEDED: 429,
+  EMAIL_UNDELIVERABLE: 422,
+  ACCOUNT_BLOCKED: 403,
 } as const satisfies Record<ErrorCode, number>;
+
+/** Rebuilds a PlatformError from its JSON form (e.g. a result returned over Workers RPC). */
+export function platformErrorFromJson(json: PlatformErrorJson): PlatformError {
+  return new PlatformError(json.code, {
+    message: json.message,
+    hint: json.hint,
+    ...(json.details === undefined ? {} : { details: json.details }),
+  });
+}

@@ -6,7 +6,7 @@ Depends on: 00, 03 (organizations, quota service). Task 3 is needed early by spe
   Satisfies: MAIL non-functional
   Tests: manual — send a test email in dev.
 
-- [ ] **1b. Resend setup (dev, prod)** — verify `PLATFORM_MAIL_DOMAIN` in Resend (SPF, DKIM, DMARC), create an API key per environment, `wrangler secret put RESEND_API_KEY --env <env>`, set `PLATFORM_MAIL_DOMAIN` var in `apps/email/wrangler.jsonc`; document in runbook.
+- [x] **1b. Resend setup (dev, prod)** — verify `PLATFORM_MAIL_DOMAIN` in Resend (SPF, DKIM, DMARC), create an API key per environment, `wrangler secret put RESEND_API_KEY --env <env>`, set `PLATFORM_MAIL_DOMAIN` var in `apps/email/wrangler.jsonc`; document in runbook.
   Satisfies: MAIL non-functional
   Tests: covered by `F-AUTH-1` on dev.
 
@@ -15,7 +15,7 @@ Depends on: 00, 03 (organizations, quota service). Task 3 is needed early by spe
   Satisfies: (infrastructure)
   Tests: SigV4 request shape against recorded fixture; error mapping table.
 
-- [ ] **3. `ResendClient` + `PlatformMail.sendLoginCode`**
+- [x] **3. `ResendClient` + `PlatformMail.sendLoginCode`**
   Satisfies: MAIL-3.1, MAIL-3.2, MAIL-3.3, MAIL-3.4, AUTH-1.8
   Tests: Resend fake receives `from` `login@<PLATFORM_MAIL_DOMAIN>` (read from the var), `Idempotency-Key`, text+html containing code and warning; 429/5xx → `UPSTREAM_ERROR`; 401/422 → `INTERNAL`; no code in logs/metrics.
 

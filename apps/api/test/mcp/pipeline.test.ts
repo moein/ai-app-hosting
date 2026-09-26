@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { MIDDLEWARE, runTool } from '../../src/mcp/pipeline';
 import { defineTool } from '../../src/mcp/tool';
-import { asUser, echoTool, privateEcho, testContext } from './helpers';
+import { echoTool, privateEcho, signIn, testContext } from './helpers';
 
 const errorOf = (result: Awaited<ReturnType<typeof runTool>>) =>
   (result.structuredContent as { error: { code: string; hint: string; details?: Record<string, unknown> } }).error;
@@ -69,9 +69,11 @@ describe('runTool (MCP-3)', () => {
     expect(errorOf(await runTool(tool, { message: 'x' }, testContext())).code).toBe('INTERNAL');
   });
 
-  it('protected tools require a user (auth guard stub until spec 02)', async () => {
+  it('protected tools require a signed-in session', async () => {
     expect(errorOf(await runTool(privateEcho, { message: 'x' }, testContext())).code).toBe('AUTH_REQUIRED');
-    expect((await runTool(privateEcho, { message: 'x' }, testContext(asUser()))).isError).toBeUndefined();
+    const ctx = testContext();
+    await signIn(ctx);
+    expect((await runTool(privateEcho, { message: 'x' }, ctx)).isError).toBeUndefined();
   });
 
   it('rate limits authenticated users per user id (MCP-3.8)', async () => {
@@ -84,12 +86,13 @@ describe('runTool (MCP-3)', () => {
         return { success: calls <= 120 };
       },
     };
-    for (let i = 0; i < 120; i++)
-      await runTool(privateEcho, { message: 'x' }, testContext({ ...asUser(), rateLimiter }));
-    const error = errorOf(await runTool(privateEcho, { message: 'x' }, testContext({ ...asUser(), rateLimiter })));
+    const ctx = testContext({ rateLimiter });
+    const { userId } = await signIn(ctx);
+    for (let i = 0; i < 120; i++) await runTool(privateEcho, { message: 'x' }, ctx);
+    const error = errorOf(await runTool(privateEcho, { message: 'x' }, ctx));
     expect(error.code).toBe('RATE_LIMITED');
     expect(error.details).toEqual({ retry_after_seconds: 60 });
-    expect(new Set(seen)).toEqual(new Set(['usr_V1StGXR8_Z5']));
+    expect(new Set(seen)).toEqual(new Set([userId]));
   });
 
   it('runs the chain in the documented order: auth → rate limit → input validation → handler (MCP-3.7)', async () => {
@@ -97,10 +100,9 @@ describe('runTool (MCP-3)', () => {
     // auth is checked before validation: an anonymous call with bad input is AUTH_REQUIRED, not INVALID_INPUT
     expect(errorOf(await runTool(privateEcho, { message: '' }, testContext())).code).toBe('AUTH_REQUIRED');
     // rate limit is checked before validation
-    const denied = { limit: async () => ({ success: false }) };
-    expect(
-      errorOf(await runTool(privateEcho, { message: '' }, testContext({ ...asUser(), rateLimiter: denied }))).code,
-    ).toBe('RATE_LIMITED');
+    const denied = testContext({ rateLimiter: { limit: async () => ({ success: false }) } });
+    await signIn(denied);
+    expect(errorOf(await runTool(privateEcho, { message: '' }, denied)).code).toBe('RATE_LIMITED');
   });
 
   it('logs one "tool call" line per call with outcome and duration, never arguments', async () => {

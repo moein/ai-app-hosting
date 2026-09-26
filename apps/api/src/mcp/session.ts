@@ -1,5 +1,7 @@
-import { Logger, systemClock } from '@repo/shared';
+import { cryptoRandom, Logger, type PlatformMailRpc, systemClock } from '@repo/shared';
 import { McpAgent } from 'agents/mcp';
+import { createSessionStore } from '../auth/session-store';
+import { createDb } from '../db/client';
 import { buildInstructions } from './instructions';
 import { TOOLS } from './registry';
 import { createMcpServer } from './server';
@@ -22,7 +24,12 @@ export class McpSession extends McpAgent<Env> {
       sessionId,
       logger: Logger.root.child({ worker: 'api', sessionId }),
       clock: systemClock,
+      random: cryptoRandom,
       rateLimiter: this.env.TOOL_RATE_LIMITER,
+      db: createDb(this.env.DB),
+      session: createSessionStore(this.ctx.storage),
+      mailer: this.env.MAIL as unknown as PlatformMailRpc,
+      emailJobs: this.env.EMAIL_JOBS,
     };
   }
 }

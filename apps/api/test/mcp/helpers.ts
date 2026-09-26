@@ -1,22 +1,93 @@
-import { Logger, type UserId } from '@repo/shared';
+import { env } from 'cloudflare:workers';
+import {
+  cryptoRandom,
+  type EmailJob,
+  Logger,
+  newId,
+  type OrgId,
+  type SendLoginCodeInput,
+  type SendLoginCodeResult,
+  type UserId,
+} from '@repo/shared';
 import { z } from 'zod';
+import { createSessionStore, memoryStorage } from '../../src/auth/session-store';
+import { createDb } from '../../src/db/client';
+import { memberships, organizations, users } from '../../src/db/schema';
 import { defineTool, type ToolContext } from '../../src/mcp/tool';
 
-export const fakeClock = (start = 1_000) => {
+export const fakeClock = (start = Date.UTC(2026, 8, 26)) => {
   let now = start;
-  return { now: () => now, advance: (ms: number) => (now += ms) };
+  return { now: () => now, advance: (ms: number) => (now += ms), set: (ms: number) => (now = ms) };
 };
 
-export const testContext = (overrides: Partial<ToolContext> = {}): ToolContext => ({
-  env: {} as Env,
-  sessionId: 'session-1',
-  logger: new Logger({ test: true }),
-  clock: fakeClock(),
-  rateLimiter: { limit: async () => ({ success: true }) },
-  ...overrides,
-});
+export type FakeMailer = ToolContext['mailer'] & { sent: SendLoginCodeInput[]; fail: SendLoginCodeResult | null };
 
-export const asUser = (id = 'usr_V1StGXR8_Z5') => ({ userId: id as UserId });
+export function fakeMailer(): FakeMailer {
+  const mailer: FakeMailer = {
+    sent: [],
+    fail: null,
+    async sendLoginCode(input) {
+      if (mailer.fail) return mailer.fail;
+      mailer.sent.push(input);
+      return { ok: true, id: `msg_${mailer.sent.length}` };
+    },
+  };
+  return mailer;
+}
+
+export const fakeQueue = () => {
+  const messages: EmailJob[] = [];
+  return { messages, send: async (message: EmailJob) => void messages.push(message) };
+};
+
+export type TestContext = ToolContext & {
+  clock: ReturnType<typeof fakeClock>;
+  mailer: FakeMailer;
+  emailJobs: ReturnType<typeof fakeQueue>;
+};
+
+export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =>
+  ({
+    env: env as Env,
+    sessionId: 'session-1',
+    logger: new Logger({ test: true }),
+    clock: fakeClock(),
+    random: cryptoRandom,
+    rateLimiter: { limit: async () => ({ success: true }) },
+    db: createDb(env.DB),
+    session: createSessionStore(memoryStorage()),
+    mailer: fakeMailer(),
+    emailJobs: fakeQueue(),
+    ...overrides,
+  }) as TestContext;
+
+/** Creates a user with a personal org and binds it to the context's session. */
+export async function signIn(ctx: ToolContext, options: { email?: string; status?: 'active' | 'blocked' } = {}) {
+  const now = ctx.clock.now();
+  const userId = newId('usr') as UserId;
+  const orgId = newId('org') as OrgId;
+  await ctx.db.batch([
+    ctx.db.insert(users).values({
+      id: userId,
+      email: options.email ?? `${userId.toLowerCase()}@test.example`,
+      status: options.status ?? 'active',
+      createdAt: now,
+    }),
+    ctx.db.insert(organizations).values({
+      id: orgId,
+      slug: `org-${userId
+        .slice(4)
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, 'x')}`,
+      name: 'test',
+      createdAt: now,
+      updatedAt: now,
+    }),
+    ctx.db.insert(memberships).values({ orgId, userId, createdAt: now }),
+  ]);
+  await ctx.session.setAuth({ userId, orgId, authenticatedAt: now, lastSeenAt: now });
+  return { userId, orgId };
+}
 
 export const echoTool = defineTool({
   name: 'echo',
