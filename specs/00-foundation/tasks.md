@@ -30,8 +30,8 @@
   Satisfies: FND-9.1, FND-9.2, FND-9.3, FND-9.4, FND-9.5, FND-9.6, FND-9.7
   Tests: one JSON line per call with timestamp/level/message + metadata; each level uses the matching console method; `Logger.root` returns the same instance on every access; child merges context without mutating the parent; Error (with cause) serialized; reserved fields can't be overwritten; circular metadata doesn't throw; lint fails on a stray `console.log` (verified once).
 
-- [ ] **7. Platform D1 + Drizzle**
-  `apps/api/src/db/schema.ts` (empty-but-wired), `drizzle.config.ts`, `migrations/`, test setup applying migrations.
+- [x] **7. Platform D1 + Drizzle**
+  `platform-db-dev` / `platform-db-prod` (location `weur`) bound as `DB`; `apps/api/src/db/schema.ts` (empty-but-wired), `src/db/client.ts`, `drizzle.config.ts` (`pnpm db:generate`), `migrations/`, test setup applying migrations; worker types generated from the dev env shape (`wrangler types --env dev --strict-vars=false`).
   Satisfies: FND-6.1, FND-6.2, FND-6.3
   Tests: a pool-workers test sees migrated schema (e.g. `sqlite_master` contains expected tables once later specs add them).
 
@@ -40,12 +40,12 @@
   Satisfies: FND-5.2, FND-5.3
   Tests: unit test on parser with a fake `pnpm outdated` JSON payload.
 
-- [ ] **9. CI checks + terminal deploy script**
+- [x] **9. CI checks + terminal deploy script**
   `.github/workflows/ci.yml` (checks only, no secrets); `scripts/deploy.mjs` behind `pnpm deploy:dev` / `pnpm deploy:prod`: checks → migrations → workers in order → e2e (dev); prod guard (clean tree, on pushed `main`).
   Satisfies: FND-7.1, FND-7.2, FND-7.3, FND-7.4
   Tests: CI green on the first push; `pnpm deploy:dev` deploys all workers and `/healthz` answers; `pnpm deploy:prod` refuses with a dirty tree (verified once); a failing check stops the deploy before any upload (verified once).
 
-- [ ] **10. Fill in CLAUDE.md "Commands"** with the real commands.
+- [x] **10. Fill in CLAUDE.md "Commands"** with the real commands.
   Satisfies: (docs)
 
 - [ ] **11. E2E on dev** (spec 12, after spec 12 task 1)

@@ -17,7 +17,15 @@
         "PLATFORM_API_ORIGIN": "https://api-dev.ai-app-hosting.workers.dev",
         "APPS_DOMAIN": "dev.motad.app",
         "GITHUB_ORG": "AI-app-hosting"
-      }
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "platform-db-dev",
+          "database_id": "407bea98-c827-4fcb-a544-f4c0c4343949",
+          "migrations_dir": "migrations"
+        }
+      ]
     },
     "prod": {
       "name": "api-prod",
@@ -29,7 +37,15 @@
         "PLATFORM_API_ORIGIN": "https://api-prod.ai-app-hosting.workers.dev",
         "APPS_DOMAIN": "motad.app",
         "GITHUB_ORG": "AI-app-hosting"
-      }
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "platform-db-prod",
+          "database_id": "983837a1-bc37-4678-8061-830a71637516",
+          "migrations_dir": "migrations"
+        }
+      ]
     }
   }
 }

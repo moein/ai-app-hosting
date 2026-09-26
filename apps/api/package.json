@@ -5,17 +5,20 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "types": "wrangler types --env-interface Env",
+    "types": "wrangler types --env dev --strict-vars=false --env-interface Env",
     "deploy:dev": "wrangler deploy --env dev",
-    "deploy:prod": "wrangler deploy --env prod"
+    "deploy:prod": "wrangler deploy --env prod",
+    "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@repo/shared": "workspace:*",
+    "drizzle-orm": "0.45.3",
     "hono": "4.13.9",
     "zod": "4.6.5"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.22.0",
+    "drizzle-kit": "0.31.11",
     "typescript": "7.0.2",
     "vitest": "4.1.11",
     "wrangler": "4.141.0"

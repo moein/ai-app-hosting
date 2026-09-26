@@ -93,4 +93,17 @@ specs/              Specs (source of truth)
 
 ## Commands
 
-To be filled in by `specs/00-foundation/tasks.md` once the workspace exists (expected: `pnpm install`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm e2e`, `pnpm deploy:dev`, `pnpm deploy:prod`). Deploys always run from the terminal with the locally authenticated `wrangler`; CI only runs checks.
+```
+pnpm install              # install everything (Node 24, pnpm 10)
+pnpm lint                 # Biome (pnpm format to auto-fix)
+pnpm typecheck            # tsc in every workspace
+pnpm test                 # Vitest in every workspace (unit + vitest-pool-workers)
+pnpm check:wrangler       # fails on wrangler.toml / wrangler.json
+pnpm deploy:dev           # checks → D1 migrations → deploy all workers to dev → e2e (from your terminal, authenticated wrangler)
+pnpm deploy:prod          # same for prod; requires a clean tree on pushed main
+pnpm secrets:dev          # upload Worker secrets for dev from the git-ignored root .env (values never printed)
+pnpm -F @repo/api db:generate   # Drizzle: generate a SQL migration from src/db/schema.ts
+pnpm -F @repo/<worker> types    # regenerate worker-configuration.d.ts after changing wrangler.jsonc
+```
+
+CI (GitHub Actions) only runs checks; it has no secrets and never deploys.
