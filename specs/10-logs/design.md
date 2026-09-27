@@ -66,9 +66,25 @@ CREATE TABLE logs (
 CREATE INDEX logs_ts ON logs (ts DESC);
 ```
 
-- `append(entries)`: insert in one transaction; per-minute counter in DO storage for LOG-2.7; if row count > `LOG_BUFFER_MAX_ENTRIES` delete oldest.
-- Alarm every hour: delete `ts < now - LOG_BUFFER_MAX_AGE_MS`.
-- `query(filter)`: SQL with bound params; cursor = last `seq` returned; `ORDER BY ts DESC, seq DESC LIMIT ?`.
+- `append(entries)`: insert in one transaction; per-minute counter (table `ingest(minute, count, dropped_seq)`, minute = `floor(entry.ts / 60 000)`) for LOG-2.7 — once a minute has `LOG_INGEST_MAX_PER_MINUTE` entries its further `console` entries are dropped and a single `dropped` entry (level `warn`) for that minute is inserted, then updated with the running count; if row count > `LOG_BUFFER_MAX_ENTRIES` delete oldest (by `seq`).
+- Alarm every hour (set on first append): delete `ts < now - LOG_BUFFER_MAX_AGE_MS` and old `ingest` rows.
+- `query(filter)`: SQL with bound params; `ORDER BY ts DESC, seq DESC LIMIT limit + 1`; cursor = `"<ts>.<seq>"` of the last entry returned (opaque to the AI), next page = rows strictly after it in that order.
+- Level filter: rank `debug`=0, `log`/`info`=1, `warn`=2, `error`=3; `level` keeps entries with rank ≥ the given one. `search` is a case-insensitive substring (`instr`, no wildcards) of `message` or `path`. `status_min` keeps only `request` entries with `status ≥ status_min`.
+
+The shared types (`LogEntry`, `LogFilter`, `LogPage`, `AppLogsRpc`) live in `packages/shared/src/logs.ts`; the api binds the DO as `APP_LOGS` with `script_name: "tail-<env>"` (so `tail-<env>` must be deployed first) and reaches it through `ToolContext.appLogs`.
+
+### Tail Worker normalization (`apps/tail/src/normalize.ts`)
+
+- `appId` = the `scriptTags` entry starting with `app_`; items without one are ignored (logged).
+- `invocation_id` = a random UUID per `TraceItem`.
+- Request entry only for `fetch` events; `duration_ms` = `TraceItem.wallTime`; `ts` = `eventTimestamp` (or the first log/exception timestamp, or now).
+- Console `message` = args joined by a space (strings as-is, everything else `JSON.stringify`, unserializable → `String()`); unknown levels become `log`.
+- Truncation is by UTF-8 bytes, never splitting a character, with a `…` suffix.
+- The tail handler catches everything (LOG-2.8): one failing item or DO call is logged and doesn't affect the others.
+
+### Archival (LOG-2.6)
+
+`LOG_ARCHIVE` is a Pipelines binding to the `app-logs-<env>` stream; every entry is sent as `{ app_id, ...entry }` in `ctx.waitUntil`, after (and independent of) the DO write. The binding is optional in code: until R2 is enabled on the account (the pipeline's sink), `wrangler.jsonc` doesn't declare it and archival is skipped.
 
 ### `get_logs` contract
 
@@ -78,6 +94,8 @@ in:  { app: string; since?: string; until?: string;
        search?: string; status_min?: number; limit?: 1..200; cursor?: string }
 out: { entries: (Omit<LogEntry,'ts'> & { ts: string })[]; next_cursor: string | null; next_step?: string }
 ```
+
+`limit` above 200 is clamped to 200 (LOG-3.4). A `since`/`until` that is neither ISO 8601 nor `<n>m|h|d` → `INVALID_INPUT`. The window is `since ≤ ts < until` (default `until` = now).
 
 ## Limits
 

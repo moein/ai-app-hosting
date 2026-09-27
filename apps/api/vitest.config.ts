@@ -1,4 +1,5 @@
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers';
+import { build } from 'esbuild';
 import { defineConfig } from 'vitest/config';
 
 // Stand-in for the email worker's PlatformMail entrypoint (the MAIL service binding). Tool tests inject
@@ -10,6 +11,20 @@ export class PlatformMail extends WorkerEntrypoint {
 }
 export default { fetch: () => new Response(null, { status: 404 }) };
 `;
+
+// The real tail worker (hosts AppLogBuffer, bound here as APP_LOGS with script_name tail-dev), bundled for Miniflare.
+async function tailWorkerScript(): Promise<string> {
+  const result = await build({
+    entryPoints: ['../tail/src/index.ts'],
+    bundle: true,
+    format: 'esm',
+    platform: 'neutral',
+    write: false,
+    external: ['cloudflare:*'],
+    logLevel: 'silent',
+  });
+  return result.outputFiles[0]?.text ?? '';
+}
 
 export default defineConfig({
   plugins: [
@@ -25,7 +40,17 @@ export default defineConfig({
           GITHUB_INSTALLATION_ID: '1',
           GITHUB_APP_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\\ntest\\n-----END PRIVATE KEY-----',
         },
-        workers: [{ name: 'email-dev', modules: true, script: EMAIL_STUB, compatibilityDate: '2026-08-22' }],
+        workers: [
+          { name: 'email-dev', modules: true, script: EMAIL_STUB, compatibilityDate: '2026-08-22' },
+          {
+            name: 'tail-dev',
+            modules: true,
+            script: await tailWorkerScript(),
+            compatibilityDate: '2026-08-22',
+            bindings: { ENVIRONMENT: 'dev' },
+            durableObjects: { APP_LOGS: { className: 'AppLogBuffer', useSQLite: true } },
+          },
+        ],
       },
     })),
   ],

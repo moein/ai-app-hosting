@@ -15,6 +15,7 @@ import { createSessionStore, memoryStorage } from '../../src/auth/session-store'
 import { runDeployment } from '../../src/builds/deploy';
 import { createDb } from '../../src/db/client';
 import { memberships, organizations, users } from '../../src/db/schema';
+import { appLogsFor } from '../../src/logs/app-logs';
 import { defineTool, type ToolContext } from '../../src/mcp/tool';
 import { fakeCloudflare } from '../fakes/cloudflare';
 import { fakeGitHub } from '../fakes/github';
@@ -70,6 +71,7 @@ export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =
     routes: env.APP_ROUTES,
     sleep: async () => {},
     artifacts: env.ARTIFACTS,
+    appLogs: (appId: string) => appLogsFor(env as Env, appId),
     fakes: { cloudflare, github },
     ...overrides,
   } as TestContext;

@@ -10,23 +10,24 @@ Depends on: 00, 04, 07 (`GitHubClient.getJobLog`), 08 (deployments, fail callbac
   Satisfies: LOG-1.1, LOG-1.3, LOG-1.4
   Tests: failed deployment returns step, excerpt, errors; contract failure returns violations only; missing excerpt triggers one `getJobLog` call, result persisted (second call makes no GitHub request); ANSI/timestamps stripped.
 
-- [ ] **3. Tail Worker normalization**
+- [x] **3. Tail Worker normalization**
   Satisfies: LOG-2.2, LOG-2.3, LOG-2.4, LOG-2.8
   Tests: synthetic `TraceItem`s (ok request with logs, exception, exceededCpu) → expected entries; no headers/query/IP in output; truncation; malformed trace doesn't throw.
 
-- [ ] **4. `AppLogBuffer` DO**
+- [x] **4. `AppLogBuffer` DO**
   Satisfies: LOG-2.5, LOG-2.7
   Tests (pool-workers): append/query; retention by count and age (alarm, fake time); per-minute ingest cap keeps request/exception, drops console, writes one `dropped` entry.
 
-- [ ] **5. Pipeline archival (`app-logs-<env>`)**
+- [x] **5. Pipeline archival (`app-logs-<env>`)**
   Satisfies: LOG-2.6
   Tests: fake pipeline receives each entry with `app_id`; send failure doesn't affect DO write.
+  The stream/sink and the `LOG_ARCHIVE` binding are provisioned with spec 05 task 1 (needs R2); until then archival is skipped.
 
-- [ ] **6. Attach tail consumer in deploy** (coordinate with spec 08 task 7)
+- [x] **6. Attach tail consumer in deploy** (coordinate with spec 08 task 7)
   Satisfies: LOG-2.1
   Tests: upload metadata includes `tail_consumers: [{ service: "tail-<env>" }]` and tags.
 
-- [ ] **7. `get_logs` tool**
+- [x] **7. `get_logs` tool**
   Satisfies: LOG-3.1, LOG-3.2, LOG-3.3, LOG-3.4, LOG-3.5
   Tests: relative/ISO time parsing; each filter; level ordering; cursor pagination; limit cap; empty result `next_step` for not-deployed vs no-match.
 

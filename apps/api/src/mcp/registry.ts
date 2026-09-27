@@ -16,6 +16,7 @@ import { rollback } from '../tools/deployments/rollback';
 import { listFiles } from '../tools/files/list-files';
 import { readFile } from '../tools/files/read-file';
 import { writeFiles } from '../tools/files/write-files';
+import { getLogs } from '../tools/logs/get-logs';
 import { getPlatformGuide } from '../tools/platform-guide';
 import { queryDatabase } from '../tools/runtime/query-database';
 import { deleteSecret, listSecrets, setSecret } from '../tools/runtime/secrets';
@@ -46,4 +47,5 @@ export const TOOLS: AnyTool[] = [
   listSecrets,
   deleteSecret,
   queryDatabase,
+  getLogs,
 ];

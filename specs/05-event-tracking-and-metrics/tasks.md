@@ -3,8 +3,8 @@
 Depends on: 00, 04 (task 2 middleware chain).
 
 - [ ] **1. Provision stream, pipeline, sink (dev + prod)**
-  Create `mcp-events-<env>` stream with schema, pipeline, R2 Data Catalog sink `mcp_events` in `datalake-<env>`; add `EVENTS` binding to `apps/api/wrangler.jsonc`. Record commands in `docs/runbook.md`.
-  Satisfies: EVT-1.7
+  Create `mcp-events-<env>` stream with schema, pipeline, R2 Data Catalog sink `mcp_events` in `datalake-<env>`; add `EVENTS` binding to `apps/api/wrangler.jsonc`. Same for the runtime-log archive (spec 10): `app-logs-<env>` stream + sink table `app_logs`, and the `LOG_ARCHIVE` binding in `apps/tail/wrangler.jsonc`. Record commands in `docs/runbook.md`. Needs R2 enabled on the account.
+  Satisfies: EVT-1.7, LOG-2.6 (infrastructure)
   Tests: manual — send a test event in dev and query it with R2 SQL / catalog.
 
 - [ ] **2. Event schema + redaction + capping**

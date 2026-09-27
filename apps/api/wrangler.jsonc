@@ -20,7 +20,12 @@
         "APPS_DOMAIN": "dev.motad.app",
         "GITHUB_ORG": "AI-app-hosting"
       },
-      "durable_objects": { "bindings": [{ "name": "MCP_SESSION", "class_name": "McpSession" }] },
+      "durable_objects": {
+        "bindings": [
+          { "name": "MCP_SESSION", "class_name": "McpSession" },
+          { "name": "APP_LOGS", "class_name": "AppLogBuffer", "script_name": "tail-dev" }
+        ]
+      },
       "services": [{ "binding": "MAIL", "service": "email-dev", "entrypoint": "PlatformMail" }],
       "queues": { "producers": [{ "binding": "EMAIL_JOBS", "queue": "email-jobs-dev" }] },
       "triggers": { "crons": ["0 3 * * *", "0 * * * *", "*/5 * * * *"] },
@@ -51,7 +56,12 @@
         "APPS_DOMAIN": "motad.app",
         "GITHUB_ORG": "AI-app-hosting"
       },
-      "durable_objects": { "bindings": [{ "name": "MCP_SESSION", "class_name": "McpSession" }] },
+      "durable_objects": {
+        "bindings": [
+          { "name": "MCP_SESSION", "class_name": "McpSession" },
+          { "name": "APP_LOGS", "class_name": "AppLogBuffer", "script_name": "tail-prod" }
+        ]
+      },
       "services": [{ "binding": "MAIL", "service": "email-prod", "entrypoint": "PlatformMail" }],
       "queues": { "producers": [{ "binding": "EMAIL_JOBS", "queue": "email-jobs-prod" }] },
       "triggers": { "crons": ["0 3 * * *", "0 * * * *", "*/5 * * * *"] },

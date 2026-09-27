@@ -1,4 +1,4 @@
-import type { Clock, EmailJob, Logger, OrgId, PlatformMailRpc, Random, UserId } from '@repo/shared';
+import type { AppLogsRpc, Clock, EmailJob, Logger, OrgId, PlatformMailRpc, Random, UserId } from '@repo/shared';
 import type { z } from 'zod';
 import type { SessionStore } from '../auth/session-store';
 import type { ArtifactStore, DeployParams } from '../builds/deploy';
@@ -39,6 +39,8 @@ export type ToolContext = {
   artifacts: ArtifactStore;
   /** Starts the DeployApp workflow (spec 08). */
   deployer: { start(params: DeployParams): Promise<void> };
+  /** The AppLogBuffer Durable Object of an app (spec 10), hosted by the tail worker. */
+  appLogs(appId: string): AppLogsRpc;
   /** Waits between polls (real timers in production, instant in tests). */
   sleep(ms: number): Promise<void>;
   userId?: UserId;

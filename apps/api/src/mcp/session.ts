@@ -1,6 +1,7 @@
 import { Logger, type PlatformMailRpc } from '@repo/shared';
 import { McpAgent } from 'agents/mcp';
 import { createSessionStore } from '../auth/session-store';
+import { appLogsFor } from '../logs/app-logs';
 import { createPlatform } from '../platform';
 import { buildInstructions } from './instructions';
 import { TOOLS } from './registry';
@@ -45,6 +46,7 @@ export class McpSession extends McpAgent<Env> {
           await this.env.DEPLOY_APP.create({ id: `deploy-${params.deploymentId}-${Date.now()}`, params });
         },
       },
+      appLogs: (appId) => appLogsFor(this.env, appId),
       sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     };
   }
