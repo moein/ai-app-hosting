@@ -18,7 +18,7 @@ Visitor ─▶ https://todo.APPS_DOMAIN/api/items
                         tail_consumers: tail-<env>   (spec 10)
 ```
 
-Dev: `*.dev.APPS_DOMAIN` needs a second-level wildcard certificate (Advanced Certificate Manager) — or use a separate dev apps domain (open question).
+Dev: `*.dev.APPS_DOMAIN` is a second-level wildcard, so the `APPS_DOMAIN` zone has Advanced Certificate Manager with a certificate for `dev.APPS_DOMAIN` + `*.dev.APPS_DOMAIN` (decided; Universal SSL only covers one level).
 
 ## Dispatcher `wrangler.jsonc` (per env)
 
@@ -129,6 +129,6 @@ Read-only check (RUN-4.2): strip comments/whitespace; reject if a `;` is followe
 ## Open questions
 
 1. Abuse handling: a `suspended` route state + admin tool to take down phishing/malware apps quickly (needed before public launch).
-2. Dev apps domain: second-level wildcard cert on `dev.APPS_DOMAIN` vs. a separate registrable dev domain.
+2. ~~Dev apps domain~~ — decided: Advanced Certificate Manager on the `APPS_DOMAIN` zone for `*.dev.APPS_DOMAIN`.
 3. Outbound Worker for egress metering / blocking abusive traffic (spam relays, crypto mining endpoints).
 4. Per-plan CPU limits once billing exists.

@@ -35,8 +35,8 @@
   Satisfies: FND-6.1, FND-6.2, FND-6.3
   Tests: a pool-workers test sees migrated schema (e.g. `sqlite_master` contains expected tables once later specs add them).
 
-- [ ] **8. Dependency check script**
-  `scripts/deps-check.ts` for `pnpm deps:check`.
+- [x] **8. Dependency check script**
+  `scripts/deps-check.mjs` (+ `deps-check-lib.mjs`, tested with `node --test`) for `pnpm deps:check`; intentional pins (with reasons) are listed in `INTENTIONAL_PINS`.
   Satisfies: FND-5.2, FND-5.3
   Tests: unit test on parser with a fake `pnpm outdated` JSON payload.
 

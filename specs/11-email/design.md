@@ -11,6 +11,8 @@ SES ──config set event destination──▶ SNS topic ──HTTPS──▶ a
 
 `apps/email` bindings: `DB` (platform D1: orgs, apps, suppressions, usage counters), `METRICS`, queue consumer `email-jobs-<env>`; secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `RESEND_API_KEY`; vars `AWS_REGION`, `SES_CONFIGURATION_SET`, `APPS_MAIL_DOMAIN`, `PLATFORM_MAIL_DOMAIN` (its own var, used only for platform emails). AWS requests are SigV4-signed with `aws4fetch`.
 
+DNS records for SES identities (DKIM CNAMEs, custom MAIL FROM MX/SPF, DMARC) are created through the Cloudflare DNS API with `CF_API_TOKEN` (Zone DNS Edit on the `APPS_DOMAIN` zone) — by the setup script now, and by per-org provisioning later (backlog item 1).
+
 The AWS IAM user is limited to `ses:SendEmail`, `ses:CreateTenant`, `ses:GetTenant`, `ses:CreateTenantResourceAssociation` on the relevant resources.
 
 ## Entrypoints

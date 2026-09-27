@@ -9,13 +9,14 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "typecheck": "pnpm -r --parallel typecheck",
-    "test": "pnpm -r test",
+    "test": "pnpm -r test && node --test 'scripts/*.test.mjs'",
     "check:wrangler": "node scripts/check-wrangler.mjs",
     "deploy:dev": "node scripts/deploy.mjs dev",
     "deploy:prod": "node scripts/deploy.mjs prod",
     "secrets:dev": "node scripts/set-secrets.mjs dev",
     "secrets:prod": "node scripts/set-secrets.mjs prod",
-    "e2e": "pnpm --filter @repo/e2e run e2e"
+    "e2e": "pnpm --filter @repo/e2e run e2e",
+    "deps:check": "node scripts/deps-check.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
