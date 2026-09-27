@@ -14,6 +14,7 @@ const SECRETS = {
     GITHUB_APP_ID: { key: 'GITHUB_APP_ID' },
     GITHUB_INSTALLATION_ID: { key: 'GITHUB_INSTALLATION_ID' },
     GITHUB_APP_PRIVATE_KEY: { key: 'GITHUB_APP_PRIVATE_KEY' },
+    SES_EVENTS_TOPIC_ARN: { key: 'SES_EVENTS_TOPIC_ARN' }, // written by scripts/setup-ses.mjs once SNS is set up
   },
   email: {
     RESEND_API_KEY: { key: 'RESEND_API_KEY' },

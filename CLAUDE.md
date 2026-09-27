@@ -105,6 +105,8 @@ pnpm e2e [pattern]        # e2e suite against deployed dev (settings from .env.d
 pnpm deploy:prod          # same for prod; requires a clean tree on pushed main
 pnpm secrets:dev          # upload Worker secrets for dev from .env.dev (values never printed); generates missing dev-only/pepper secrets.
                           # Run it BEFORE the deploy that first needs a new secret — workers reject requests while a required secret is missing.
+node scripts/setup-ses.mjs <env>              # SES identity/DNS/config set/SNS for customer-app email (idempotent; docs/runbook.md)
+node scripts/requeue-email-tenants.mjs <env>  # re-enqueue SES tenant provisioning for pending/failed orgs
 pnpm -F @repo/api db:generate   # Drizzle: generate a SQL migration from src/db/schema.ts
 pnpm -F @repo/<worker> types    # regenerate worker-configuration.d.ts after changing wrangler.jsonc
 pnpm -F @repo/app-contract build:guide       # after editing packages/app-contract/guide/*.md

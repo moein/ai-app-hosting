@@ -9,11 +9,25 @@ app script ──EMAIL (service binding, entrypoint AppMail, props)──▶ app
 SES ──config set event destination──▶ SNS topic ──HTTPS──▶ apps/api POST /v1/ses/events ──▶ D1 email_suppressions
 ```
 
-`apps/email` bindings: `DB` (platform D1: orgs, apps, suppressions, usage counters), `METRICS`, queue consumer `email-jobs-<env>`; secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `RESEND_API_KEY`; vars `AWS_REGION`, `SES_CONFIGURATION_SET`, `APPS_MAIL_DOMAIN`, `PLATFORM_MAIL_DOMAIN` (its own var, used only for platform emails). AWS requests are SigV4-signed with `aws4fetch`.
+`apps/email` bindings: `DB` (platform D1: orgs, apps, suppressions, usage counters — plain SQL; the api owns the schema and migrations, and the email worker's tests apply the api's migrations), `METRICS`, queue consumer `email-jobs-<env>` (`max_retries: 10`); secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `RESEND_API_KEY`; vars `AWS_REGION`, `SES_CONFIGURATION_SET`, `APPS_MAIL_DOMAIN`, `PLATFORM_MAIL_DOMAIN` (its own var, used only for platform emails). AWS requests are SigV4-signed with `aws4fetch`.
 
 DNS records for SES identities (DKIM CNAMEs, custom MAIL FROM MX/SPF, DMARC) are created through the Cloudflare DNS API with `CF_API_TOKEN` (Zone DNS Edit on the `APPS_DOMAIN` zone) — by the setup script now, and by per-org provisioning later (backlog item 1).
 
 The AWS IAM user is limited to `ses:SendEmail`, `ses:CreateTenant`, `ses:GetTenant`, `ses:CreateTenantResourceAssociation` on the relevant resources.
+
+### Setup (`scripts/setup-ses.mjs <env>`, idempotent)
+
+The AWS account is shared with unrelated projects, so the script only creates/updates resources it names and never lists-and-modifies others. It reads AWS keys and `CF_API_TOKEN` from `.env.<env>` and `APPS_MAIL_DOMAIN` / `AWS_REGION` / `SES_CONFIGURATION_SET` from `apps/email/wrangler.jsonc`.
+
+1. Domain identity `APPS_MAIL_DOMAIN` (Easy DKIM, RSA 2048) → three DKIM CNAMEs `<token>._domainkey.<domain>` → `<token>.dkim.amazonses.com`.
+2. Custom MAIL FROM `bounce.<domain>` (`BehaviorOnMxFailure: USE_DEFAULT_VALUE`) → MX `feedback-smtp.<region>.amazonses.com` (priority 10) and TXT `v=spf1 include:amazonses.com ~all`.
+3. DMARC TXT `_dmarc.<domain>` = `v=DMARC1; p=none;` (tighten to `quarantine` after a clean week of reports).
+4. Configuration set `apps-<env>` (reputation metrics on).
+5. SNS topic `ses-events-<env>` (attribute `SignatureVersion` = 2; topic policy lets `ses.amazonaws.com` publish, conditioned on the account), configuration-set event destination (`BOUNCE`, `COMPLAINT`) → topic, HTTPS subscription to `PLATFORM_API_ORIGIN/v1/ses/events`, and `SES_EVENTS_TOPIC_ARN` appended to `.env.<env>` (uploaded as an api secret by `pnpm secrets:<env>`). Needs `sns:CreateTopic`, `sns:Subscribe`, `sns:GetTopicAttributes`, `sns:SetTopicAttributes`; the step is skipped with a message when the key lacks them.
+
+DNS records are upserted in the Cloudflare zone that contains the domain (DNS only, not proxied). SES production access is an account-level setting (already enabled on the shared account; `GET /v2/email/account` shows `ProductionAccessEnabled`).
+
+The AWS account id is never committed: the email worker resolves it once per isolate with STS `GetCallerIdentity` (needs no IAM permission) to build the identity and configuration-set ARNs for tenant associations; the api gets the full topic ARN as the `SES_EVENTS_TOPIC_ARN` secret. While that secret is unset, `/v1/ses/events` answers 403 to everything.
 
 ## Entrypoints
 
@@ -65,8 +79,9 @@ SES v2 SendEmail {
   ConfigurationSetName, TenantName: `${env}-${orgId}`,
   EmailTags: [env, org_id, app_id]
 }
-  SES error "tenant paused"/sending paused      → tenant_paused
-  other error                                   → send_failed (refund quota)
+  SES SendingPausedException                    → tenant_paused
+  SES NotFoundException (tenant missing)        → tenant_not_ready
+  other error                                   → send_failed (refund quota on every SES error)
 metrics email_sent (sub 'app') / email_rejected (sub = code)
 ```
 

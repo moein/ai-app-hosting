@@ -15,7 +15,14 @@
         "ENVIRONMENT": "dev",
         "PLATFORM_MAIL_DOMAIN": "ideep.app",
         "APPS_MAIL_DOMAIN": "mail.dev.motad.app",
-        "AWS_REGION": "eu-central-1"
+        "AWS_REGION": "eu-central-1",
+        "SES_CONFIGURATION_SET": "apps-dev"
+      },
+      "d1_databases": [
+        { "binding": "DB", "database_name": "platform-db-dev", "database_id": "407bea98-c827-4fcb-a544-f4c0c4343949" }
+      ],
+      "queues": {
+        "consumers": [{ "queue": "email-jobs-dev", "max_batch_size": 10, "max_retries": 10 }]
       }
       // secrets: RESEND_API_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (scripts/set-secrets.mjs)
     },
@@ -27,7 +34,14 @@
         "ENVIRONMENT": "prod",
         "PLATFORM_MAIL_DOMAIN": "ideep.app",
         "APPS_MAIL_DOMAIN": "mail.motad.app",
-        "AWS_REGION": "eu-central-1"
+        "AWS_REGION": "eu-central-1",
+        "SES_CONFIGURATION_SET": "apps-prod"
+      },
+      "d1_databases": [
+        { "binding": "DB", "database_name": "platform-db-prod", "database_id": "983837a1-bc37-4678-8061-830a71637516" }
+      ],
+      "queues": {
+        "consumers": [{ "queue": "email-jobs-prod", "max_batch_size": 10, "max_retries": 10 }]
       }
       // secrets: RESEND_API_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (scripts/set-secrets.mjs)
     }

@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { APP_EMAIL_ERROR_CODES } from '@repo/shared';
 import * as limits from '@repo/shared/limits';
 import { describe, expect, it } from 'vitest';
 import { generateGuideModule, OUTPUT, TOPIC_ORDER } from '../scripts/build-guide.mjs';
@@ -31,6 +32,17 @@ describe('platform guide (MCP-2, CON-1)', () => {
     expect(render('limits')).toContain(`| Files per \`write_files\` call | ${limits.MAX_FILES_PER_WRITE} |`);
     expect(render('limits')).toContain(formatBytes(limits.MAX_FILE_BYTES));
     expect(render('workflow')).toContain('https://<slug>.apps.example');
+  });
+
+  it('documents the EMAIL binding: types, every error code and the limits (MCP-2.2, spec 11)', () => {
+    const email = render('email');
+    for (const text of ['type AppEmailMessage', 'type AppEmailResult', 'EMAIL: { send(message: AppEmailMessage)']) {
+      expect(email).toContain(text);
+    }
+    for (const code of APP_EMAIL_ERROR_CODES) expect(email).toContain(`'${code}'`);
+    expect(email).toContain(`1..${limits.MAX_EMAIL_RECIPIENTS} recipients`);
+    expect(email).toContain(`${limits.MAX_EMAILS_PER_ORG_PER_DAY} emails per day`);
+    expect(email).toContain(formatBytes(limits.MAX_EMAIL_BYTES));
   });
 
   it('states that the AI writes every file and there are no templates (MCP-2.4, CON-1.1)', () => {

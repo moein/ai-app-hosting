@@ -5,6 +5,8 @@ interface PlatformSecrets {
   GITHUB_APP_ID: string;
   GITHUB_INSTALLATION_ID: string;
   GITHUB_APP_PRIVATE_KEY: string;
+  /** Optional until SNS is set up (scripts/setup-ses.mjs); /v1/ses/events rejects everything while unset. */
+  SES_EVENTS_TOPIC_ARN?: string;
 }
 
 interface Env extends PlatformSecrets {}
