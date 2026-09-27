@@ -233,8 +233,8 @@ importers:
         version: link:../shared
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: 5.20260926.1
-        version: 5.20260926.1
+        specifier: 5.20260927.1
+        version: 5.20260927.1
       '@types/node':
         specifier: 24.19.0
         version: 24.19.0
@@ -261,8 +261,8 @@ importers:
         version: 4.13.9
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: 5.20260926.1
-        version: 5.20260926.1
+        specifier: 5.20260927.1
+        version: 5.20260927.1
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -280,8 +280,8 @@ importers:
         version: 4.6.5
     devDependencies:
       '@cloudflare/workers-types':
-        specifier: 5.20260926.1
-        version: 5.20260926.1
+        specifier: 5.20260927.1
+        version: 5.20260927.1
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -557,9 +557,6 @@ packages:
     engines: {node: '>=16'}
     cpu: [x64]
     os: [win32]
-
-  '@cloudflare/workers-types@5.20260926.1':
-    resolution: {integrity: sha512-jLtwSjBFtXucrEIj584vNk/k9OwgW4ij7/nK40hnCw137/0ilqfkTlYIUTWlTEbUX2V/+XVBijzZha9spdQTUw==}
 
   '@cloudflare/workers-types@5.20260927.1':
     resolution: {integrity: sha512-7/L0y4Pb8ig/8QSQW4/g4WbGyPYKniw+uC03nkN7VMvawHTWEuqeoVCKi9nOHKiya434eeEUaic2o0+vJhKjYw==}
@@ -3175,8 +3172,6 @@ snapshots:
 
   '@cloudflare/workerd-windows-64@1.20260925.1':
     optional: true
-
-  '@cloudflare/workers-types@5.20260926.1': {}
 
   '@cloudflare/workers-types@5.20260927.1': {}
 
