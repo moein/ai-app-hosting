@@ -24,8 +24,8 @@ export async function transition(
 }
 
 /** A newer build started: older queued/building ones for the app are cancelled (DEP-2.2). */
-export async function cancelOthers(db: Db, appId: string, keepId: string, now: number) {
-  await db
+export async function cancelOthers(db: Db, appId: string, keepId: string, now: number): Promise<string[]> {
+  const cancelled = await db
     .update(deployments)
     .set({ status: 'cancelled', finishedAt: now })
     .where(
@@ -34,5 +34,8 @@ export async function cancelOthers(db: Db, appId: string, keepId: string, now: n
         ne(deployments.id, keepId),
         inArray(deployments.status, ['queued', 'building']),
       ),
-    );
+    )
+    .returning({ id: deployments.id })
+    .all();
+  return cancelled.map((row) => row.id);
 }

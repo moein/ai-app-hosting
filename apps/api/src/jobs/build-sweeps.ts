@@ -1,11 +1,17 @@
-import { ARTIFACTS_RETAINED_PER_APP, DEPLOY_BUILDING_TIMEOUT_MS, DEPLOY_QUEUED_TIMEOUT_MS } from '@repo/shared';
+import {
+  ARTIFACTS_RETAINED_PER_APP,
+  DEPLOY_BUILDING_TIMEOUT_MS,
+  DEPLOY_QUEUED_TIMEOUT_MS,
+  type Metrics,
+} from '@repo/shared';
 import { and, desc, eq, isNotNull, lt } from 'drizzle-orm';
 import type { ArtifactStore } from '../builds/deploy';
+import { recordDeploymentFinished } from '../builds/metrics';
 import type { Db } from '../db/client';
 import { apps, deployments } from '../db/schema';
 
 /** DEP-2.12: builds that never started or never finished are failed with an explanation. */
-export async function sweepStaleDeployments(db: Db, now: number): Promise<number> {
+export async function sweepStaleDeployments(db: Db, now: number, metrics: Metrics): Promise<number> {
   const stale = [
     ...(await db
       .select()
@@ -18,14 +24,19 @@ export async function sweepStaleDeployments(db: Db, now: number): Promise<number
       .where(and(eq(deployments.status, 'building'), lt(deployments.startedAt, now - DEPLOY_BUILDING_TIMEOUT_MS)))
       .all()),
   ];
+  const failed: string[] = [];
   for (const row of stale) {
     const message = row.status === 'queued' ? 'The build did not start.' : 'The build timed out.';
-    await db
+    const updated = await db
       .update(deployments)
       .set({ status: 'failed', errorCode: 'BUILD_FAILED', errorDetails: JSON.stringify({ message }), finishedAt: now })
-      .where(and(eq(deployments.id, row.id), eq(deployments.status, row.status)));
+      .where(and(eq(deployments.id, row.id), eq(deployments.status, row.status)))
+      .returning({ id: deployments.id })
+      .all();
+    failed.push(...updated.map((r) => r.id));
   }
-  return stale.length;
+  await recordDeploymentFinished(db, metrics, failed);
+  return failed.length;
 }
 
 /** Keeps the artifacts of the 20 newest successful deployments per app, plus the live one (spec 08). */

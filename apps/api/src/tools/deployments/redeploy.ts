@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { consumeDaily, refundDaily } from '../../apps/quota';
 import { resolveApp } from '../../apps/resolve';
+import { recordDeploymentFinished } from '../../builds/metrics';
 import { transition } from '../../builds/state';
 import { DeploymentViewSchema, toDeploymentView } from '../../builds/view';
 import { deployments } from '../../db/schema';
@@ -43,7 +44,9 @@ export const redeploy = defineTool({
     try {
       await ctx.github.dispatchWorkflow(app.repoName, 'deploy.yml', { deployment_id: id }); // DEP-4.1
     } catch (error) {
-      await transition(ctx.db, id, ['queued'], { status: 'failed', errorCode: 'DEPLOY_FAILED', finishedAt: now });
+      if (await transition(ctx.db, id, ['queued'], { status: 'failed', errorCode: 'DEPLOY_FAILED', finishedAt: now })) {
+        await recordDeploymentFinished(ctx.db, ctx.metrics, [id]);
+      }
       await refundDaily(ctx.db, app.orgId, 'deploys', now);
       throw error;
     }

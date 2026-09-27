@@ -2,6 +2,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { PlatformError, TOOL_RESULT_MAX_BYTES, toPlatformError } from '@repo/shared';
 import type { z } from 'zod';
 import { authGuard } from '../auth/guard';
+import { trackToolCall } from '../tracking/track';
 import type { AnyTool, ToolContext } from './tool';
 
 export type ToolCall = { tool: AnyTool; args: unknown; ctx: ToolContext; input?: unknown };
@@ -71,6 +72,7 @@ export async function runTool(
   middleware: ToolMiddleware[] = MIDDLEWARE,
 ): Promise<CallToolResult> {
   const started = ctx.clock.now();
+  ctx.app = undefined;
   let outcome = await execute({ tool, args, ctx }, middleware);
   if (!outcome.ok && outcome.error.code === 'INTERNAL') {
     ctx.logger.error('tool failed', { tool: tool.name, error: outcome.error.cause ?? outcome.error });
@@ -82,12 +84,15 @@ export async function runTool(
     outcome = { ok: false, error: new PlatformError('INTERNAL') };
     result = serialize(outcome);
   }
-  // Tracking (spec 05) replaces this log with the pipeline event; never log arguments here.
-  ctx.logger.info('tool call', {
+  trackToolCall(ctx, {
     tool: tool.name,
-    outcome: outcome.ok ? 'ok' : 'error',
-    errorCode: outcome.ok ? undefined : outcome.error.code,
+    args,
+    outcome,
     durationMs: ctx.clock.now() - started,
+    resultBytes:
+      bytes > TOOL_RESULT_MAX_BYTES
+        ? new TextEncoder().encode(JSON.stringify(result.structuredContent)).byteLength
+        : bytes,
   });
   return result;
 }

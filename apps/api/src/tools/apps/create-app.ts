@@ -49,6 +49,7 @@ export const createApp = defineTool({
     }
     await checkAppQuota(ctx.db, ctx.orgId as string);
     const inserted = await insertApp(ctx, { name, slug: input.slug });
+    ctx.app = { id: inserted.id, slug: inserted.slug };
     await ctx.provisioner.start(inserted.id);
     const app = await waitForProvisioning(ctx, inserted.id);
     return { ...(await toAppSummary(ctx.db, app, ctx.env.APPS_DOMAIN)), next_step: nextStepFor(app.provisioning) };

@@ -15,6 +15,7 @@ export class DeployApp extends WorkflowEntrypoint<Env, DeployParams> {
       artifacts: this.env.ARTIFACTS,
       clock: platform.clock,
       logger: platform.logger,
+      metrics: platform.metrics,
       environment: platform.environment,
     };
     await runDeployment(deps, event.payload, async (name, run) => {

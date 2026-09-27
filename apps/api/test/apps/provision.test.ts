@@ -15,6 +15,7 @@ const deps = (ctx: TestContext) => ({
   routes: ctx.routes,
   clock: ctx.clock,
   logger: ctx.logger,
+  metrics: ctx.metrics,
   apiOrigin: 'https://api.test',
 });
 

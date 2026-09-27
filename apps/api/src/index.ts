@@ -1,5 +1,5 @@
 import { errorResponse } from '@repo/http';
-import { Logger, toPlatformError } from '@repo/shared';
+import { createMetrics, Logger, toPlatformError } from '@repo/shared';
 import { createDb } from './db/client';
 import { parseEnv } from './env';
 import { app } from './http/app';
@@ -29,7 +29,11 @@ export default {
     parseEnv(env);
     const db = createDb(env.DB);
     if (controller.cron === EVERY_5_MINUTES) {
-      const failed = await sweepStaleDeployments(db, controller.scheduledTime);
+      const failed = await sweepStaleDeployments(
+        db,
+        controller.scheduledTime,
+        createMetrics(env.METRICS, Logger.root.child({ worker: 'api', job: 'sweeps' })),
+      );
       if (failed > 0) Logger.root.info('failed stale deployments', { failed });
       return;
     }

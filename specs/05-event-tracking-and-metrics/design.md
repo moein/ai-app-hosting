@@ -12,7 +12,7 @@ tool call ─▶ track middleware (first in chain, spec 04)
                └─ metrics.write('tool_call', …)                        ─▶ Analytics Engine platform_metrics_<env>
 ```
 
-## Event schema (`packages/shared/schemas/events.ts`)
+## Event schema (`packages/shared/src/events.ts`)
 
 ```ts
 type McpEvent = {
@@ -41,6 +41,13 @@ type McpEvent = {
 ```
 
 The stream is created with this schema (Pipelines structured stream) so malformed events are rejected at ingest rather than landing in R2.
+
+### Where events come from (api)
+
+- `runTool` (spec 04) is the single exit of every tool call, so it calls `trackToolCall` once per call — after the size cap, for every outcome including `AUTH_REQUIRED`, `INVALID_INPUT` and `RATE_LIMITED`. Unknown tool names (answered in `server.ts`) are tracked the same way with `error_code = NOT_FOUND`.
+- `ToolContext` gains `events` (the `EVENTS` binding, optional until the stream exists — events are skipped while it is unbound), `metrics`, `waitUntil`, `client` (from the session's stored initialize request) and a mutable `app` (`{ id, slug }`) that `resolveApp` and `create_app` set so the event carries `app_id`/`app_slug`.
+- `McpSession` overrides `setInitializeRequest` (called by the agents runtime for each `initialize`): it keeps the runtime's storage of the request (the client info for later events, EVT-1.2) and emits `mcp_session_initialized` plus a `session_init` metric.
+- `session_hash` = hex SHA-256 of the session id; `email_hash` = hex SHA-256 of the trimmed, lower-cased email.
 
 ## Redaction rules (EVT-1.4)
 
@@ -80,6 +87,20 @@ Dataset `platform_metrics_<env>`. One helper: `metrics.write(event, fields)`.
 Event names: `tool_call`, `session_init`, `login_code_requested`, `login_succeeded`, `login_failed`, `app_created`, `app_deleted`, `provisioning_failed`, `deployment_finished`, `email_sent`, `email_rejected`, `email_bounced`, `email_complained`, `event_emit_failed`.
 
 Workers that write: `api` (most), `email` (email_*). Both bind the same dataset as `METRICS`.
+
+The helper lives in `packages/shared/src/metrics.ts` (`createMetrics(dataset, logger)`); a missing binding or a throwing `writeDataPoint` is logged and swallowed (EVT-2.7).
+
+Feature metrics are written where the fact is known:
+
+| Metric | Written by |
+|---|---|
+| `tool_call` | `trackToolCall` |
+| `login_code_requested`, `login_succeeded`, `login_failed` | `trackToolCall`, from `request_login_code` / `verify_login_code` outcomes (`login_succeeded.sub` = `signup` when the verify output says the account was created) |
+| `app_created`, `app_deleted` | `trackToolCall`, from `create_app` / `delete_app` successes |
+| `provisioning_failed` | `markProvisioningFailed` (sub `app`); email worker after the last tenant retry (sub `email_tenant`) |
+| `deployment_finished` | `recordDeploymentFinished(db, metrics, ids)` after every transition to `succeeded`, `failed` or `cancelled` (DeployApp, build callbacks, sweeps, redeploy, cancellations) |
+| `email_sent` / `email_rejected` | email worker: `AppMail.send` (sub `app` / the error code), `PlatformMail.sendLoginCode` (sub `platform`) |
+| `email_bounced`, `email_complained` | api SES webhook |
 
 ## Example metric queries (`docs/metrics/`)
 

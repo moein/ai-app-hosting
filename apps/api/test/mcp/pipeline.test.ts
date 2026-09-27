@@ -104,13 +104,4 @@ describe('runTool (MCP-3)', () => {
     await signIn(denied);
     expect(errorOf(await runTool(privateEcho, { message: '' }, denied)).code).toBe('RATE_LIMITED');
   });
-
-  it('logs one "tool call" line per call with outcome and duration, never arguments', async () => {
-    const info = vi.spyOn(console, 'info').mockImplementation(() => {});
-    await runTool(echoTool, { message: 'top-secret-arg' }, testContext());
-    expect(info).toHaveBeenCalledOnce();
-    const entry = JSON.parse(String(info.mock.lastCall?.[0]));
-    expect(entry).toMatchObject({ message: 'tool call', tool: 'echo', outcome: 'ok' });
-    expect(JSON.stringify(entry)).not.toContain('top-secret-arg');
-  });
 });

@@ -1,4 +1,4 @@
-import { cryptoRandom, Logger, systemClock } from '@repo/shared';
+import { createMetrics, cryptoRandom, Logger, systemClock } from '@repo/shared';
 import { dispatchNamespaceFor } from './apps/names';
 import type { ProvisionDeps } from './apps/provision';
 import { createDb } from './db/client';
@@ -28,6 +28,7 @@ export function createPlatform(env: Env) {
     clock: systemClock,
     random: cryptoRandom,
     logger: Logger.root.child({ worker: 'api' }),
+    metrics: createMetrics(env.METRICS, Logger.root.child({ worker: 'api' })),
     apiOrigin: env.PLATFORM_API_ORIGIN,
   };
 }
@@ -41,5 +42,6 @@ export const provisionDeps = (platform: Pick<Platform, keyof ProvisionDeps>): Pr
   routes: platform.routes,
   clock: platform.clock,
   logger: platform.logger,
+  metrics: platform.metrics,
   apiOrigin: platform.apiOrigin,
 });

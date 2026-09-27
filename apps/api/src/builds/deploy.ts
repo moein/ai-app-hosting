@@ -5,6 +5,7 @@ import {
   MAX_ASSET_FILE_BYTES,
   MAX_ASSET_FILES,
   MAX_WORKER_BUNDLE_BYTES,
+  type Metrics,
   PlatformError,
   type PlatformErrorJson,
   platformErrorFromJson,
@@ -19,6 +20,7 @@ import { buildBindings } from '../runtime/bindings';
 import { putRoute, type RouteStore } from '../runtime/routes';
 import { type Artifact, gunzip, inspectArtifact, untar } from './artifact';
 import { prepareAssets } from './assets';
+import { recordDeploymentFinished } from './metrics';
 import { applyMigrations } from './migrations';
 import { transition } from './state';
 
@@ -31,6 +33,7 @@ export type DeployDeps = {
   artifacts: ArtifactStore;
   clock: Clock;
   logger: Logger;
+  metrics: Metrics;
   environment: Environment;
 };
 
@@ -137,6 +140,7 @@ export function deploySteps(deps: DeployDeps, params: DeployParams) {
         const now = deps.clock.now();
         if (!(await transition(deps.db, params.deploymentId, ['deploying'], { status: 'succeeded', finishedAt: now })))
           return;
+        await recordDeploymentFinished(deps.db, deps.metrics, [params.deploymentId]);
         await deps.db
           .update(apps)
           .set({ liveDeploymentId: params.deploymentId, updatedAt: now })
@@ -163,12 +167,13 @@ function asDeployError(error: unknown): PlatformError {
 export async function markDeploymentFailed(deps: DeployDeps, deploymentId: string, error: unknown) {
   const platformError = asDeployError(error);
   deps.logger.error('deployment failed', { deploymentId, code: platformError.code, error });
-  await transition(deps.db, deploymentId, ['deploying'], {
+  const failed = await transition(deps.db, deploymentId, ['deploying'], {
     status: 'failed',
     errorCode: platformError.code,
     errorDetails: JSON.stringify({ message: platformError.message, ...(platformError.details ?? {}) }).slice(0, 20_000),
     finishedAt: deps.clock.now(),
   });
+  if (failed) await recordDeploymentFinished(deps.db, deps.metrics, [deploymentId]);
 }
 
 export async function runDeployment(

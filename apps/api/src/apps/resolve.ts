@@ -23,6 +23,7 @@ export async function resolveApp(
   if (!app) {
     throw new PlatformError('NOT_FOUND', { message: `No app "${slug}".`, hint: 'Call list_apps to see your apps.' });
   }
+  ctx.app = { id: app.id, slug: app.slug };
   if (app.status === 'deleted' && !options.allowDeleted) throw new PlatformError('APP_DELETED');
   if (options.requireReady && app.provisioning !== 'ready') {
     throw new PlatformError('APP_NOT_READY', { details: { provisioning: app.provisioning } });

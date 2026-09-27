@@ -38,6 +38,7 @@ const deps = (ctx: TestContext) => ({
   artifacts: ctx.artifacts,
   clock: ctx.clock,
   logger: ctx.logger,
+  metrics: ctx.metrics,
   environment: 'dev' as const,
 });
 

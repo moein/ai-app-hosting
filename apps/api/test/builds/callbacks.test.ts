@@ -32,6 +32,7 @@ async function setup() {
     db: ctx.db,
     artifacts: ctx.artifacts,
     clock: ctx.clock,
+    metrics: ctx.metrics,
     audience: 'https://api.test',
     org: 'AI-app-hosting',
     fetch: keys.fetch,

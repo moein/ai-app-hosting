@@ -1,4 +1,4 @@
-import { type Clock, MAX_ARTIFACT_BYTES, newId, PlatformError } from '@repo/shared';
+import { type Clock, MAX_ARTIFACT_BYTES, type Metrics, newId, PlatformError } from '@repo/shared';
 import { and, desc, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { createMiddleware } from 'hono/factory';
@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { consumeDaily } from '../../apps/quota';
 import type { AppRow } from '../../apps/resolve';
 import type { ArtifactStore, DeployParams } from '../../builds/deploy';
+import { recordDeploymentFinished } from '../../builds/metrics';
 import { checkBuildClaims, type GitHubOidcClaims, verifyGitHubOidc } from '../../builds/oidc';
 import { cancelOthers, transition } from '../../builds/state';
 import type { Db } from '../../db/client';
@@ -17,6 +18,7 @@ export type BuildsDeps = {
   db: Db;
   artifacts: ArtifactStore;
   clock: Clock;
+  metrics: Metrics;
   audience: string;
   org: string;
   startDeploy(params: DeployParams): Promise<void>;
@@ -131,7 +133,7 @@ export function createBuildsRoutes(depsFor: (env: Env) => BuildsDeps) {
         commitSha: body.commit_sha,
       });
       if (!started) throw conflict(`Deployment ${deployment.id} is ${deployment.status}.`);
-      await cancelOthers(deps.db, app.id, deployment.id, now);
+      await recordDeploymentFinished(deps.db, deps.metrics, await cancelOthers(deps.db, app.id, deployment.id, now));
       return c.json({ deployment_id: deployment.id });
     })
     .post('/:deployment/fail', async (c) => {
@@ -151,6 +153,7 @@ export function createBuildsRoutes(depsFor: (env: Env) => BuildsDeps) {
         finishedAt: deps.clock.now(),
       });
       if (!failed) throw conflict(`Deployment ${deployment.id} is ${deployment.status}.`);
+      await recordDeploymentFinished(deps.db, deps.metrics, [deployment.id]);
       return c.body(null, 204);
     })
     .put('/:deployment/artifact', async (c) => {
@@ -190,6 +193,7 @@ export const buildsRoutes = createBuildsRoutes((env) => {
     db: platform.db,
     artifacts: env.ARTIFACTS,
     clock: platform.clock,
+    metrics: platform.metrics,
     audience: env.PLATFORM_API_ORIGIN,
     org: env.GITHUB_ORG,
     startDeploy: async (params) => {

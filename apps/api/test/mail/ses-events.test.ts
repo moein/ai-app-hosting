@@ -1,4 +1,5 @@
 import { env } from 'cloudflare:workers';
+import { memoryMetrics } from '@repo/shared';
 import { Hono } from 'hono';
 import { describe, expect, it, vi } from 'vitest';
 import { createDb } from '../../src/db/client';
@@ -24,9 +25,11 @@ async function setup(options: { topicArn?: string | undefined } = { topicArn: TO
     return new Response('not found', { status: 404 });
   });
   const db = createDb(env.DB);
+  const metrics = memoryMetrics();
   const routes = createSesRoutes(() => ({
     db,
     clock: fakeClock(),
+    metrics,
     topicArn: options.topicArn,
     fetch: fetchImpl as typeof fetch,
   }));
@@ -41,7 +44,7 @@ async function setup(options: { topicArn?: string | undefined } = { topicArn: TO
   const notification = (event: unknown) =>
     signer.sign({ ...base, MessageId: crypto.randomUUID(), Type: 'Notification', Message: JSON.stringify(event) });
   const post = (body: unknown) => app.request('/v1/ses/events', { method: 'POST', body: JSON.stringify(body) }, env);
-  return { signer, db, post, notification, base, fetched };
+  return { signer, db, post, notification, base, fetched, metrics };
 }
 
 const bounce = (type: string, emails: string[], orgId = 'org_abcdefghijk') => ({
@@ -162,21 +165,28 @@ describe('SES events (MAIL-4.2–4.6)', () => {
     expect((await post(evil)).status).toBe(403);
   });
 
-  it('suppresses permanent bounces globally and ignores transient ones (MAIL-4.3, 4.6)', async () => {
-    const { post, notification } = await setup();
+  it('suppresses permanent bounces globally and ignores transient ones (MAIL-4.3, 4.6, 4.5)', async () => {
+    const { post, notification, metrics } = await setup();
     await post(await notification(bounce('Permanent', ['Hard@Example.com', '"Name" <other@example.com>'])));
     await post(await notification(bounce('Transient', ['soft@example.com'])));
     expect(await rows('hard@example.com')).toEqual([{ orgId: null, reason: 'bounce' }]);
     expect(await rows('other@example.com')).toEqual([{ orgId: null, reason: 'bounce' }]);
     expect(await rows('soft@example.com')).toEqual([]);
+    expect(metrics.points).toEqual([
+      { event: 'email_bounced', fields: { orgId: 'org_abcdefghijk', appId: null, bytes: 2 } },
+    ]);
   });
 
   it('suppresses complaints for the originating org, or globally without an org tag (MAIL-4.4)', async () => {
-    const { post, notification } = await setup();
+    const { post, notification, metrics } = await setup();
     await post(await notification(complaint(['angry@example.com'], 'org_abcdefghijk')));
     await post(await notification(complaint(['platform@example.com'])));
     expect(await rows('angry@example.com')).toEqual([{ orgId: 'org_abcdefghijk', reason: 'complaint' }]);
     expect(await rows('platform@example.com')).toEqual([{ orgId: null, reason: 'complaint' }]);
+    expect(metrics.points.map((p) => [p.event, p.fields.orgId])).toEqual([
+      ['email_complained', 'org_abcdefghijk'],
+      ['email_complained', null],
+    ]);
   });
 
   it('is idempotent for duplicate deliveries and ignores other event types (MAIL-4.6)', async () => {

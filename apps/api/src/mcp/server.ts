@@ -2,6 +2,7 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ListToolsRequestSchema, type Tool } from '@modelcontextprotocol/sdk/types.js';
 import { PlatformError } from '@repo/shared';
 import { z } from 'zod';
+import { trackToolCall } from '../tracking/track';
 import { runTool } from './pipeline';
 import type { AnyTool, ToolContext } from './tool';
 
@@ -37,15 +38,21 @@ export function createMcpServer(options: {
     const tool = byName.get(request.params.name);
     const ctx = await options.context();
     if (!tool) {
-      const error = new PlatformError('NOT_FOUND', {
+      const notFound = new PlatformError('NOT_FOUND', {
         message: `Unknown tool "${request.params.name}".`,
         hint: 'Call tools/list to see the available tools.',
-      }).toJSON();
-      return {
-        isError: true,
-        structuredContent: { error },
-        content: [{ type: 'text', text: JSON.stringify({ error }) }],
-      };
+      });
+      const error = notFound.toJSON();
+      const structuredContent = { error };
+      // EVT-1.1: unknown tools are tracked too (the name is capped; arguments are not recorded).
+      trackToolCall(ctx, {
+        tool: request.params.name.slice(0, 64),
+        args: undefined,
+        outcome: { ok: false, error: notFound },
+        durationMs: 0,
+        resultBytes: new TextEncoder().encode(JSON.stringify(structuredContent)).byteLength,
+      });
+      return { isError: true, structuredContent, content: [{ type: 'text', text: JSON.stringify(structuredContent) }] };
     }
     return runTool(tool, request.params.arguments, ctx);
   });

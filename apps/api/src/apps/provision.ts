@@ -1,5 +1,5 @@
 import { DEPLOY_WORKFLOW_PATH, PLATFORM_JSON_PATH, renderDeployWorkflow, renderPlatformJson } from '@repo/app-contract';
-import { type Clock, type Logger, PlatformError } from '@repo/shared';
+import { type Clock, type Logger, type Metrics, PlatformError } from '@repo/shared';
 import { eq } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import { apps } from '../db/schema';
@@ -17,6 +17,7 @@ export type ProvisionDeps = {
   routes: RouteStore;
   clock: Clock;
   logger: Logger;
+  metrics: Metrics;
   apiOrigin: string;
 };
 
@@ -127,10 +128,20 @@ export function provisionSteps(deps: ProvisionDeps, appId: string): Step[] {
 export async function markProvisioningFailed(deps: ProvisionDeps, appId: string, error: unknown) {
   const code = error instanceof PlatformError ? error.code : 'INTERNAL';
   deps.logger.error('app provisioning failed', { appId, code, error });
-  await deps.db
+  const failed = await deps.db
     .update(apps)
     .set({ provisioning: 'failed', provisioningError: code, updatedAt: deps.clock.now() })
-    .where(eq(apps.id, appId));
+    .where(eq(apps.id, appId))
+    .returning({ orgId: apps.orgId, createdBy: apps.createdBy })
+    .get();
+  deps.metrics.write('provisioning_failed', {
+    orgId: failed?.orgId,
+    appId,
+    userId: failed?.createdBy,
+    sub: 'app',
+    outcome: 'error',
+    errorCode: code,
+  });
 }
 
 /** Runs every step once, in order (used by tests and as the workflow body with per-step retries). */

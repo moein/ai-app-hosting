@@ -1,4 +1,4 @@
-import { type Clock, Logger } from '@repo/shared';
+import { type Clock, Logger, type Metrics } from '@repo/shared';
 import { Hono } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { Db } from '../../db/client';
@@ -10,6 +10,7 @@ import type { AppEnv } from '../env';
 export type SesRoutesDeps = {
   db: Db;
   clock: Clock;
+  metrics: Metrics;
   /** Full ARN of `ses-events-<env>`; while unset every request is rejected (spec 11 design). */
   topicArn: string | undefined;
   fetch?: typeof fetch;
@@ -59,7 +60,7 @@ export function createSesRoutes(depsFor: (env: Env) => SesRoutesDeps) {
       } catch {
         event = null;
       }
-      await applySesEvent(deps.db, event, deps.clock.now(), logger);
+      await applySesEvent(deps.db, event, deps.clock.now(), logger, deps.metrics);
     }
     return c.body(null, 200);
   });
@@ -67,5 +68,10 @@ export function createSesRoutes(depsFor: (env: Env) => SesRoutesDeps) {
 
 export const sesRoutes = createSesRoutes((env) => {
   const platform = createPlatform(env);
-  return { db: platform.db, clock: platform.clock, topicArn: env.SES_EVENTS_TOPIC_ARN || undefined };
+  return {
+    db: platform.db,
+    clock: platform.clock,
+    metrics: platform.metrics,
+    topicArn: env.SES_EVENTS_TOPIC_ARN || undefined,
+  };
 });

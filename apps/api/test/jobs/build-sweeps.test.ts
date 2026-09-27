@@ -29,7 +29,16 @@ describe('build sweeps (DEP-2.12, artifact retention)', () => {
         row('dep_q_new', 'queued', now - 1_000),
         row('dep_b_old', 'building', now, now - DEPLOY_BUILDING_TIMEOUT_MS - 1),
       ]);
-    expect(await sweepStaleDeployments(ctx.db, now)).toBe(2);
+    expect(await sweepStaleDeployments(ctx.db, now, ctx.metrics)).toBe(2);
+    // EVT-2.4: each deployment that reached a terminal state is counted once.
+    expect(
+      ctx.metrics.points
+        .filter((p) => p.event === 'deployment_finished')
+        .map((p) => [p.fields.sub, p.fields.errorCode]),
+    ).toEqual([
+      ['failed', 'BUILD_FAILED'],
+      ['failed', 'BUILD_FAILED'],
+    ]);
     const status = async (id: string) => ctx.db.select().from(deployments).where(eq(deployments.id, id)).get();
     expect(await status('dep_q_old')).toMatchObject({ status: 'failed', errorCode: 'BUILD_FAILED' });
     expect(JSON.parse((await status('dep_q_old'))?.errorDetails ?? '{}').message).toContain('did not start');

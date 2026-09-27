@@ -1,4 +1,4 @@
-import type { Logger } from '@repo/shared';
+import type { Logger, Metrics } from '@repo/shared';
 import { z } from 'zod';
 import type { Db } from '../db/client';
 import { suppress } from './suppressions';
@@ -20,6 +20,7 @@ export async function applySesEvent(
   raw: unknown,
   now: number,
   logger: Logger,
+  metrics: Metrics,
 ): Promise<{ action: 'suppressed' | 'ignored'; count: number }> {
   const parsed = SesEventSchema.safeParse(raw);
   if (!parsed.success) {
@@ -32,12 +33,14 @@ export async function applySesEvent(
   if (event.eventType === 'Bounce' && event.bounce?.bounceType === 'Permanent') {
     const emails = event.bounce.bouncedRecipients.map((r) => bareAddress(r.emailAddress));
     for (const email of emails) await suppress(db, { email, orgId: null, reason: 'bounce', now });
+    metrics.write('email_bounced', { orgId, appId: event.mail.tags.app_id?.[0] ?? null, bytes: emails.length });
     logger.info('permanent bounce suppressed', { orgId, count: emails.length });
     return { action: 'suppressed', count: emails.length };
   }
   if (event.eventType === 'Complaint' && event.complaint) {
     const emails = event.complaint.complainedRecipients.map((r) => bareAddress(r.emailAddress));
     for (const email of emails) await suppress(db, { email, orgId, reason: 'complaint', now });
+    metrics.write('email_complained', { orgId, appId: event.mail.tags.app_id?.[0] ?? null, bytes: emails.length });
     logger.info('complaint suppressed', { orgId, count: emails.length });
     return { action: 'suppressed', count: emails.length };
   }

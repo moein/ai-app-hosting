@@ -3,6 +3,8 @@ import {
   cryptoRandom,
   type EmailJob,
   Logger,
+  type McpEvent,
+  memoryMetrics,
   newId,
   type OrgId,
   type SendLoginCodeInput,
@@ -47,6 +49,11 @@ export const fakeQueue = () => {
 
 export type TestContext = ToolContext & {
   clock: ReturnType<typeof fakeClock>;
+  metrics: ReturnType<typeof memoryMetrics>;
+  /** Events sent to the fake EVENTS stream. */
+  sentEvents: McpEvent[];
+  /** Background work handed to waitUntil (tracking); await `flush(ctx)` before asserting on it. */
+  pending: Promise<unknown>[];
   mailer: FakeMailer;
   emailJobs: ReturnType<typeof fakeQueue>;
   fakes: { cloudflare: ReturnType<typeof fakeCloudflare>; github: ReturnType<typeof fakeGitHub> };
@@ -55,6 +62,8 @@ export type TestContext = ToolContext & {
 export const testContext = (overrides: Partial<ToolContext> = {}): TestContext => {
   const cloudflare = fakeCloudflare({ d1: env.DB });
   const github = fakeGitHub();
+  const sentEvents: McpEvent[] = [];
+  const pending: Promise<unknown>[] = [];
   const ctx = {
     env: env as Env,
     sessionId: 'session-1',
@@ -73,6 +82,12 @@ export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =
     artifacts: env.ARTIFACTS,
     appLogs: (appId: string) => appLogsFor(env as Env, appId),
     fakes: { cloudflare, github },
+    metrics: memoryMetrics(),
+    client: { name: 'test-client', version: '1.0.0', protocolVersion: '2025-06-18' },
+    sentEvents,
+    pending,
+    events: { send: async (events: McpEvent[]) => void sentEvents.push(...events) },
+    waitUntil: (promise: Promise<unknown>) => void pending.push(promise),
     ...overrides,
   } as TestContext;
   // Provisioning runs inline against the fakes, as the workflow would.
@@ -86,6 +101,7 @@ export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =
           routes: ctx.routes,
           clock: ctx.clock,
           logger: ctx.logger,
+          metrics: ctx.metrics,
           apiOrigin: ctx.env.PLATFORM_API_ORIGIN,
         },
         appId,
@@ -103,6 +119,7 @@ export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =
           artifacts: ctx.artifacts,
           clock: ctx.clock,
           logger: ctx.logger,
+          metrics: ctx.metrics,
           environment: 'dev',
         },
         params,
@@ -111,6 +128,11 @@ export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =
   };
   return ctx;
 };
+
+/** Waits for all background work (tracking) handed to waitUntil so far. */
+export async function flush(ctx: TestContext): Promise<void> {
+  while (ctx.pending.length > 0) await Promise.all(ctx.pending.splice(0));
+}
 
 /** Creates a user with a personal org and binds it to the context's session. */
 export async function signIn(ctx: ToolContext, options: { email?: string; status?: 'active' | 'blocked' } = {}) {

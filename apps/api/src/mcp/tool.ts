@@ -1,4 +1,16 @@
-import type { AppLogsRpc, Clock, EmailJob, Logger, OrgId, PlatformMailRpc, Random, UserId } from '@repo/shared';
+import type {
+  AppLogsRpc,
+  Clock,
+  EmailJob,
+  Logger,
+  McpClientInfo,
+  McpEvent,
+  Metrics,
+  OrgId,
+  PlatformMailRpc,
+  Random,
+  UserId,
+} from '@repo/shared';
 import type { z } from 'zod';
 import type { SessionStore } from '../auth/session-store';
 import type { ArtifactStore, DeployParams } from '../builds/deploy';
@@ -43,8 +55,17 @@ export type ToolContext = {
   appLogs(appId: string): AppLogsRpc;
   /** Waits between polls (real timers in production, instant in tests). */
   sleep(ms: number): Promise<void>;
+  /** The `EVENTS` pipeline (spec 05); undefined until the stream is provisioned. */
+  events: { send(events: McpEvent[]): Promise<void> } | undefined;
+  metrics: Metrics;
+  /** Keeps background work (tracking) alive after the result is returned. */
+  waitUntil(promise: Promise<unknown>): void;
+  /** The MCP client from the session's initialize request (EVT-1.2). */
+  client: McpClientInfo | null;
   userId?: UserId;
   orgId?: OrgId;
+  /** The app this call acted on, set by resolveApp / create_app for tracking (EVT-1.3). */
+  app?: { id: string; slug: string } | undefined;
 };
 
 export type ToolDefinition<I extends z.ZodObject, O extends z.ZodObject> = {

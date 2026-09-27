@@ -2,6 +2,7 @@ import { PlatformError } from '@repo/shared';
 import { and, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { resolveApp } from '../../apps/resolve';
+import { recordDeploymentFinished } from '../../builds/metrics';
 import { appSecrets, apps, deployments } from '../../db/schema';
 import { defineTool } from '../../mcp/tool';
 import { deleteRoute } from '../../runtime/routes';
@@ -31,10 +32,17 @@ export const deleteApp = defineTool({
     }
     const now = ctx.clock.now();
     // In-flight builds are cancelled; their artifacts will be refused (APP-4.7).
-    await ctx.db
+    const cancelled = await ctx.db
       .update(deployments)
       .set({ status: 'cancelled', finishedAt: now })
-      .where(and(eq(deployments.appId, app.id), inArray(deployments.status, ['queued', 'building', 'deploying'])));
+      .where(and(eq(deployments.appId, app.id), inArray(deployments.status, ['queued', 'building', 'deploying'])))
+      .returning({ id: deployments.id })
+      .all();
+    await recordDeploymentFinished(
+      ctx.db,
+      ctx.metrics,
+      cancelled.map((row) => row.id),
+    );
     // Only the Worker goes (APP-4.1, APP-4.2); a missing script is fine (APP-4.6).
     await ctx.cloudflare.deleteScript(app.scriptName);
     await deleteRoute(ctx.routes, app.slug);
