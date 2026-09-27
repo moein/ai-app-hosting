@@ -102,6 +102,7 @@ export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =
           clock: ctx.clock,
           logger: ctx.logger,
           metrics: ctx.metrics,
+          emailJobs: ctx.emailJobs,
           apiOrigin: ctx.env.PLATFORM_API_ORIGIN,
         },
         appId,

@@ -215,7 +215,7 @@ Secrets:
 | Worker | Secrets |
 |---|---|
 | api | `CF_API_TOKEN`, `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_INSTALLATION_ID`, `LOGIN_CODE_PEPPER` |
-| email | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `RESEND_API_KEY` (vars: `AWS_REGION`, `SES_CONFIGURATION_SET`, `APPS_MAIL_DOMAIN`, `PLATFORM_MAIL_DOMAIN`) |
+| email | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `RESEND_API_KEY` (vars: `AWS_REGION`, `SES_CONFIGURATION_SET`, `APPS_DOMAIN`, `PLATFORM_MAIL_DOMAIN`; plus `CF_API_TOKEN` for per-app DKIM records) |
 | e2e-inbox (dev only) | `E2E_INBOX_TOKEN` |
 | api (vars) | `SES_EVENTS_TOPIC_ARN`, `APPS_DOMAIN`, `GITHUB_ORG`, `ENVIRONMENT`, `PLATFORM_API_ORIGIN`, `E2E_INBOX_ADDRESS` (dev only) |
 
@@ -304,8 +304,8 @@ Deploy order: `email` → `tail` → `api` → `dispatcher` (service-binding tar
 
 1. Create Cloudflare resources from the naming table; put their IDs into `wrangler.jsonc`.
 2. Create the GitHub App (spec 07), install it on `GITHUB_ORG`.
-3. Email: SES — verify `APPS_MAIL_DOMAIN`, configuration set, SNS topic → `/v1/ses/events` (spec 11). Resend — verify `PLATFORM_MAIL_DOMAIN`, API key (spec 11). Dev only — Email Routing on the `APPS_DOMAIN` apex with subaddressing and a rule `E2E_INBOX_ADDRESS` → `e2e-inbox-dev` (spec 12).
-4. DNS: add `APPS_DOMAIN` as a Cloudflare zone; wildcard `*.APPS_DOMAIN` route to dispatcher (spec 09); SES DNS records (DKIM, MAIL FROM, DMARC) for `APPS_MAIL_DOMAIN`; Resend DNS records for `PLATFORM_MAIL_DOMAIN`. The API needs no DNS (workers.dev).
+3. Email: SES — configuration set, SNS topic → `/v1/ses/events` (spec 11). Resend — verify `PLATFORM_MAIL_DOMAIN`, API key (spec 11). Dev only — Email Routing on the `APPS_DOMAIN` apex with subaddressing and a rule `E2E_INBOX_ADDRESS` → `e2e-inbox-dev` (spec 12).
+4. DNS: add `APPS_DOMAIN` as a Cloudflare zone; wildcard `*.APPS_DOMAIN` route to dispatcher (spec 09); a DMARC record at the `APPS_DOMAIN` apex (per-app DKIM records are created automatically, spec 11); Resend DNS records for `PLATFORM_MAIL_DOMAIN`. The API needs no DNS (workers.dev).
 
 ## Open questions
 

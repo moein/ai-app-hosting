@@ -20,6 +20,7 @@ const SECRETS = {
     RESEND_API_KEY: { key: 'RESEND_API_KEY' },
     AWS_ACCESS_KEY_ID: { key: 'AWS_ACCESS_KEY' },
     AWS_SECRET_ACCESS_KEY: { key: 'AWS_SECRET_ACCESS_KEY' },
+    CF_API_TOKEN: { key: 'CF_API_TOKEN' }, // per-app DKIM records (spec 11)
   },
   'e2e-inbox': {
     E2E_INBOX_TOKEN: { key: 'E2E_INBOX_TOKEN', envs: ['dev'], generate: true },

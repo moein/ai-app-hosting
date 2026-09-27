@@ -92,6 +92,10 @@ export const apps = sqliteTable(
       .notNull()
       .default('pending'),
     provisioningError: text('provisioning_error'),
+    // spec 11: the app's SES identity mail.<slug>.APPS_DOMAIN (MAIL-1.6, MAIL-1.7)
+    emailStatus: text('email_status', { enum: ['pending', 'ready', 'failed'] })
+      .notNull()
+      .default('pending'),
     scriptName: text('script_name').notNull(),
     repoOwner: text('repo_owner').notNull(),
     repoName: text('repo_name').notNull(),

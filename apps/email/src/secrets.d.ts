@@ -3,6 +3,7 @@ interface Env {
   RESEND_API_KEY: string;
   AWS_ACCESS_KEY_ID: string;
   AWS_SECRET_ACCESS_KEY: string;
+  CF_API_TOKEN: string;
 }
 
 declare namespace Cloudflare {
@@ -10,5 +11,6 @@ declare namespace Cloudflare {
     RESEND_API_KEY: string;
     AWS_ACCESS_KEY_ID: string;
     AWS_SECRET_ACCESS_KEY: string;
+    CF_API_TOKEN: string;
   }
 }

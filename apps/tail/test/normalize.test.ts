@@ -36,7 +36,7 @@ describe('normalize (LOG-2.2–2.4)', () => {
 
   it('keeps no headers, cookies, query strings or IPs (LOG-2.3)', () => {
     const json = JSON.stringify(normalize(traceItem()).entries);
-    for (const secret of ['token=secret', 'session=abc', 'Bearer', '1.2.3.4', 'todo.dev.motad.app']) {
+    for (const secret of ['token=secret', 'session=abc', 'Bearer', '1.2.3.4', 'todo.motad.app']) {
       expect(json).not.toContain(secret);
     }
   });
@@ -44,7 +44,7 @@ describe('normalize (LOG-2.2–2.4)', () => {
   it('records exceptions and marks the request as an error', () => {
     const { entries } = normalize(
       traceItem({
-        event: { request: { method: 'POST', url: 'https://x.dev.motad.app/api/x', headers: {} } },
+        event: { request: { method: 'POST', url: 'https://x.motad.app/api/x', headers: {} } },
         outcome: 'exception',
         exceptions: [{ timestamp: 5, name: 'TypeError', message: "Cannot read 'x'", stack: 'at a\nat b' }],
       }),

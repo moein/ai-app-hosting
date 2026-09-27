@@ -2,7 +2,7 @@
 
 The platform sends two kinds of email through two providers:
 - **Platform emails** (login codes, spec 02) go through **Resend**, from `login@PLATFORM_MAIL_DOMAIN`.
-- **Customer app emails** — sent by user apps through their `EMAIL` binding — go through **AWS SES v2**, from `<slug>@APPS_MAIL_DOMAIN`. Each organization gets its own SES tenant so one org's sending reputation can't harm others.
+- **Customer app emails** — sent by user apps through their `EMAIL` binding — go through **AWS SES v2**, from `hello@mail.<slug>.APPS_DOMAIN`. Every app has its own verified sending domain (its own SES identity and DKIM key), so mailbox providers judge each app's reputation separately; every organization gets its own SES tenant so one org can be paused without affecting others.
 
 SES is used only for customer apps; Resend only for the platform.
 
@@ -11,21 +11,25 @@ SES is used only for customer apps; Resend only for the platform.
 ### MAIL-1 — SES tenant per organization
 As the operator, I want every organization isolated in its own SES tenant, so that a spammy app can be paused without affecting everyone else.
 
-- **MAIL-1.1** WHEN an `org.provision_email_tenant` job is received THE SYSTEM SHALL create the SES tenant `<env>-<org_id>`, associate the `APPS_MAIL_DOMAIN` identity and the environment's configuration set with it, and set `organizations.email_tenant_status = 'ready'`.
+- **MAIL-1.1** WHEN an `org.provision_email_tenant` job is received THE SYSTEM SHALL create the SES tenant `<env>-<org_id>`, associate the environment's configuration set with it, and set `organizations.email_tenant_status = 'ready'`.
 - **MAIL-1.2** THE SYSTEM SHALL make tenant provisioning idempotent (an existing tenant or association counts as success).
 - **MAIL-1.3** IF provisioning still fails after the queue's max retries THEN THE SYSTEM SHALL set `email_tenant_status = 'failed'` and write a `provisioning_failed` metric (sub = `email_tenant`).
-- **MAIL-1.4** THE SYSTEM SHALL provide an operator script to re-enqueue provisioning for all orgs with status `pending` or `failed`.
+- **MAIL-1.4** THE SYSTEM SHALL provide an operator script to re-enqueue provisioning for all orgs with `email_tenant_status` and all active apps with `email_status` `pending` or `failed`.
+- **MAIL-1.5** WHEN an app is provisioned THE SYSTEM SHALL enqueue an `app.provision_email_identity` job for it.
+- **MAIL-1.6** WHEN an `app.provision_email_identity` job is received THE SYSTEM SHALL create the SES domain identity `mail.<slug>.APPS_DOMAIN` (Easy DKIM), create its DKIM CNAME records in the `APPS_DOMAIN` zone, and associate the identity with the org's tenant; IF the org's tenant is not `ready` yet THEN the job SHALL be retried later.
+- **MAIL-1.7** WHEN SES reports the app's identity verified THE SYSTEM SHALL set `apps.email_status = 'ready'`; until then the job SHALL be retried with backoff, and IF it is still unverified after the queue's max retries THEN THE SYSTEM SHALL set `email_status = 'failed'` and write a `provisioning_failed` metric (sub = `email_identity`).
+- **MAIL-1.8** Every step of identity provisioning SHALL be idempotent (existing identity, DNS record or association counts as success). Deleting an app SHALL NOT delete its identity (APP-4: only the Worker is removed); a deleted app can't send (MAIL-2.8).
 
 ### MAIL-2 — Apps send email
 As a user, I want my app to send emails (welcome messages, notifications), so that it feels like a real product.
 
 - **MAIL-2.1** WHEN app code calls `env.EMAIL.send(message)` THE SYSTEM SHALL send it through SES using the app's org tenant and return `{ ok: true, id, suppressed }`, or `{ ok: false, error: { code, message } }` without throwing.
 - **MAIL-2.2** THE SYSTEM SHALL identify the sending app and org only from the binding's platform-set `props` (RUN-2.1), never from the message.
-- **MAIL-2.3** THE SYSTEM SHALL send from `"<from_name or app name>" <<slug>@APPS_MAIL_DOMAIN>`, where `from_name` is sanitized (no quotes, angle brackets or line breaks; ≤ 64 chars).
+- **MAIL-2.3** THE SYSTEM SHALL send from `"<from_name or app name>" <hello@mail.<slug>.APPS_DOMAIN>`, where `from_name` is sanitized (no quotes, angle brackets or line breaks; ≤ 64 chars).
 - **MAIL-2.4** IF the message has no recipients or more than `MAX_EMAIL_RECIPIENTS`, an invalid address, a subject outside 1–200 chars, neither `text` nor `html`, or exceeds `MAX_EMAIL_BYTES` THEN THE SYSTEM SHALL return `invalid_message`.
 - **MAIL-2.5** THE SYSTEM SHALL remove suppressed recipients (global or the org's), report them in `suppressed`, and IF all recipients are suppressed THEN return `all_suppressed`.
 - **MAIL-2.6** THE SYSTEM SHALL count each remaining recipient against `MAX_EMAILS_PER_ORG_PER_DAY` (APP-5) before sending, and IF exceeded THEN return `quota_exceeded`.
-- **MAIL-2.7** IF the org's tenant is not `ready` THEN THE SYSTEM SHALL return `tenant_not_ready`; IF SES reports the tenant paused THEN `tenant_paused`; other SES failures SHALL return `send_failed`.
+- **MAIL-2.7** IF the org's tenant or the app's email identity (`apps.email_status`) is not `ready` THEN THE SYSTEM SHALL return `tenant_not_ready` (email is still being set up); IF SES reports the tenant paused THEN `tenant_paused`; other SES failures SHALL return `send_failed`.
 - **MAIL-2.8** IF the app is deleted THEN THE SYSTEM SHALL return `send_failed` and not send.
 - **MAIL-2.9** THE SYSTEM SHALL tag every SES message with `env`, `org_id` and `app_id` and write `email_sent` / `email_rejected` metrics.
 
@@ -50,7 +54,8 @@ As the operator, I want to stop sending to addresses that bounce or complain, so
 ## Non-functional requirements
 
 - `env.EMAIL.send` p95 < 1 s.
-- SES production access (out of sandbox) in prod; DKIM, custom MAIL FROM and DMARC configured for `APPS_MAIL_DOMAIN`.
+- SES production access (out of sandbox) in each environment's AWS account; DKIM per app identity, and a DMARC record at the `APPS_DOMAIN` apex covering every app's mail subdomain.
+- An app's email is usually ready within minutes of creation (DKIM verification after DNS propagation).
 - `PLATFORM_MAIL_DOMAIN` verified in Resend (SPF, DKIM, DMARC).
 
 ## Out of scope

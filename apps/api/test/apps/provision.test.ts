@@ -16,6 +16,7 @@ const deps = (ctx: TestContext) => ({
   clock: ctx.clock,
   logger: ctx.logger,
   metrics: ctx.metrics,
+  emailJobs: ctx.emailJobs,
   apiOrigin: 'https://api.test',
 });
 
@@ -51,6 +52,8 @@ describe('ProvisionApp steps (APP-2.3, APP-2.5, APP-2.6, SRC-1)', () => {
       scriptName: app.slug,
       state: 'not_deployed',
     });
+    // MAIL-1.5: the app's email identity is handed to the email worker.
+    expect(ctx.emailJobs.messages).toContainEqual({ type: 'app.provision_email_identity', appId: app.id });
   });
 
   it('is idempotent: a second run creates nothing new', async () => {

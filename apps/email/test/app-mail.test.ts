@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:workers';
-import { Logger, MAX_EMAIL_BYTES, MAX_EMAIL_RECIPIENTS, MAX_EMAILS_PER_ORG_PER_DAY } from '@repo/shared';
+import { Logger, MAX_EMAIL_BYTES, MAX_EMAIL_RECIPIENTS, MAX_EMAILS_PER_ORG_PER_DAY, memoryMetrics } from '@repo/shared';
 import { describe, expect, it } from 'vitest';
 import { type AppMailDeps, sendAppEmail } from '../src/app-mail/send';
 import { sanitizeFromName } from '../src/app-mail/validate';
@@ -10,16 +10,18 @@ import { emailsUsedToday, seedApp, suppress } from './seed';
 const NOW = Date.UTC(2026, 8, 27, 12);
 function deps() {
   const ses = fakeSes();
+  const metrics = memoryMetrics();
   const d: AppMailDeps = {
     db: env.DB,
     ses: ses.client,
     environment: 'dev',
-    appsMailDomain: 'mail.dev.motad.app',
+    appsDomain: 'motad.app',
+    metrics,
     configurationSet: 'apps-dev',
     now: () => NOW,
     logger: new Logger({ test: true }),
   };
-  return { deps: d, ses };
+  return { deps: d, ses, metrics };
 }
 const msg = (overrides: Record<string, unknown> = {}) => ({
   to: 'Friend@Example.com',
@@ -29,13 +31,24 @@ const msg = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe('AppMail.send (MAIL-2)', () => {
-  it('sends through the org tenant from <slug>@APPS_MAIL_DOMAIN with tags (MAIL-2.1, 2.3, 2.9)', async () => {
+  it('writes one email_sent or email_rejected data point per call (MAIL-2.9, EVT-2.5)', async () => {
+    const { deps: d, metrics } = deps();
+    const { props, orgId, appId } = await seedApp();
+    await sendAppEmail(d, props, msg());
+    await sendAppEmail(d, props, msg({ subject: '' }));
+    expect(metrics.points).toEqual([
+      { event: 'email_sent', fields: { orgId, appId, sub: 'app', outcome: 'ok' } },
+      { event: 'email_rejected', fields: { orgId, appId, sub: 'invalid_message', outcome: 'error' } },
+    ]);
+  });
+
+  it('sends from hello@mail.<slug>.APPS_DOMAIN through the org tenant with tags (MAIL-2.1, 2.3, 2.9)', async () => {
     const { deps: d, ses } = deps();
     const { props, orgId, appId, slug } = await seedApp();
     const result = await sendAppEmail(d, props, msg({ html: '<b>Hi</b>', reply_to: 'Owner@Example.com' }));
     expect(result).toEqual({ ok: true, id: 'msg-1', suppressed: [] });
     expect(ses.sent[0]).toEqual({
-      from: `"Todo List" <${slug}@mail.dev.motad.app>`,
+      from: `"Todo List" <hello@mail.${slug}.motad.app>`,
       to: ['friend@example.com'],
       replyTo: 'owner@example.com',
       subject: 'Welcome',
@@ -57,7 +70,7 @@ describe('AppMail.send (MAIL-2)', () => {
       props,
       msg({ from: 'ceo@bank.com', appId: other.appId, orgId: other.orgId, slug: other.slug, tenant: 'x' }),
     );
-    expect(ses.sent[0]?.from).toBe(`"Todo List" <${slug}@mail.dev.motad.app>`);
+    expect(ses.sent[0]?.from).toBe(`"Todo List" <hello@mail.${slug}.motad.app>`);
     expect(ses.sent[0]?.tenant).toBe(`dev-${orgId}`);
   });
 
@@ -68,10 +81,10 @@ describe('AppMail.send (MAIL-2)', () => {
     const { props, slug } = await seedApp();
     await sendAppEmail(d, props, msg({ from_name: 'Café "Bob"' }));
     expect(ses.sent[0]?.from).toBe(
-      `=?UTF-8?B?${btoa(String.fromCharCode(...new TextEncoder().encode('Café Bob')))}?= <${slug}@mail.dev.motad.app>`,
+      `=?UTF-8?B?${btoa(String.fromCharCode(...new TextEncoder().encode('Café Bob')))}?= <hello@mail.${slug}.motad.app>`,
     );
     await sendAppEmail(d, props, msg({ from_name: '"<>"' }));
-    expect(ses.sent[1]?.from).toBe(`"Todo List" <${slug}@mail.dev.motad.app>`);
+    expect(ses.sent[1]?.from).toBe(`"Todo List" <hello@mail.${slug}.motad.app>`);
   });
 
   it.each([
@@ -144,8 +157,12 @@ describe('AppMail.send (MAIL-2)', () => {
     expect(await emailsUsedToday(orgId, NOW)).toBe(0);
   });
 
-  it('refuses when the tenant is not ready or the app is deleted (MAIL-2.7, 2.8)', async () => {
+  it('refuses when the tenant or the app identity is not ready, or the app is deleted (MAIL-2.7, 2.8)', async () => {
     const { deps: d, ses } = deps();
+    for (const emailStatus of ['pending', 'failed'] as const) {
+      const { props } = await seedApp({ emailStatus });
+      expect(await sendAppEmail(d, props, msg())).toMatchObject({ ok: false, error: { code: 'tenant_not_ready' } });
+    }
     for (const tenant of ['pending', 'failed'] as const) {
       const { props } = await seedApp({ tenant });
       expect(await sendAppEmail(d, props, msg())).toMatchObject({ ok: false, error: { code: 'tenant_not_ready' } });

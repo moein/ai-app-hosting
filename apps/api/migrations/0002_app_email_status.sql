@@ -1,0 +1,1 @@
+ALTER TABLE `apps` ADD `email_status` text DEFAULT 'pending' NOT NULL;

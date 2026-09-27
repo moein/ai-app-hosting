@@ -11,6 +11,7 @@ export default defineConfig({
           RESEND_API_KEY: 're_test_key',
           AWS_ACCESS_KEY_ID: 'test',
           AWS_SECRET_ACCESS_KEY: 'test',
+          CF_API_TOKEN: 'test-cf-token',
           // The api owns the platform schema; apply its migrations to the test D1.
           TEST_MIGRATIONS: await readD1Migrations('../api/migrations'),
         },

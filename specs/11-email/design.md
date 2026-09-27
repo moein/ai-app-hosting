@@ -5,29 +5,32 @@
 ```
 apps/api  ──EMAIL_JOBS queue──▶ apps/email (queue consumer: org.provision_email_tenant) ──▶ SES v2 CreateTenant / associations
 apps/api  ──MAIL (service binding, entrypoint PlatformMail)──▶ apps/email ──▶ Resend API (from login@PLATFORM_MAIL_DOMAIN)
-app script ──EMAIL (service binding, entrypoint AppMail, props)──▶ apps/email ──▶ SES SendEmail (tenant <env>-<org_id>)
+apps/api  ──EMAIL_JOBS queue──▶ apps/email (app.provision_email_identity) ──▶ SES CreateEmailIdentity + Cloudflare DNS (DKIM) + tenant association
+app script ──EMAIL (service binding, entrypoint AppMail, props)──▶ apps/email ──▶ SES SendEmail (from hello@mail.<slug>.APPS_DOMAIN, tenant <env>-<org_id>)
 SES ──config set event destination──▶ SNS topic ──HTTPS──▶ apps/api POST /v1/ses/events ──▶ D1 email_suppressions
 ```
 
-`apps/email` bindings: `DB` (platform D1: orgs, apps, suppressions, usage counters — plain SQL; the api owns the schema and migrations, and the email worker's tests apply the api's migrations), `METRICS`, queue consumer `email-jobs-<env>` (`max_retries: 10`); secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `RESEND_API_KEY`; vars `AWS_REGION`, `SES_CONFIGURATION_SET`, `APPS_MAIL_DOMAIN`, `PLATFORM_MAIL_DOMAIN` (its own var, used only for platform emails). AWS requests are SigV4-signed with `aws4fetch`.
+`apps/email` bindings: `DB` (platform D1: orgs, apps, suppressions, usage counters — plain SQL; the api owns the schema and migrations, and the email worker's tests apply the api's migrations), `METRICS`, queue consumer `email-jobs-<env>` (`max_retries: 10`); secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `RESEND_API_KEY`, `CF_API_TOKEN` (DNS edit on the `APPS_DOMAIN` zone, for per-app DKIM records); vars `AWS_REGION`, `SES_CONFIGURATION_SET`, `APPS_DOMAIN`, `PLATFORM_MAIL_DOMAIN` (its own var, used only for platform emails). AWS requests are SigV4-signed with `aws4fetch`.
 
-DNS records for SES identities (DKIM CNAMEs, custom MAIL FROM MX/SPF, DMARC) are created through the Cloudflare DNS API with `CF_API_TOKEN` (Zone DNS Edit on the `APPS_DOMAIN` zone) — by the setup script now, and by per-org provisioning later (backlog item 1).
+## Per-app sending domain
 
-The AWS IAM user is limited to `ses:SendEmail`, `ses:CreateTenant`, `ses:GetTenant`, `ses:CreateTenantResourceAssociation` on the relevant resources.
+Every app sends from its own SES domain identity `mail.<slug>.APPS_DOMAIN` (address `hello@mail.<slug>.APPS_DOMAIN`), so mailbox providers build reputation per app. Per identity the platform creates only the three Easy DKIM CNAMEs (`<token>._domainkey.mail.<slug>.APPS_DOMAIN` → `<token>.dkim.amazonses.com`, DNS only) in the `APPS_DOMAIN` zone through the Cloudflare DNS API. No per-app custom MAIL FROM: DKIM is aligned with the From domain, which is what DMARC needs, and it keeps the zone at 3 records per app. One DMARC record at the zone apex (`_dmarc.APPS_DOMAIN`, created by the setup script) covers every app subdomain.
+
+`apps.email_status` (`pending` → `ready` | `failed`) tracks the identity; `AppMail.send` requires it to be `ready`.
+
+The AWS IAM user is limited to `ses:SendEmail`, `ses:CreateTenant`, `ses:GetTenant`, `ses:CreateTenantResourceAssociation`, `ses:CreateEmailIdentity`, `ses:GetEmailIdentity` on the relevant resources.
 
 ### Setup (`scripts/setup-ses.mjs <env>`, idempotent)
 
-The AWS account is shared with unrelated projects, so the script only creates/updates resources it names and never lists-and-modifies others. It reads AWS keys and `CF_API_TOKEN` from `.env.<env>` and `APPS_MAIL_DOMAIN` / `AWS_REGION` / `SES_CONFIGURATION_SET` from `apps/email/wrangler.jsonc`.
+The AWS account is shared with unrelated projects, so the script only creates/updates resources it names and never lists-and-modifies others. It reads AWS keys and `CF_API_TOKEN` from `.env.<env>` and `APPS_DOMAIN` / `AWS_REGION` / `SES_CONFIGURATION_SET` from `apps/email/wrangler.jsonc`.
 
-1. Domain identity `APPS_MAIL_DOMAIN` (Easy DKIM, RSA 2048) → three DKIM CNAMEs `<token>._domainkey.<domain>` → `<token>.dkim.amazonses.com`.
-2. Custom MAIL FROM `bounce.<domain>` (`BehaviorOnMxFailure: USE_DEFAULT_VALUE`) → MX `feedback-smtp.<region>.amazonses.com` (priority 10) and TXT `v=spf1 include:amazonses.com ~all`.
-3. DMARC TXT `_dmarc.<domain>` = `v=DMARC1; p=none;` (tighten to `quarantine` after a clean week of reports).
-4. Configuration set `apps-<env>` (reputation metrics on).
-5. SNS topic `ses-events-<env>` (attribute `SignatureVersion` = 2; topic policy lets `ses.amazonaws.com` publish, conditioned on the account), configuration-set event destination (`BOUNCE`, `COMPLAINT`) → topic, HTTPS subscription to `PLATFORM_API_ORIGIN/v1/ses/events`, and `SES_EVENTS_TOPIC_ARN` appended to `.env.<env>` (uploaded as an api secret by `pnpm secrets:<env>`). Needs `sns:CreateTopic`, `sns:Subscribe`, `sns:GetTopicAttributes`, `sns:SetTopicAttributes`; the step is skipped with a message when the key lacks them.
+1. DMARC TXT `_dmarc.APPS_DOMAIN` = `v=DMARC1; p=none;` — created only if the apex has no DMARC record yet (tighten to `quarantine` after a clean week of reports). It covers every `mail.<slug>` subdomain.
+2. Configuration set `apps-<env>` (reputation metrics on).
+3. SNS topic `ses-events-<env>` (attribute `SignatureVersion` = 2; topic policy lets `ses.amazonaws.com` publish, conditioned on the account), configuration-set event destination (`BOUNCE`, `COMPLAINT`) → topic, HTTPS subscription to `PLATFORM_API_ORIGIN/v1/ses/events`, and `SES_EVENTS_TOPIC_ARN` appended to `.env.<env>` (uploaded as an api secret by `pnpm secrets:<env>`). Needs `sns:CreateTopic`, `sns:Subscribe`, `sns:GetTopicAttributes`, `sns:SetTopicAttributes`; the step is skipped with a message when the key lacks them.
 
-DNS records are upserted in the Cloudflare zone that contains the domain (DNS only, not proxied). SES production access is an account-level setting (already enabled on the shared account; `GET /v2/email/account` shows `ProductionAccessEnabled`).
+DNS records are created in the `APPS_DOMAIN` zone (DNS only, not proxied). Per-app identities are not created by the script but by the email worker (below). SES production access is an account-level setting (already enabled on the shared account; `GET /v2/email/account` shows `ProductionAccessEnabled`).
 
-The AWS account id is never committed: the email worker resolves it once per isolate with STS `GetCallerIdentity` (needs no IAM permission) to build the identity and configuration-set ARNs for tenant associations; the api gets the full topic ARN as the `SES_EVENTS_TOPIC_ARN` secret. While that secret is unset, `/v1/ses/events` answers 403 to everything.
+The AWS account id is never committed: the email worker resolves it once per isolate with STS `GetCallerIdentity` (needs no IAM permission) to build identity and configuration-set ARNs for tenant associations; the api gets the full topic ARN as the `SES_EVENTS_TOPIC_ARN` secret. While that secret is unset, `/v1/ses/events` answers 403 to everything.
 
 ## Entrypoints
 
@@ -67,13 +70,13 @@ type AppEmailResult =
 ```
 validate(msg)                                   → invalid_message
 app = D1 apps by props.appId; if deleted        → send_failed
-org = D1 organizations by props.orgId; tenant status != ready → tenant_not_ready
+org = D1 organizations by props.orgId; tenant status != ready, or app.email_status != ready → tenant_not_ready
 recipients = dedupe(lowercase(to)); suppressed = D1 email_suppressions where email IN recipients
                                                   AND (org_id IS NULL OR org_id = orgId)
 remaining = recipients − suppressed; empty      → all_suppressed
 consumeDaily('emails', count = remaining.length) → quota_exceeded   (atomic check-and-add, spec 03)
 SES v2 SendEmail {
-  FromEmailAddress: `"${fromName}" <${slug}@${APPS_MAIL_DOMAIN}>`,
+  FromEmailAddress: `"${fromName}" <hello@mail.${slug}.${APPS_DOMAIN}>`,
   Destination: { ToAddresses: remaining }, ReplyToAddresses,
   Content: { Simple: { Subject, Body: { Text, Html } } },
   ConfigurationSetName, TenantName: `${env}-${orgId}`,
@@ -91,11 +94,25 @@ Message: `{ type: 'org.provision_email_tenant', orgId }`. Consumer:
 
 ```
 CreateTenant(TenantName = `${env}-${orgId}`, Tags [org_id, env])      AlreadyExists → ok
-CreateTenantResourceAssociation(identity ARN of APPS_MAIL_DOMAIN)       AlreadyExists → ok
 CreateTenantResourceAssociation(configuration set ARN)                  AlreadyExists → ok
 UPDATE organizations SET email_tenant_status='ready'
 failure → message.retry({ delaySeconds: backoff }); on final attempt (max_retries 10) → status 'failed' + metric
 ```
+
+Message `{ type: 'app.provision_email_identity', appId }` (enqueued by `ProvisionApp`, MAIL-1.5):
+
+```
+app (active) + org tenant status; tenant not ready                     → retry (backoff)
+CreateEmailIdentity(mail.<slug>.APPS_DOMAIN, ConfigurationSetName,
+                    Tags [app_id, org_id, env])                         AlreadyExists → ok
+GetEmailIdentity → DKIM tokens → upsert 3 CNAMEs in the APPS_DOMAIN zone (zone id looked up by name, cached)
+CreateTenantResourceAssociation(tenant, identity ARN)                   AlreadyExists → ok
+VerificationStatus = SUCCESS → UPDATE apps SET email_status='ready'; ack
+otherwise                                                               → retry (backoff: 10 s … 15 min)
+final attempt still unverified → email_status='failed' + provisioning_failed (sub email_identity)
+```
+
+Backoff `min(10 s · 2^(attempt-1), 15 min)` over 10 retries gives verification about 1.5 hours; DKIM usually verifies within minutes. Retries re-run every step, which is safe because each is idempotent.
 
 ## Platform email via Resend (`PlatformMail`)
 
@@ -148,7 +165,7 @@ AUTH-1.7 checks `org_id IS NULL` rows only.
 
 ## Open questions
 
-0. Per-org sending subdomains are planned — see [backlog](../backlog.md) item 1.
+0. DNS record budget: 3 records per app in the `APPS_DOMAIN` zone (Cloudflare zones have a record quota by plan) — watch it as apps grow.
 
 1. SES tenant reputation policy settings (automatic pause thresholds) — use SES defaults initially?
 2. Custom sender domains per org (would add identity verification flows to MCP).

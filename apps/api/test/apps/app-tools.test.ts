@@ -45,7 +45,7 @@ describe('create_app (APP-2, SLUG-4)', () => {
     }>(await create(ctx, { name: `  ${name}  ` }));
     expect(app.slug).toBe(name.toLowerCase().replace(/ /g, '-'));
     expect(app).toMatchObject({ provisioning: 'ready', status: 'active', live_deployment: null });
-    expect(app.url).toBe(`https://${app.slug}.dev.motad.app`);
+    expect(app.url).toBe(`https://${app.slug}.motad.app`);
     expect(app.next_step).toContain('write_files');
   });
 

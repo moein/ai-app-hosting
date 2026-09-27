@@ -8,7 +8,7 @@
 | Worker script name (dispatch namespace) | `<slug>` | lowercase, `[a-z0-9-]` |
 | GitHub repo name | `<slug>` (prod) / `dev-<slug>` (dev) | ≤ 100 chars |
 | App D1 database name | `app-<slug>-<env>` | account-unique names |
-| SES sender local part | `<slug>@APPS_MAIL_DOMAIN` | RFC 5321 local part |
+| SES sending domain | `mail.<slug>.APPS_DOMAIN` | DNS label |
 | SES tenant name | uses org **ID**, not slug (spec 11) | — |
 
 `--` is banned so that (a) `xn--` punycode labels are impossible, and (b) `--` stays free as a future separator (e.g. `<app>--<preview>.APPS_DOMAIN`).

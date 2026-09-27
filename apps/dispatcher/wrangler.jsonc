@@ -12,10 +12,10 @@
       "workers_dev": false,
       "preview_urls": false,
       "routes": [
-        { "pattern": "*.dev.motad.app/*", "zone_name": "motad.app" },
-        { "pattern": "dev.motad.app/*", "zone_name": "motad.app" }
+        { "pattern": "*.motad.app/*", "zone_name": "motad.app" },
+        { "pattern": "motad.app/*", "zone_name": "motad.app" }
       ],
-      "vars": { "ENVIRONMENT": "dev", "APPS_DOMAIN": "dev.motad.app", "PLATFORM_WEBSITE_URL": "" },
+      "vars": { "ENVIRONMENT": "dev", "APPS_DOMAIN": "motad.app", "PLATFORM_WEBSITE_URL": "" },
       "kv_namespaces": [{ "binding": "APP_ROUTES", "id": "4acad1cfc1ea43d9b25f6f2f10e5055f" }],
       "dispatch_namespaces": [{ "binding": "DISPATCHER", "namespace": "apps-dev" }]
     },
@@ -23,7 +23,8 @@
       "name": "dispatcher-prod",
       "workers_dev": false,
       "preview_urls": false,
-      "vars": { "ENVIRONMENT": "prod", "APPS_DOMAIN": "motad.app", "PLATFORM_WEBSITE_URL": "" },
+      // Prod APPS_DOMAIN not chosen yet (specs/values.md): empty fails env validation; add routes with the domain.
+      "vars": { "ENVIRONMENT": "prod", "APPS_DOMAIN": "", "PLATFORM_WEBSITE_URL": "" },
       "kv_namespaces": [{ "binding": "APP_ROUTES", "id": "b0aca44ad9d3482792e13d4a559e3a7b" }],
       "dispatch_namespaces": [{ "binding": "DISPATCHER", "namespace": "apps-prod" }]
     }

@@ -2,11 +2,17 @@
 
 const dayOf = (now: number) => new Date(now).toISOString().slice(0, 10);
 
+export type EmailStatus = 'pending' | 'ready' | 'failed';
+
 export async function findApp(db: D1Database, appId: string) {
   return db
-    .prepare('SELECT name, slug, status FROM apps WHERE id = ?')
+    .prepare('SELECT name, slug, org_id, status, email_status FROM apps WHERE id = ?')
     .bind(appId)
-    .first<{ name: string; slug: string; status: 'active' | 'deleted' }>();
+    .first<{ name: string; slug: string; org_id: string; status: 'active' | 'deleted'; email_status: EmailStatus }>();
+}
+
+export async function setAppEmailStatus(db: D1Database, appId: string, status: 'ready' | 'failed') {
+  await db.prepare('UPDATE apps SET email_status = ? WHERE id = ?').bind(status, appId).run();
 }
 
 export async function tenantStatus(db: D1Database, orgId: string) {

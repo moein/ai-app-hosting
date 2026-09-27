@@ -2,10 +2,10 @@
 
 Depends on: 00, 03 (organizations, quota service). Task 3 is needed early by spec 02.
 
-- [ ] **1. SES setup (dev, prod)** — verify `APPS_MAIL_DOMAIN` (DKIM, MAIL FROM, DMARC), configuration sets, SNS topic + event destination, IAM user, production access request; document in runbook. (SES is for customer apps only.)
+- [ ] **1. SES setup (dev, prod)** — DMARC at the `APPS_DOMAIN` apex, configuration sets, SNS topic + event destination, IAM user, production access request; document in runbook. (SES is for customer apps only.)
   Satisfies: MAIL non-functional
   Tests: manual — send a test email in dev.
-  Status: dev done with `scripts/setup-ses.mjs` (identity, DKIM, MAIL FROM, DMARC, configuration set verified; test email via an org tenant arrived in the e2e inbox). Open: SNS step (IAM user lacks SNS permissions), prod run.
+  Status: dev done with `scripts/setup-ses.mjs` (DMARC, configuration set; test email via an org tenant arrived in the e2e inbox). Open: SNS step (IAM user lacks SNS permissions), prod run (prod domain not chosen).
 
 - [x] **1b. Resend setup (dev, prod)** — verify `PLATFORM_MAIL_DOMAIN` in Resend (SPF, DKIM, DMARC), create an API key per environment, `wrangler secret put RESEND_API_KEY --env <env>`, set `PLATFORM_MAIL_DOMAIN` var in `apps/email/wrangler.jsonc`; document in runbook.
   Satisfies: MAIL non-functional
@@ -23,6 +23,10 @@ Depends on: 00, 03 (organizations, quota service). Task 3 is needed early by spe
 - [x] **4. Tenant provisioning queue consumer + operator script**
   Satisfies: MAIL-1.1, MAIL-1.2, MAIL-1.3, MAIL-1.4
   Tests: happy path sets `ready`; AlreadyExists paths succeed; retry with backoff; final failure sets `failed` + metric; script enqueues only pending/failed orgs.
+
+- [x] **4b. Per-app email identity** (job `app.provision_email_identity`, `apps.email_status`, ProvisionApp step "email", requeue script covers apps)
+  Satisfies: MAIL-1.4, MAIL-1.5, MAIL-1.6, MAIL-1.7, MAIL-1.8, MAIL-2.7
+  Tests: identity created with config set + tags; 3 DKIM CNAMEs upserted (existing records untouched); associated with the org tenant; tenant not ready → retry; unverified → retry, verified → `ready`; final attempt → `failed` + metric; idempotent re-run; ProvisionApp enqueues the job; AppMail refuses until `ready`; script enqueues pending/failed apps.
 
 - [x] **5. Schema `email_suppressions`**
   Satisfies: MAIL-4.6 (constraint)
@@ -42,5 +46,5 @@ Depends on: 00, 03 (organizations, quota service). Task 3 is needed early by spe
   Tests: guide contains `AppEmailMessage`/`AppEmailResult` types and limits matching `limits.ts`.
 
 - [ ] **9. E2E on dev** (spec 12)
-  Flows: `F-MAIL-1` (app email via SES arrives in the e2e inbox from `<slug>@APPS_MAIL_DOMAIN`); login-code delivery via Resend is covered by `F-AUTH-1`.
+  Flows: `F-MAIL-1` (app email via SES arrives in the e2e inbox from `hello@mail.<slug>.APPS_DOMAIN`); login-code delivery via Resend is covered by `F-AUTH-1`.
   Satisfies: E2E-3.3

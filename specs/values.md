@@ -8,9 +8,8 @@ This is the only place for the concrete values behind the placeholders used in s
 |---|---|---|---|
 | `CF_ACCOUNT_ID` | Cloudflare account ("Ai app hosting") owning every platform resource; set as `account_id` in every `wrangler.jsonc`. Not a secret. | `ebdcbd8e905ff028ba30a0104288f65e` | same |
 | `PLATFORM_API_ORIGIN` | Origin of the platform API / MCP server. For now the Cloudflare-generated `workers.dev` URL of the `api-<env>` worker; a custom domain may replace it later. | `https://api-dev.ai-app-hosting.workers.dev` | `https://api-prod.ai-app-hosting.workers.dev` |
-| `APPS_DOMAIN` | Domain hosting user apps (`<slug>.APPS_DOMAIN`). A Cloudflare zone with a wildcard route to the dispatcher. | `dev.motad.app` | `motad.app` |
-| `APPS_MAIL_DOMAIN` | SES-verified domain customer apps send from (`<slug>@APPS_MAIL_DOMAIN`). SES only. | `mail.dev.motad.app` | `mail.motad.app` |
-| `PLATFORM_MAIL_DOMAIN` | Resend-verified domain for platform emails (login codes, sent from `login@PLATFORM_MAIL_DOMAIN`). Its own `vars` entry in `apps/email/wrangler.jsonc`, separate from `APPS_MAIL_DOMAIN`, so app sending reputation can't hurt login-code delivery. | `ideep.app` | `ideep.app` |
+| `APPS_DOMAIN` | Domain hosting user apps (`<slug>.APPS_DOMAIN`). A Cloudflare zone (its apex) with a wildcard route to the dispatcher. Each environment has its own domain. Each app also sends email from its own SES identity `mail.<slug>.APPS_DOMAIN` (spec 11). | `motad.app` | _to be chosen_ |
+| `PLATFORM_MAIL_DOMAIN` | Resend-verified domain for platform emails (login codes, sent from `login@PLATFORM_MAIL_DOMAIN`). Its own `vars` entry in `apps/email/wrangler.jsonc`, separate from the apps' mail domains, so app sending reputation can't hurt login-code delivery. | `ideep.app` | `ideep.app` |
 | `PLATFORM_WEBSITE_URL` | Where the apex and `www.` of `APPS_DOMAIN` redirect. Empty means those hosts get the 404 page. | _(empty)_ | _(empty)_ |
 | `GITHUB_ORG` | GitHub organization that owns all app repos (dev repos are prefixed `dev-`). | `AI-app-hosting` | `AI-app-hosting` |
 | `AWS_REGION` | AWS region for SES (customer app email). | `eu-central-1` (Frankfurt) | `eu-central-1` (Frankfurt) |
@@ -18,9 +17,9 @@ This is the only place for the concrete values behind the placeholders used in s
 
 Notes:
 - The account's `workers.dev` subdomain is `ai-app-hosting`.
-- `mail`, `dev` and `e2e` are on the reserved-slug list (spec 01), so no app can claim `mail.motad.app`, `dev.motad.app` or `e2e.motad.app`; `mail` also protects `mail.dev.motad.app`.
+- Reserved slugs (spec 01) such as `mail`, `www`, `api` and `e2e` can never become app hostnames under `APPS_DOMAIN`.
 - Email Routing can't be enabled on a subdomain here, which is why the e2e inbox is a single subaddressed address on the apex rather than a whole domain.
-- `motad.app` (user apps) and `ideep.app` (platform email) are temporary domains.
+- `motad.app` (dev user apps) and `ideep.app` (platform email) are temporary domains. The prod `APPS_DOMAIN` is not chosen yet: prod `vars` hold an empty value, which env validation rejects, so prod can't start until it is set.
 
 ## Derived endpoints
 
@@ -31,3 +30,4 @@ Notes:
 | OIDC audience for builds (spec 08) | `PLATFORM_API_ORIGIN` |
 | SES events webhook (spec 11) | `PLATFORM_API_ORIGIN/v1/ses/events` |
 | User app | `https://<slug>.APPS_DOMAIN` |
+| App sender address (spec 11) | `hello@mail.<slug>.APPS_DOMAIN` |

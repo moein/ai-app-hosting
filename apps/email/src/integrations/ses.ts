@@ -34,6 +34,12 @@ export interface SesClient {
   sendEmail(input: SesSendInput): Promise<{ messageId: string }>;
   createTenant(name: string, tags: Record<string, string>): Promise<'created' | 'exists'>;
   associateTenantResource(tenant: string, resourceArn: string): Promise<'created' | 'exists'>;
+  /** Domain identity with Easy DKIM (RSA 2048), sending through the configuration set. */
+  createEmailIdentity(
+    domain: string,
+    options: { configurationSet: string; tags: Record<string, string> },
+  ): Promise<'created' | 'exists'>;
+  getEmailIdentity(domain: string): Promise<{ verified: boolean; dkimTokens: string[] } | null>;
   /** The AWS account id of the credentials (STS GetCallerIdentity), for building resource ARNs. */
   accountId(): Promise<string>;
 }
@@ -126,6 +132,32 @@ export function createSesClient(options: SesClientOptions): SesClient {
     },
     associateTenantResource(tenant, resourceArn) {
       return createdOrExists(post('/tenants/resources', { TenantName: tenant, ResourceArn: resourceArn }));
+    },
+    createEmailIdentity(domain, { configurationSet, tags }) {
+      return createdOrExists(
+        post('/identities', {
+          EmailIdentity: domain,
+          ConfigurationSetName: configurationSet,
+          DkimSigningAttributes: { NextSigningKeyLength: 'RSA_2048_BIT' },
+          Tags: Object.entries(tags).map(([Key, Value]) => ({ Key, Value })),
+        }),
+      );
+    },
+    async getEmailIdentity(domain) {
+      try {
+        const identity = await call<{ VerificationStatus?: string; DkimAttributes?: { Tokens?: string[] } }>(
+          'ses',
+          `${base}/identities/${encodeURIComponent(domain)}`,
+          { method: 'GET' },
+        );
+        return {
+          verified: identity.VerificationStatus === 'SUCCESS',
+          dkimTokens: identity.DkimAttributes?.Tokens ?? [],
+        };
+      } catch (error) {
+        if (error instanceof SesError && error.type === 'NotFoundException') return null;
+        throw error;
+      }
     },
     accountId() {
       accountId ??= call<string>('sts', `https://sts.${options.region}.amazonaws.com/`, {

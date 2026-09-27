@@ -43,6 +43,7 @@ describe('platform guide (MCP-2, CON-1)', () => {
     expect(email).toContain(`1..${limits.MAX_EMAIL_RECIPIENTS} recipients`);
     expect(email).toContain(`${limits.MAX_EMAILS_PER_ORG_PER_DAY} emails per day`);
     expect(email).toContain(formatBytes(limits.MAX_EMAIL_BYTES));
+    expect(email).toContain('hello@mail.<slug>.apps.example');
   });
 
   it('states that the AI writes every file and there are no templates (MCP-2.4, CON-1.1)', () => {

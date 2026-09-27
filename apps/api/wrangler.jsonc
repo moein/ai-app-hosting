@@ -1,4 +1,5 @@
 // Platform API + MCP server. Resources and placeholder values: specs/00-foundation/design.md, specs/values.md
+// METRICS (Analytics Engine platform_metrics_<env>) is added once Analytics Engine is enabled on the account.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "api",
@@ -17,7 +18,7 @@
         "ENVIRONMENT": "dev",
         "CF_ACCOUNT_ID": "ebdcbd8e905ff028ba30a0104288f65e",
         "PLATFORM_API_ORIGIN": "https://api-dev.ai-app-hosting.workers.dev",
-        "APPS_DOMAIN": "dev.motad.app",
+        "APPS_DOMAIN": "motad.app",
         "GITHUB_ORG": "AI-app-hosting"
       },
       "durable_objects": {
@@ -35,7 +36,6 @@
         { "binding": "DEPLOY_APP", "name": "deploy-app-dev", "class_name": "DeployApp" }
       ],
       "r2_buckets": [{ "binding": "ARTIFACTS", "bucket_name": "artifacts-dev" }],
-      "analytics_engine_datasets": [{ "binding": "METRICS", "dataset": "platform_metrics_dev" }],
       "ratelimits": [{ "name": "TOOL_RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 120, "period": 60 } }],
       "d1_databases": [
         {
@@ -54,7 +54,7 @@
         "ENVIRONMENT": "prod",
         "CF_ACCOUNT_ID": "ebdcbd8e905ff028ba30a0104288f65e",
         "PLATFORM_API_ORIGIN": "https://api-prod.ai-app-hosting.workers.dev",
-        "APPS_DOMAIN": "motad.app",
+        "APPS_DOMAIN": "", // prod domain not chosen yet (specs/values.md)
         "GITHUB_ORG": "AI-app-hosting"
       },
       "durable_objects": {
@@ -72,7 +72,6 @@
         { "binding": "DEPLOY_APP", "name": "deploy-app-prod", "class_name": "DeployApp" }
       ],
       "r2_buckets": [{ "binding": "ARTIFACTS", "bucket_name": "artifacts-prod" }],
-      "analytics_engine_datasets": [{ "binding": "METRICS", "dataset": "platform_metrics_prod" }],
       "ratelimits": [{ "name": "TOOL_RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 120, "period": 60 } }],
       "d1_databases": [
         {

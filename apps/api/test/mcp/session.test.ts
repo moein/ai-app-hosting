@@ -43,7 +43,7 @@ describe('MCP endpoint (MCP-1.1)', () => {
     ]) {
       expect(instructions).toContain(tool);
     }
-    expect(instructions).toContain('dev.motad.app');
+    expect(instructions).toContain('motad.app');
   });
 
   it('serves tools/list on the session', async () => {

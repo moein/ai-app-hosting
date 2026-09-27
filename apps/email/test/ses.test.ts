@@ -26,7 +26,7 @@ describe('SesClient (spec 11 task 2)', () => {
   it('signs SendEmail with SigV4 for ses in the region and sends the SES v2 body', async () => {
     const { ses, requests } = client(() => Response.json({ MessageId: 'm-1' }));
     const result = await ses.sendEmail({
-      from: '"Todo" <todo@mail.dev.motad.app>',
+      from: '"Todo" <hello@mail.todo.motad.app>',
       to: ['a@example.com'],
       replyTo: 'r@example.com',
       subject: 'Hi',
@@ -44,7 +44,7 @@ describe('SesClient (spec 11 task 2)', () => {
     );
     expect(req.headers.get('x-amz-date')).toMatch(/^\d{8}T\d{6}Z$/);
     expect(await req.json()).toEqual({
-      FromEmailAddress: '"Todo" <todo@mail.dev.motad.app>',
+      FromEmailAddress: '"Todo" <hello@mail.todo.motad.app>',
       Destination: { ToAddresses: ['a@example.com'] },
       ReplyToAddresses: ['r@example.com'],
       Content: {
@@ -58,6 +58,31 @@ describe('SesClient (spec 11 task 2)', () => {
         { Name: 'app_id', Value: 'app_1' },
       ],
     });
+  });
+
+  it('creates a domain identity with Easy DKIM 2048 and reads its DKIM tokens and status', async () => {
+    let calls = 0;
+    const { ses, requests } = client(() => {
+      calls++;
+      if (calls === 1) return Response.json({ IdentityType: 'DOMAIN' });
+      if (calls === 2) return awsError(400, 'AlreadyExistsException');
+      if (calls === 3)
+        return Response.json({ VerificationStatus: 'PENDING', DkimAttributes: { Tokens: ['a', 'b', 'c'] } });
+      return awsError(404, 'NotFoundException');
+    });
+    const options = { configurationSet: 'apps-dev', tags: { app_id: 'app_1' } };
+    expect(await ses.createEmailIdentity('mail.todo.motad.app', options)).toBe('created');
+    expect(await ses.createEmailIdentity('mail.todo.motad.app', options)).toBe('exists');
+    expect(await requests[0]?.json()).toEqual({
+      EmailIdentity: 'mail.todo.motad.app',
+      ConfigurationSetName: 'apps-dev',
+      DkimSigningAttributes: { NextSigningKeyLength: 'RSA_2048_BIT' },
+      Tags: [{ Key: 'app_id', Value: 'app_1' }],
+    });
+    expect(await ses.getEmailIdentity('mail.todo.motad.app')).toEqual({ verified: false, dkimTokens: ['a', 'b', 'c'] });
+    expect(requests[2]?.url).toBe('https://email.eu-central-1.amazonaws.com/v2/email/identities/mail.todo.motad.app');
+    expect(requests[2]?.method).toBe('GET');
+    expect(await ses.getEmailIdentity('mail.gone.motad.app')).toBeNull();
   });
 
   it('treats AlreadyExists as success for tenants and associations', async () => {

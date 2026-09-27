@@ -9,7 +9,13 @@ export interface PlatformMailRpc {
 }
 
 /** Messages on the EMAIL_JOBS queue (consumed by the email worker, spec 11). */
-export type EmailJob = { type: 'org.provision_email_tenant'; orgId: string };
+export type EmailJob =
+  | { type: 'org.provision_email_tenant'; orgId: string }
+  | { type: 'app.provision_email_identity'; appId: string };
+
+/** An app's sending domain and address (spec 11): its own SES identity under APPS_DOMAIN. */
+export const appMailDomain = (slug: string, appsDomain: string) => `mail.${slug}.${appsDomain}`;
+export const appSenderAddress = (slug: string, appsDomain: string) => `hello@${appMailDomain(slug, appsDomain)}`;
 
 /** What app code passes to `env.EMAIL.send` (spec 11, documented in the guide's email topic). */
 export type AppEmailMessage = {

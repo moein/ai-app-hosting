@@ -15,7 +15,7 @@ describe('get_platform_guide (MCP-2.2)', () => {
     const guide = result.structuredContent as Guide;
     expect(guide.topic).toBe('all');
     expect(guide.contract_version).toBe(CONTRACT_VERSION);
-    expect(guide.markdown).toContain('https://<slug>.dev.motad.app');
+    expect(guide.markdown).toContain('https://<slug>.motad.app');
     expect(JSON.stringify(guide).length).toBeLessThan(TOOL_RESULT_MAX_BYTES);
   });
 

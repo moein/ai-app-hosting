@@ -2,6 +2,7 @@ import { WorkerEntrypoint } from 'cloudflare:workers';
 import {
   type AppEmailResult,
   type AppMailProps,
+  createMetrics,
   type EmailJob,
   Logger,
   type PlatformMailRpc,
@@ -10,6 +11,7 @@ import {
 } from '@repo/shared';
 import { sendAppEmail } from './app-mail/send';
 import { parseEnv } from './env';
+import { createDnsClient } from './integrations/cloudflare-dns';
 import { createResendClient } from './integrations/resend';
 import { createSesClient, type SesClient } from './integrations/ses';
 import { handleEmailJobs } from './jobs/email-jobs';
@@ -35,7 +37,7 @@ function sesClient(env: ReturnType<typeof parseEnv>): SesClient {
 export class PlatformMail extends WorkerEntrypoint<Env> implements PlatformMailRpc {
   async sendLoginCode(input: SendLoginCodeInput): Promise<SendLoginCodeResult> {
     const env = parseEnv(this.env);
-    return sendLoginCode(
+    const result = await sendLoginCode(
       {
         resend: createResendClient(env.RESEND_API_KEY),
         platformMailDomain: env.PLATFORM_MAIL_DOMAIN,
@@ -44,6 +46,10 @@ export class PlatformMail extends WorkerEntrypoint<Env> implements PlatformMailR
       },
       input,
     );
+    const metrics = createMetrics(this.env.METRICS, Logger.root.child({ worker: 'email' }));
+    if (result.ok) metrics.write('email_sent', { sub: 'platform', outcome: 'ok' });
+    else metrics.write('email_rejected', { sub: 'platform', outcome: 'error', errorCode: result.error.code });
+    return result;
   }
 }
 
@@ -58,9 +64,10 @@ export class AppMail extends WorkerEntrypoint<Env, AppMailProps> {
           db: this.env.DB,
           ses: sesClient(env),
           environment: env.ENVIRONMENT,
-          appsMailDomain: env.APPS_MAIL_DOMAIN,
+          appsDomain: env.APPS_DOMAIN,
           configurationSet: env.SES_CONFIGURATION_SET,
           now: Date.now,
+          metrics: createMetrics(this.env.METRICS, logger),
           logger,
         },
         this.ctx.props,
@@ -85,8 +92,10 @@ export default {
       ses: sesClient(parsed),
       environment: parsed.ENVIRONMENT,
       region: parsed.AWS_REGION,
-      appsMailDomain: parsed.APPS_MAIL_DOMAIN,
+      dns: createDnsClient({ apiToken: parsed.CF_API_TOKEN, zoneName: parsed.APPS_DOMAIN }),
+      appsDomain: parsed.APPS_DOMAIN,
       configurationSet: parsed.SES_CONFIGURATION_SET,
+      metrics: createMetrics(env.METRICS, Logger.root.child({ worker: 'email' })),
       logger: Logger.root.child({ worker: 'email', consumer: 'email-jobs' }),
     });
   },

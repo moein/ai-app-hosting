@@ -58,7 +58,7 @@ describe('get_deployment (DEP-3.1, DEP-3.2, LOG-1)', () => {
     });
     await succeed(ctx, depId);
     const live = data(await runTool(getDeployment, { app: slug, deployment: depId }, ctx));
-    expect(live).toMatchObject({ status: 'live', url: `https://${slug}.dev.motad.app` });
+    expect(live).toMatchObject({ status: 'live', url: `https://${slug}.motad.app` });
     expect(live.next_step).toContain('live at');
   });
 

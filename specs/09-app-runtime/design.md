@@ -18,7 +18,7 @@ Visitor ─▶ https://todo.APPS_DOMAIN/api/items
                         tail_consumers: tail-<env>   (spec 10)
 ```
 
-Dev: `*.dev.APPS_DOMAIN` is a second-level wildcard, so the `APPS_DOMAIN` zone has Advanced Certificate Manager with a certificate for `dev.APPS_DOMAIN` + `*.dev.APPS_DOMAIN` (decided; Universal SSL only covers one level).
+Each environment has its own `APPS_DOMAIN` zone, and apps are one level below its apex (`<slug>.APPS_DOMAIN`), so the zone's Universal SSL certificate (apex + `*.APPS_DOMAIN`) covers every app — no Advanced Certificate needed. Deeper names under an app (`mail.<slug>.APPS_DOMAIN`, spec 11) only carry DNS records for email, never HTTP.
 
 ## Dispatcher `wrangler.jsonc` (per env)
 
@@ -31,8 +31,8 @@ Dev: `*.dev.APPS_DOMAIN` is a second-level wildcard, so the `APPS_DOMAIN` zone h
   "env": {
     "dev": {
       "name": "dispatcher-dev",
-      "routes": [{ "pattern": "*.dev.APPS_DOMAIN/*", "zone_name": "APPS_DOMAIN" }],
-      "vars": { "APPS_DOMAIN": "dev.APPS_DOMAIN", "PLATFORM_WEBSITE_URL": ""  /* empty = apex/www get the 404 page */ },
+      "routes": [{ "pattern": "*.APPS_DOMAIN/*", "zone_name": "APPS_DOMAIN" }, { "pattern": "APPS_DOMAIN/*", "zone_name": "APPS_DOMAIN" }],
+      "vars": { "APPS_DOMAIN": "APPS_DOMAIN", "PLATFORM_WEBSITE_URL": ""  /* empty = apex/www get the 404 page */ },
       "kv_namespaces": [{ "binding": "APP_ROUTES", "id": "…" }],
       "dispatch_namespaces": [{ "binding": "DISPATCHER", "namespace": "apps-dev" }]
     },
@@ -133,6 +133,6 @@ The var-collision check (RUN-3.2) reads `vars` from the live deployment's artifa
 ## Open questions
 
 1. Abuse handling: a `suspended` route state + admin tool to take down phishing/malware apps quickly (needed before public launch).
-2. ~~Dev apps domain~~ — decided: Advanced Certificate Manager on the `APPS_DOMAIN` zone for `*.dev.APPS_DOMAIN`.
+2. ~~Dev apps domain~~ — decided (2026-09-27): dev and prod each have their own `APPS_DOMAIN` zone; apps sit directly under its apex, covered by Universal SSL.
 3. Outbound Worker for egress metering / blocking abusive traffic (spam relays, crypto mining endpoints).
 4. Per-plan CPU limits once billing exists.

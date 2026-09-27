@@ -83,6 +83,8 @@ step "repo"    : GitHub: create private repo in GITHUB_ORG (if exists → reuse)
 step "script"  : upload placeholder Worker to dispatch namespace as `script_name`
                  (keep_bindings: secret_text), bindings: none                            [spec 09]
 step "route"   : KV APP_ROUTES put `<slug>` → { appId, scriptName, state: 'not_deployed' } [spec 09]
+step "email"   : EMAIL_JOBS send { type: 'app.provision_email_identity', appId } (the app's SES identity,
+                 finished asynchronously by the email worker; not awaited)                 [spec 11]
 step "ready"   : UPDATE apps SET provisioning='ready'
 on final failure: UPDATE apps SET provisioning='failed', provisioning_error=<code>
 ```

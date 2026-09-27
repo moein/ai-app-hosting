@@ -15,6 +15,13 @@
       "when": 1790489890243,
       "tag": "0001_apps",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790521680209,
+      "tag": "0002_app_email_status",
+      "breakpoints": true
     }
   ]
 }

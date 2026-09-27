@@ -1,5 +1,5 @@
 import { DEPLOY_WORKFLOW_PATH, PLATFORM_JSON_PATH, renderDeployWorkflow, renderPlatformJson } from '@repo/app-contract';
-import { type Clock, type Logger, type Metrics, PlatformError } from '@repo/shared';
+import { type Clock, type EmailJob, type Logger, type Metrics, PlatformError } from '@repo/shared';
 import { eq } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import { apps } from '../db/schema';
@@ -18,6 +18,8 @@ export type ProvisionDeps = {
   clock: Clock;
   logger: Logger;
   metrics: Metrics;
+  /** The email worker's queue; the app's SES identity is provisioned there (spec 11, MAIL-1.5). */
+  emailJobs: { send(job: EmailJob): Promise<unknown> };
   apiOrigin: string;
 };
 
@@ -113,6 +115,14 @@ export function provisionSteps(deps: ProvisionDeps, appId: string): Step[] {
         const app = await load();
         if (app.liveDeploymentId) return;
         await putRoute(deps.routes, app.slug, { appId: app.id, scriptName: app.scriptName, state: 'not_deployed' });
+      },
+    },
+    {
+      name: 'email',
+      run: async () => {
+        const app = await load();
+        if (app.emailStatus === 'ready') return;
+        await deps.emailJobs.send({ type: 'app.provision_email_identity', appId: app.id });
       },
     },
     {

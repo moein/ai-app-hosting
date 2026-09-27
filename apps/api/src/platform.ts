@@ -29,6 +29,7 @@ export function createPlatform(env: Env) {
     random: cryptoRandom,
     logger: Logger.root.child({ worker: 'api' }),
     metrics: createMetrics(env.METRICS, Logger.root.child({ worker: 'api' })),
+    emailJobs: env.EMAIL_JOBS,
     apiOrigin: env.PLATFORM_API_ORIGIN,
   };
 }
@@ -43,5 +44,6 @@ export const provisionDeps = (platform: Pick<Platform, keyof ProvisionDeps>): Pr
   clock: platform.clock,
   logger: platform.logger,
   metrics: platform.metrics,
+  emailJobs: platform.emailJobs,
   apiOrigin: platform.apiOrigin,
 });

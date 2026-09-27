@@ -1,6 +1,6 @@
 # Email
 
-Apps send email through the `EMAIL` binding. Messages come from `<slug>@<the platform's mail domain>`, with your app's name (or `from_name`) as the sender name.
+Apps send email through the `EMAIL` binding. Every app has its own sending domain: messages come from `hello@mail.<slug>.{{APPS_DOMAIN}}`, with your app's name (or `from_name`) as the sender name. Set `reply_to` if replies should reach a real inbox.
 
 ```ts
 type AppEmailMessage = {
@@ -26,5 +26,6 @@ if (!result.ok) console.error(result.error);
 ```
 
 - `send` never throws; always check `result.ok`.
+- `tenant_not_ready`: email is still being set up — usually for a few minutes after the app is created. Tell the user to try again shortly.
 - Addresses that bounced or complained are skipped and listed in `suppressed`.
 - Each organization can send up to {{MAX_EMAILS_PER_ORG_PER_DAY}} emails per day; messages are limited to {{bytes:MAX_EMAIL_BYTES}}.

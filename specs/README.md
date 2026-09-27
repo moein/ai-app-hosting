@@ -52,7 +52,7 @@ Deferred work: [backlog.md](backlog.md).
                      apps/tail ──▶ AppLogBuffer DO (per app)  +  Pipeline (→ R2 logs archive)
 
  apps/email ──▶ Resend (platform login codes, login@PLATFORM_MAIL_DOMAIN)
-            └─▶ AWS SES v2 (customer app email, tenant per org, <slug>@APPS_MAIL_DOMAIN)
+            └─▶ AWS SES v2 (customer app email, tenant per org, hello@mail.<slug>.APPS_DOMAIN, one identity per app)
 
  e2e/ (CI or any machine) ──MCP──▶ PLATFORM_API_ORIGIN (dev) · reads real emails from apps/e2e-inbox (dev only)
 ```
@@ -76,7 +76,7 @@ Deferred work: [backlog.md](backlog.md).
 
 ## Placeholders
 
-Specs never contain concrete domains or account names. They use placeholders (`PLATFORM_API_ORIGIN`, `APPS_DOMAIN`, `APPS_MAIL_DOMAIN`, `PLATFORM_MAIL_DOMAIN`, `PLATFORM_WEBSITE_URL`, `GITHUB_ORG`, `E2E_INBOX_ADDRESS`); their meanings and current values live in one file: [values.md](values.md).
+Specs never contain concrete domains or account names. They use placeholders (`PLATFORM_API_ORIGIN`, `APPS_DOMAIN`, `PLATFORM_MAIL_DOMAIN`, `PLATFORM_WEBSITE_URL`, `GITHUB_ORG`, `E2E_INBOX_ADDRESS`); their meanings and current values live in one file: [values.md](values.md).
 
 ## Spec conventions
 

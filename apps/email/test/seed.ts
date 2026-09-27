@@ -5,7 +5,11 @@ const id = (prefix: string) => `${prefix}_${String(++seq).padStart(4, '0')}${cry
 
 /** A user, org (tenant status as given) and app in the platform D1 (schema from the api's migrations). */
 export async function seedApp(
-  options: { tenant?: 'pending' | 'ready' | 'failed'; appStatus?: 'active' | 'deleted' } = {},
+  options: {
+    tenant?: 'pending' | 'ready' | 'failed';
+    appStatus?: 'active' | 'deleted';
+    emailStatus?: 'pending' | 'ready' | 'failed';
+  } = {},
 ) {
   const userId = id('usr');
   const orgId = id('org');
@@ -20,11 +24,30 @@ export async function seedApp(
       'INSERT INTO organizations (id, slug, name, email_tenant_status, created_at, updated_at) VALUES (?, ?, ?, ?, 0, 0)',
     ).bind(orgId, orgId.toLowerCase().replace(/_/g, '-'), 'Personal', options.tenant ?? 'ready'),
     env.DB.prepare(
-      `INSERT INTO apps (id, org_id, slug, name, status, script_name, repo_owner, repo_name, d1_database_name, created_by, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'o', ?, ?, ?, 0, 0)`,
-    ).bind(appId, orgId, slug, 'Todo List', options.appStatus ?? 'active', `app-${slug}`, slug, `app-${slug}`, userId),
+      `INSERT INTO apps (id, org_id, slug, name, status, email_status, script_name, repo_owner, repo_name,
+                         d1_database_name, created_by, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'o', ?, ?, ?, 0, 0)`,
+    ).bind(
+      appId,
+      orgId,
+      slug,
+      'Todo List',
+      options.appStatus ?? 'active',
+      options.emailStatus ?? 'ready',
+      `app-${slug}`,
+      slug,
+      `app-${slug}`,
+      userId,
+    ),
   ]);
   return { userId, orgId, appId, slug, props: { appId, orgId, slug } };
+}
+
+export async function appEmailStatus(appId: string) {
+  const row = await env.DB.prepare('SELECT email_status AS s FROM apps WHERE id = ?')
+    .bind(appId)
+    .first<{ s: string }>();
+  return row?.s;
 }
 
 export async function suppress(email: string, orgId: string | null, reason: 'bounce' | 'complaint' = 'bounce') {

@@ -4,7 +4,7 @@ export function traceItem(overrides: Partial<Record<keyof TraceItem, unknown>> =
     event: {
       request: {
         method: 'GET',
-        url: 'https://todo.dev.motad.app/api/notes?token=secret#x',
+        url: 'https://todo.motad.app/api/notes?token=secret#x',
         headers: { cookie: 'session=abc', authorization: 'Bearer t', 'cf-connecting-ip': '1.2.3.4' },
         cf: { clientIp: '1.2.3.4' },
       },

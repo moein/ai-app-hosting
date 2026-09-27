@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// SES setup for customer-app email (spec 11 design, "Setup"). Idempotent; safe to re-run.
+// SES setup for customer-app email (spec 11 design, "Setup"): configuration set, apex DMARC, SNS. Idempotent.
 // Usage: node scripts/setup-ses.mjs <dev|prod>
 // The AWS account is shared with other projects: this only touches resources it names. Secrets are never printed.
 import { appendFileSync, readFileSync } from 'node:fs';
@@ -16,7 +16,8 @@ const say = (line) => process.stdout.write(`${line}\n`);
 const wranglerVars = (worker) => parseJsonc(readFileSync(`apps/${worker}/wrangler.jsonc`, 'utf8')).env[env].vars;
 
 const secrets = readEnvFile(env);
-const { APPS_MAIL_DOMAIN: domain, AWS_REGION: region, SES_CONFIGURATION_SET: configSet } = wranglerVars('email');
+const { APPS_DOMAIN: domain, AWS_REGION: region, SES_CONFIGURATION_SET: configSet } = wranglerVars('email');
+if (!domain) throw new Error(`APPS_DOMAIN is not set for ${env} (specs/values.md)`);
 const { PLATFORM_API_ORIGIN: apiOrigin } = wranglerVars('api');
 for (const key of ['AWS_ACCESS_KEY', 'AWS_SECRET_ACCESS_KEY', 'CF_API_TOKEN']) {
   if (!secrets[key]) throw new Error(`${key} is missing from ${envFilePath(env)}`);
@@ -106,42 +107,15 @@ const created = await ses(
 );
 say(`configuration set: ${created.__error ? 'exists' : 'created'}`);
 
-const identityCreate = await ses(
-  'POST',
-  '/identities',
-  {
-    EmailIdentity: domain,
-    ConfigurationSetName: configSet,
-    DkimSigningAttributes: { NextSigningKeyLength: 'RSA_2048_BIT' },
-  },
-  { allow: ['AlreadyExistsException'] },
-);
-say(`identity: ${identityCreate.__error ? 'exists' : 'created'}`);
-await ses('PUT', `/identities/${domain}/mail-from`, {
-  MailFromDomain: `bounce.${domain}`,
-  BehaviorOnMxFailure: 'USE_DEFAULT_VALUE',
-});
-const identity = await ses('GET', `/identities/${domain}`);
-const tokens = identity.DkimAttributes?.Tokens ?? [];
-if (tokens.length === 0) throw new Error('SES returned no DKIM tokens');
-
+// Per-app identities (mail.<slug>.APPS_DOMAIN) and their DKIM records are created by the email worker.
+// One DMARC record at the zone apex covers every app's mail subdomain; never overwrite an existing policy.
 const zone = await zoneFor(domain);
-say(`DNS records in zone ${zone.name}:`);
-for (const token of tokens) {
-  await upsertRecord(zone.id, {
-    type: 'CNAME',
-    name: `${token}._domainkey.${domain}`,
-    content: `${token}.dkim.amazonses.com`,
-  });
+const dmarc = await cf('GET', `/zones/${zone.id}/dns_records?type=TXT&name=_dmarc.${domain}`);
+if (dmarc.some((r) => unquote(r.content).startsWith('v=DMARC1'))) {
+  say(`DMARC: _dmarc.${domain} already exists (left as is)`);
+} else {
+  await upsertRecord(zone.id, { type: 'TXT', name: `_dmarc.${domain}`, content: '"v=DMARC1; p=none;"' });
 }
-await upsertRecord(zone.id, {
-  type: 'MX',
-  name: `bounce.${domain}`,
-  content: `feedback-smtp.${region}.amazonses.com`,
-  priority: 10,
-});
-await upsertRecord(zone.id, { type: 'TXT', name: `bounce.${domain}`, content: '"v=spf1 include:amazonses.com ~all"' });
-await upsertRecord(zone.id, { type: 'TXT', name: `_dmarc.${domain}`, content: '"v=DMARC1; p=none;"' });
 
 // SNS: bounces and complaints → api webhook (MAIL-4).
 const topic = await snsCall({ Action: 'CreateTopic', Name: `ses-events-${env}` });
@@ -203,11 +177,7 @@ if (topic.status === 403) {
   }
 }
 
-const refreshed = await ses('GET', `/identities/${domain}`);
 const account = await ses('GET', '/account');
-say(
-  `identity verification: ${refreshed.VerificationStatus}, DKIM: ${refreshed.DkimAttributes?.Status}, MAIL FROM: ${refreshed.MailFromAttributes?.MailFromDomainStatus}`,
-);
 say(
   `account: production access ${account.ProductionAccessEnabled ? 'enabled' : 'NOT enabled (sandbox)'}, sending ${account.SendingEnabled ? 'enabled' : 'disabled'}`,
 );
