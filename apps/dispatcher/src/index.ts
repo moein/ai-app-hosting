@@ -1,12 +1,20 @@
+import { htmlResponse, NO_APP_HTML } from '@repo/http';
 import { parseEnv } from './env';
+import { type AppRoute, routeRequest } from './route';
 
-// Skeleton: routing by hostname lands in spec 09 (RUN-1). Until then every host gets the "no app here" page.
 export default {
-  fetch(_request, env) {
-    parseEnv(env);
-    return new Response('There is no app at this address.', {
-      status: 404,
-      headers: { 'content-type': 'text/plain; charset=utf-8' },
+  async fetch(request, env) {
+    let config: ReturnType<typeof parseEnv>;
+    try {
+      config = parseEnv(env);
+    } catch {
+      return htmlResponse(NO_APP_HTML, 503);
+    }
+    return routeRequest(request, {
+      appsDomain: config.APPS_DOMAIN,
+      platformWebsiteUrl: config.PLATFORM_WEBSITE_URL,
+      getRoute: (slug) => env.APP_ROUTES.get<AppRoute>(slug, { type: 'json', cacheTtl: 30 }),
+      dispatch: (scriptName, limits) => env.DISPATCHER.get(scriptName, {}, { limits }),
     });
   },
 } satisfies ExportedHandler<Env>;

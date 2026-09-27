@@ -10,6 +10,7 @@
     "deploy:prod": "wrangler deploy --env prod"
   },
   "dependencies": {
+    "@repo/http": "workspace:*",
     "@repo/shared": "workspace:*",
     "zod": "4.6.5"
   },

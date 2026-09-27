@@ -79,6 +79,22 @@ export const ERROR_CATALOG = {
     hint: 'Tell the user to contact support.',
     retryable: false,
   },
+  // spec 03 — organizations & apps
+  NAME_INVALID: {
+    message: 'That app name is not valid.',
+    hint: 'App names must be 1–60 characters. Ask the user for a shorter or cleaner name.',
+    retryable: false,
+  },
+  APP_NOT_READY: {
+    message: 'The app is still being set up.',
+    hint: 'Call get_app; if `provisioning` is "failed", call retry_provisioning, otherwise try again shortly.',
+    retryable: true,
+  },
+  APP_DELETED: {
+    message: 'This app was deleted.',
+    hint: "Create a new app, or tell the user deleted apps can't be restored yet.",
+    retryable: false,
+  },
 } as const satisfies Record<string, CatalogEntry>;
 
 export type ErrorCode = keyof typeof ERROR_CATALOG;
@@ -145,6 +161,9 @@ export const ERROR_HTTP_STATUS = {
   CODE_ATTEMPTS_EXCEEDED: 429,
   EMAIL_UNDELIVERABLE: 422,
   ACCOUNT_BLOCKED: 403,
+  NAME_INVALID: 400,
+  APP_NOT_READY: 409,
+  APP_DELETED: 410,
 } as const satisfies Record<ErrorCode, number>;
 
 /** Rebuilds a PlatformError from its JSON form (e.g. a result returned over Workers RPC). */

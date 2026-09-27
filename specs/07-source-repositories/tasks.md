@@ -2,16 +2,16 @@
 
 Depends on: 00, 03 (apps table, `resolveApp`, quota service), 04 (tool framework), 06 (managed files).
 
-- [ ] **1. GitHub App setup (dev + prod)** — create Apps with the permission table, install on `GITHUB_ORG`, store secrets; document in `docs/runbook.md`.
+- [x] **1. GitHub App setup (dev + prod)** — create Apps with the permission table, install on `GITHUB_ORG`, store secrets; document in `docs/runbook.md`.
   Satisfies: SRC-4.1 (setup)
   Tests: manual — token exchange works in dev.
 
-- [ ] **2. `GitHubClient` real implementation + fake**
+- [x] **2. `GitHubClient` real implementation + fake**
   JWT signing (WebCrypto RS256), scoped installation tokens + cache, error mapping.
   Satisfies: SRC-4.1, SRC-4.2, SRC-4.3
   Tests: JWT claims/signature verified with a test key; token cache hit/miss/expiry (fake clock); 502/secondary-rate-limit → `UPSTREAM_ERROR` with `retry_after_seconds`; fake passes a shared contract test suite with the real client's recorded responses.
 
-- [ ] **3. Repo provisioning step** (plugs into `ProvisionApp`)
+- [x] **3. Repo provisioning step** (plugs into `ProvisionApp`)
   Satisfies: SRC-1.1, SRC-1.2, SRC-1.3, SRC-1.4, APP-2.7
   Tests (fake): creates private repo with correct settings; empty-repo bootstrap via contents API; both commits contain `[skip ci]`; only managed files committed; reuse when `platform.json.app` matches; `CONFLICT` otherwise; repo id saved.
 

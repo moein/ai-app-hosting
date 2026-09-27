@@ -2,11 +2,11 @@
 
 Depends on: 00, 03. Tasks 1–2 are prerequisites for specs 03 (provisioning) and 08 (deploy).
 
-- [ ] **1. `CloudflareClient` real implementation + fake**
+- [x] **1. `CloudflareClient` real implementation + fake**
   Satisfies: (infrastructure for RUN-2, RUN-3, RUN-4, DEP-2)
   Tests: request shapes for each method against recorded fixtures; 429/5xx → `UPSTREAM_ERROR`; 404 on delete → `not_found`.
 
-- [ ] **2. `buildBindings` + placeholder script**
+- [x] **2. `buildBindings` + placeholder script**
   Satisfies: RUN-2.1, RUN-2.2, RUN-2.4
   Tests: binding list exactly matches design (DB id, ASSETS, EMAIL with props, vars); no platform bindings ever present; placeholder upload has zero bindings and returns 503 page (pool-workers).
 
@@ -15,11 +15,11 @@ Depends on: 00, 03. Tasks 1–2 are prerequisites for specs 03 (provisioning) an
   Satisfies: RUN-1.1, RUN-1.8, RUN-2.3, RUN-2.5
   Tests: manual — curl http → https redirect; HSTS header present.
 
-- [ ] **4. Dispatcher Worker**
+- [x] **4. Dispatcher Worker**
   Satisfies: RUN-1.2, RUN-1.3, RUN-1.4, RUN-1.5, RUN-1.6, RUN-1.7
   Tests (pool-workers with a dispatch namespace stub): live → forwarded with limits; not_deployed → 503; missing → 404; deeper subdomain → 404; apex/www → 302 to platform; thrown dispatch → 502 and logged app id.
 
-- [ ] **5. KV route reconciliation cron** (in `apps/api`)
+- [x] **5. KV route reconciliation cron** (in `apps/api`)
   Satisfies: RUN-1.9
   Tests: missing route added; route for deleted app removed; stale state corrected.
 

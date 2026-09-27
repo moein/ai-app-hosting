@@ -29,7 +29,7 @@ Depends on: 00.
   Satisfies: CON-5.1, CON-5.2
   Tests: validator returns `[]`; `vite build` produces `dist/client` and `dist/app`; a repo-wide test asserts no production code imports from `fixtures/`.
 
-- [ ] **7. Managed files**
+- [x] **7. Managed files**
   `managed/platform.json.ts`; `deploy.yml` content owned by spec 08 task 2.
   Satisfies: CON-1.1
   Tests: managed file list is exactly `.github/workflows/deploy.yml`, `platform.json`.

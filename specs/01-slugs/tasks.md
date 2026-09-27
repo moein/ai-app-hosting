@@ -17,12 +17,12 @@
   Satisfies: SLUG-4.1, SLUG-4.2 (codes only)
   Tests: catalog entries have hints.
 
-- [ ] **5. Unique indexes + insert-retry helper** (after spec 03 task creating tables)
+- [x] **5. Unique indexes + insert-retry helper** (after spec 03 task creating tables)
   `insertWithSlug(generate, insert)` retrying on unique violation.
   Satisfies: SLUG-3.1, SLUG-3.2, SLUG-3.3, SLUG-3.4
   Tests (pool-workers, real D1): duplicate insert fails at DB level; two concurrent generated inserts for same name both succeed with different slugs; requested-slug race returns `SLUG_UNAVAILABLE`; deleted app's slug remains taken; no update path for slug exists (schema/API test).
 
-- [ ] **6. `check_slug` MCP tool** (after spec 04 tool framework)
+- [x] **6. `check_slug` MCP tool** (after spec 04 tool framework)
   Satisfies: SLUG-4.3
   Tests: valid+free, valid+taken (with suggestion), invalid (with reason + suggestion).
 

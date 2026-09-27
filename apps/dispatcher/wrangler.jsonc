@@ -1,4 +1,4 @@
-// Routes *.APPS_DOMAIN to user Workers (spec 09). Routes and the dispatch namespace binding are added in spec 09.
+// Routes *.APPS_DOMAIN to user Workers in the dispatch namespace (spec 09). Values: specs/values.md.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dispatcher",
@@ -11,13 +11,21 @@
       "name": "dispatcher-dev",
       "workers_dev": false,
       "preview_urls": false,
-      "vars": { "ENVIRONMENT": "dev", "APPS_DOMAIN": "dev.motad.app", "PLATFORM_WEBSITE_URL": "" }
+      "routes": [
+        { "pattern": "*.dev.motad.app/*", "zone_name": "motad.app" },
+        { "pattern": "dev.motad.app/*", "zone_name": "motad.app" }
+      ],
+      "vars": { "ENVIRONMENT": "dev", "APPS_DOMAIN": "dev.motad.app", "PLATFORM_WEBSITE_URL": "" },
+      "kv_namespaces": [{ "binding": "APP_ROUTES", "id": "4acad1cfc1ea43d9b25f6f2f10e5055f" }],
+      "dispatch_namespaces": [{ "binding": "DISPATCHER", "namespace": "apps-dev" }]
     },
     "prod": {
       "name": "dispatcher-prod",
       "workers_dev": false,
       "preview_urls": false,
-      "vars": { "ENVIRONMENT": "prod", "APPS_DOMAIN": "motad.app", "PLATFORM_WEBSITE_URL": "" }
+      "vars": { "ENVIRONMENT": "prod", "APPS_DOMAIN": "motad.app", "PLATFORM_WEBSITE_URL": "" },
+      "kv_namespaces": [{ "binding": "APP_ROUTES", "id": "b0aca44ad9d3482792e13d4a559e3a7b" }],
+      "dispatch_namespaces": [{ "binding": "DISPATCHER", "namespace": "apps-prod" }]
     }
   }
 }

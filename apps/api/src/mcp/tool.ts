@@ -2,6 +2,9 @@ import type { Clock, EmailJob, Logger, OrgId, PlatformMailRpc, Random, UserId } 
 import type { z } from 'zod';
 import type { SessionStore } from '../auth/session-store';
 import type { Db } from '../db/client';
+import type { CloudflareClient } from '../integrations/cloudflare';
+import type { GitHubClient } from '../integrations/github';
+import type { RouteStore } from '../runtime/routes';
 
 export type ToolAnnotations = {
   readOnlyHint: boolean;
@@ -12,6 +15,9 @@ export type ToolAnnotations = {
 
 export type RateLimiter = { limit(options: { key: string }): Promise<{ success: boolean }> };
 export type JobQueue<T> = { send(message: T): Promise<unknown> };
+
+/** Starts the ProvisionApp workflow for an app (spec 03). */
+export type Provisioner = { start(appId: string): Promise<void> };
 
 /** Everything a tool handler may use. `userId`/`orgId` are set by the auth guard (spec 02). */
 export type ToolContext = {
@@ -25,6 +31,12 @@ export type ToolContext = {
   session: SessionStore;
   mailer: PlatformMailRpc;
   emailJobs: JobQueue<EmailJob>;
+  cloudflare: CloudflareClient;
+  github: GitHubClient;
+  routes: RouteStore;
+  provisioner: Provisioner;
+  /** Waits between polls (real timers in production, instant in tests). */
+  sleep(ms: number): Promise<void>;
   userId?: UserId;
   orgId?: OrgId;
 };

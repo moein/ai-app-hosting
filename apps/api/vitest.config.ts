@@ -20,6 +20,10 @@ export default defineConfig({
         bindings: {
           TEST_MIGRATIONS: await readD1Migrations('./migrations'),
           LOGIN_CODE_PEPPER: 'test-pepper-0123456789abcdef0123456789abcdef',
+          CF_API_TOKEN: 'test-cf-token',
+          GITHUB_APP_ID: '1',
+          GITHUB_INSTALLATION_ID: '1',
+          GITHUB_APP_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\\ntest\\n-----END PRIVATE KEY-----',
         },
         workers: [{ name: 'email-dev', modules: true, script: EMAIL_STUB, compatibilityDate: '2026-08-22' }],
       },

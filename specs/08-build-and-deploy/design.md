@@ -28,6 +28,7 @@ CREATE TABLE deployments (
   org_id                TEXT NOT NULL REFERENCES organizations(id),
   trigger               TEXT NOT NULL,                   -- 'push' | 'redeploy' | 'rollback'
   commit_sha            TEXT NOT NULL,
+  commit_message        TEXT,                            -- first line, for DeploymentView
   source_deployment_id  TEXT REFERENCES deployments(id), -- rollback only
   status                TEXT NOT NULL,                   -- 'queued'|'building'|'deploying'|'succeeded'|'failed'|'cancelled'
   error_code            TEXT,

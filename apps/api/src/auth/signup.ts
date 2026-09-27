@@ -1,5 +1,6 @@
 import { generateSlug, newId, type OrgId, orgNameFromEmail, type UserId } from '@repo/shared';
 import { eq } from 'drizzle-orm';
+import { isUniqueViolation } from '../db/errors';
 import { memberships, organizations, users } from '../db/schema';
 import type { ToolContext } from '../mcp/tool';
 
@@ -28,7 +29,7 @@ export async function signUp(ctx: ToolContext, email: string): Promise<{ userId:
       ]);
       break;
     } catch (error) {
-      const slugRace = String(error).includes('organizations.slug');
+      const slugRace = isUniqueViolation(error, 'organizations.slug');
       if (!slugRace || attempt >= MAX_SLUG_RACES) throw error;
     }
   }

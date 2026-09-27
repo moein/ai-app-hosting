@@ -10,5 +10,9 @@ export const parseEnv = createEnvParser(
     APPS_DOMAIN: z.string().min(1),
     GITHUB_ORG: z.string().min(1),
     LOGIN_CODE_PEPPER: z.string().min(32),
+    CF_API_TOKEN: z.string().min(1),
+    GITHUB_APP_ID: z.string().min(1),
+    GITHUB_INSTALLATION_ID: z.string().min(1),
+    GITHUB_APP_PRIVATE_KEY: z.string().includes('PRIVATE KEY'),
   }),
 );

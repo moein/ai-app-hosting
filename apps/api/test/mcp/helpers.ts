@@ -10,10 +10,13 @@ import {
   type UserId,
 } from '@repo/shared';
 import { z } from 'zod';
+import { runProvisioning } from '../../src/apps/provision';
 import { createSessionStore, memoryStorage } from '../../src/auth/session-store';
 import { createDb } from '../../src/db/client';
 import { memberships, organizations, users } from '../../src/db/schema';
 import { defineTool, type ToolContext } from '../../src/mcp/tool';
+import { fakeCloudflare } from '../fakes/cloudflare';
+import { fakeGitHub } from '../fakes/github';
 
 export const fakeClock = (start = Date.UTC(2026, 8, 26)) => {
   let now = start;
@@ -44,10 +47,13 @@ export type TestContext = ToolContext & {
   clock: ReturnType<typeof fakeClock>;
   mailer: FakeMailer;
   emailJobs: ReturnType<typeof fakeQueue>;
+  fakes: { cloudflare: ReturnType<typeof fakeCloudflare>; github: ReturnType<typeof fakeGitHub> };
 };
 
-export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =>
-  ({
+export const testContext = (overrides: Partial<ToolContext> = {}): TestContext => {
+  const cloudflare = fakeCloudflare({ d1: env.DB });
+  const github = fakeGitHub();
+  const ctx = {
     env: env as Env,
     sessionId: 'session-1',
     logger: new Logger({ test: true }),
@@ -58,8 +64,32 @@ export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =
     session: createSessionStore(memoryStorage()),
     mailer: fakeMailer(),
     emailJobs: fakeQueue(),
+    cloudflare: cloudflare.client,
+    github: github.client,
+    routes: env.APP_ROUTES,
+    sleep: async () => {},
+    fakes: { cloudflare, github },
     ...overrides,
-  }) as TestContext;
+  } as TestContext;
+  // Provisioning runs inline against the fakes, as the workflow would.
+  ctx.provisioner = overrides.provisioner ?? {
+    start: async (appId) => {
+      await runProvisioning(
+        {
+          db: ctx.db,
+          cloudflare: ctx.cloudflare,
+          github: ctx.github,
+          routes: ctx.routes,
+          clock: ctx.clock,
+          logger: ctx.logger,
+          apiOrigin: ctx.env.PLATFORM_API_ORIGIN,
+        },
+        appId,
+      ).catch(() => {});
+    },
+  };
+  return ctx;
+};
 
 /** Creates a user with a personal org and binds it to the context's session. */
 export async function signIn(ctx: ToolContext, options: { email?: string; status?: 'active' | 'blocked' } = {}) {
@@ -86,6 +116,9 @@ export async function signIn(ctx: ToolContext, options: { email?: string; status
     ctx.db.insert(memberships).values({ orgId, userId, createdAt: now }),
   ]);
   await ctx.session.setAuth({ userId, orgId, authenticatedAt: now, lastSeenAt: now });
+  // What the auth guard sets for protected tools, for tests that call services directly.
+  ctx.userId = userId;
+  ctx.orgId = orgId;
   return { userId, orgId };
 }
 
