@@ -138,6 +138,17 @@ export const ERROR_CATALOG = {
     hint: 'Call redeploy.',
     retryable: true,
   },
+  // spec 09 — app runtime
+  SECRET_NAME_INVALID: {
+    message: 'That secret name is not allowed.',
+    hint: 'Use UPPER_SNAKE_CASE (e.g. STRIPE_API_KEY), not DB, ASSETS, EMAIL or a name already used in vars.',
+    retryable: false,
+  },
+  QUERY_FAILED: {
+    message: 'The database rejected the SQL.',
+    hint: 'Read `details.message`. Check table and column names with SELECT name, sql FROM sqlite_master.',
+    retryable: false,
+  },
   DEPLOYMENT_NOT_ROLLBACKABLE: {
     message: 'That deployment cannot be restored.',
     hint: 'Only previously live (`superseded`) deployments can be restored. Use list_deployments to pick one.',
@@ -221,6 +232,8 @@ export const ERROR_HTTP_STATUS = {
   MIGRATION_FAILED: 422,
   DEPLOY_FAILED: 502,
   DEPLOYMENT_NOT_ROLLBACKABLE: 409,
+  SECRET_NAME_INVALID: 400,
+  QUERY_FAILED: 400,
 } as const satisfies Record<ErrorCode, number>;
 
 /** Rebuilds a PlatformError from its JSON form (e.g. a result returned over Workers RPC). */

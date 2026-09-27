@@ -94,6 +94,7 @@ export function createCloudflareClient(options: {
     throw new PlatformError('UPSTREAM_ERROR', {
       message: `Cloudflare rejected the request: ${envelope.errors?.map((e) => e.message).join('; ') ?? response.status}`,
       hint: 'Retry; if it keeps failing, tell the user the platform has a configuration problem.',
+      details: { status: response.status, errors: envelope.errors?.map((e) => e.message) ?? [] },
     });
   }
 

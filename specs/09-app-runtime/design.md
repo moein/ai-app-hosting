@@ -108,6 +108,10 @@ query_database  in { app; sql: string; params?: (string|number|null)[]; allow_wr
 
 Read-only check (RUN-4.2): strip comments/whitespace; reject if a `;` is followed by any non-whitespace; first keyword ∈ {`SELECT`, `EXPLAIN`, `PRAGMA`} — and for `PRAGMA` only `table_info`, `table_list`, `index_list`, `index_info`, `foreign_key_list`. `WITH` is allowed only when `allow_writes` is true (a CTE can wrap writes). Guide tip: schema via `SELECT name, sql FROM sqlite_master`.
 
+`query_database` sends the single comment-stripped statement to D1's `/raw` endpoint. D1 answers bad SQL with HTTP 400, which becomes `QUERY_FAILED` with D1's message; any other Cloudflare failure (429/5xx, auth) stays `UPSTREAM_ERROR`. Results over `QUERY_MAX_ROWS` / `QUERY_MAX_BYTES` are cut from the end (`row_count` is the full count).
+
+The var-collision check (RUN-3.2) reads `vars` from the live deployment's artifact config (`dist/app/wrangler.json`); with no live deployment there are no vars to collide with. `set_secret` checks the name before any Cloudflare call.
+
 ## Limits
 
 | Constant | Value |

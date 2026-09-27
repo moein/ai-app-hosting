@@ -17,6 +17,8 @@ import { listFiles } from '../tools/files/list-files';
 import { readFile } from '../tools/files/read-file';
 import { writeFiles } from '../tools/files/write-files';
 import { getPlatformGuide } from '../tools/platform-guide';
+import { queryDatabase } from '../tools/runtime/query-database';
+import { deleteSecret, listSecrets, setSecret } from '../tools/runtime/secrets';
 import type { AnyTool } from './tool';
 
 /** Every tool the server exposes. Features add their tools here as they land (catalog: spec 04 design). */
@@ -40,4 +42,8 @@ export const TOOLS: AnyTool[] = [
   getDeployment,
   redeploy,
   rollback,
+  setSecret,
+  listSecrets,
+  deleteSecret,
+  queryDatabase,
 ];

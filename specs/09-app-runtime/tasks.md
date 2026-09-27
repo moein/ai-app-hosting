@@ -23,11 +23,11 @@ Depends on: 00, 03. Tasks 1–2 are prerequisites for specs 03 (provisioning) an
   Satisfies: RUN-1.9
   Tests: missing route added; route for deleted app removed; stale state corrected.
 
-- [ ] **6. Schema `app_secrets` + tools `set_secret`, `list_secrets`, `delete_secret`**
+- [x] **6. Schema `app_secrets` + tools `set_secret`, `list_secrets`, `delete_secret`**
   Satisfies: RUN-3.1, RUN-3.2, RUN-3.3, RUN-3.4, RUN-3.5, RUN-3.6, RUN-3.7
   Tests: name validation incl. reserved + var collision; size limit; list has no values (schema-level); delete idempotent; secret count limit; secret persists after a fake redeploy (`keep_bindings` present in upload metadata).
 
-- [ ] **7. `query_database` tool**
+- [x] **7. `query_database` tool**
   Satisfies: RUN-4.1, RUN-4.2, RUN-4.3, RUN-4.4, RUN-4.5
   Tests: read-only classifier table (SELECT ok; INSERT/UPDATE/DELETE/DROP/WITH rejected without `allow_writes`; `SELECT 1; DROP …` rejected; allowed pragmas only); `_platform_migrations`/`_cf_` writes rejected; truncation by rows and bytes; D1 error → `QUERY_FAILED`.
 
