@@ -1,0 +1,23 @@
+{
+  "name": "contract-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.worker.json && tsc -p tsconfig.web.json"
+  },
+  "dependencies": {
+    "hono": "4.13.9",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.60.2",
+    "@cloudflare/workers-types": "5.20260927.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.1"
+  }
+}

@@ -107,6 +107,8 @@ pnpm secrets:dev          # upload Worker secrets for dev from .env.dev (values 
                           # Run it BEFORE the deploy that first needs a new secret — workers reject requests while a required secret is missing.
 pnpm -F @repo/api db:generate   # Drizzle: generate a SQL migration from src/db/schema.ts
 pnpm -F @repo/<worker> types    # regenerate worker-configuration.d.ts after changing wrangler.jsonc
+pnpm -F @repo/app-contract build:guide       # after editing packages/app-contract/guide/*.md
+pnpm -F @repo/app-contract build:validator   # after changing the validator (run after `pnpm format`; a test fails if stale)
 ```
 
 CI (GitHub Actions) only runs checks; it has no secrets and never deploys.

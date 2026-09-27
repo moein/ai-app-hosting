@@ -129,7 +129,7 @@ validate(files: Map<string, FileEntry>): Violation[];
 
 CLI: walks the directory (ignoring `.git/`), loads text files ≤ 1 MB, runs `validate`, prints `{"violations":[…]}`, exit 1 if any.
 
-`wrangler.jsonc` is parsed with `jsonc-parser` (comments + trailing commas allowed), bundled into `validator.mjs` so the CLI stays zero-dependency at runtime.
+`wrangler.jsonc` is parsed with a small in-house JSONC parser (`src/jsonc.ts`: strips `//` and `/* */` comments outside strings and trailing commas, then `JSON.parse`), so the bundled `validator.mjs` has no dependencies. `pnpm -F @repo/app-contract build:validator` bundles `src/cli.ts` with esbuild into `src/validator-bundle.generated.ts` (a string the api serves); a test fails if it is stale.
 
 Version comparison uses a tiny internal semver-min check on the declared range's lowest version (`^19.3.0`, `19.3.0`, `>=19.3.0`, `~19.3.0` supported; `*`/`latest` → violation `CON-R04` "pin a version").
 

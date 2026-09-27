@@ -1,0 +1,2 @@
+CREATE TABLE notes (id INTEGER PRIMARY KEY, body TEXT NOT NULL);
+INSERT INTO notes (body) VALUES ('hello');
