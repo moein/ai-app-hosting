@@ -37,7 +37,7 @@ As an AI client in a fresh conversation, I want to read the current code, so tha
 - **SRC-3.2** WHEN `read_file({ app, path, ref?, offset?, limit? })` is called THE SYSTEM SHALL return the file's content as UTF-8 text, or base64 (`encoding: "base64"`) for binary files.
 - **SRC-3.3** IF a text file's content exceeds `READ_FILE_MAX_BYTES` from `offset` THEN THE SYSTEM SHALL return a chunk ending on a line boundary with `truncated: true` and `next_offset`.
 - **SRC-3.4** IF the path or ref doesn't exist THEN THE SYSTEM SHALL return `NOT_FOUND`.
-- **SRC-3.5** `ref` SHALL accept only a full or abbreviated (≥ 7 chars) commit SHA reachable from `main`, or be omitted.
+- **SRC-3.5** `ref` SHALL accept only a full or abbreviated (≥ 7 chars) commit SHA of the app's repository, or be omitted.
 
 ### SRC-4 — GitHub integration
 As the platform, I want safe, least-privilege access to GitHub, so that one compromised token can't affect other apps.

@@ -9,6 +9,9 @@ import { logout } from '../tools/auth/logout';
 import { requestLoginCode } from '../tools/auth/request-login-code';
 import { verifyLoginCode } from '../tools/auth/verify-login-code';
 import { whoami } from '../tools/auth/whoami';
+import { listFiles } from '../tools/files/list-files';
+import { readFile } from '../tools/files/read-file';
+import { writeFiles } from '../tools/files/write-files';
 import { getPlatformGuide } from '../tools/platform-guide';
 import type { AnyTool } from './tool';
 
@@ -26,4 +29,7 @@ export const TOOLS: AnyTool[] = [
   listApps,
   getApp,
   deleteApp,
+  listFiles,
+  readFile,
+  writeFiles,
 ];

@@ -95,6 +95,27 @@ export const ERROR_CATALOG = {
     hint: "Create a new app, or tell the user deleted apps can't be restored yet.",
     retryable: false,
   },
+  // spec 07 — source repositories
+  PROTECTED_PATH: {
+    message: 'Some files are managed by the platform.',
+    hint: '`details.paths` are managed by the platform and cannot be changed. Remove them from the request.',
+    retryable: false,
+  },
+  FILE_TOO_LARGE: {
+    message: 'A file is too large.',
+    hint: '`details.path` exceeds the per-file limit. Shrink or split it; never commit build output.',
+    retryable: false,
+  },
+  PAYLOAD_TOO_LARGE: {
+    message: 'Too many files or bytes in one call.',
+    hint: 'Split into several write_files calls with deploy=false, then deploy with the last one.',
+    retryable: false,
+  },
+  COMMIT_CONFLICT: {
+    message: 'The code changed since the commit you based your changes on.',
+    hint: 'Re-read the affected files at `details.head_commit_sha`, reapply your changes, and retry.',
+    retryable: true,
+  },
 } as const satisfies Record<string, CatalogEntry>;
 
 export type ErrorCode = keyof typeof ERROR_CATALOG;
@@ -164,6 +185,10 @@ export const ERROR_HTTP_STATUS = {
   NAME_INVALID: 400,
   APP_NOT_READY: 409,
   APP_DELETED: 410,
+  PROTECTED_PATH: 403,
+  FILE_TOO_LARGE: 413,
+  PAYLOAD_TOO_LARGE: 413,
+  COMMIT_CONFLICT: 409,
 } as const satisfies Record<ErrorCode, number>;
 
 /** Rebuilds a PlatformError from its JSON form (e.g. a result returned over Workers RPC). */
