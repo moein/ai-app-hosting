@@ -1,6 +1,7 @@
 import {
   LOGIN_CODE_TTL_MS,
   type Logger,
+  type Metrics,
   type SendLoginCodeInput,
   type SendLoginCodeResult,
   toPlatformError,
@@ -22,7 +23,7 @@ export function loginCodeContent(code: string): { subject: string; text: string;
 
 /** Sends a login code through Resend (MAIL-3). Never logs the code; returns a result instead of throwing. */
 export async function sendLoginCode(
-  deps: { resend: ResendClient; platformMailDomain: string; environment: string; logger: Logger },
+  deps: { resend: ResendClient; platformMailDomain: string; environment: string; logger: Logger; metrics: Metrics },
   input: SendLoginCodeInput,
 ): Promise<SendLoginCodeResult> {
   try {
@@ -39,10 +40,12 @@ export async function sendLoginCode(
       { idempotencyKey: `login-code/${input.codeId}` },
     );
     deps.logger.info('login code email sent', { codeId: input.codeId, resendId: id });
+    deps.metrics.write('email_sent', { sub: 'platform', outcome: 'ok' }); // never the code (MAIL-3.2)
     return { ok: true, id };
   } catch (error) {
     const platformError = toPlatformError(error);
     deps.logger.warn('login code email failed', { codeId: input.codeId, code: platformError.code });
+    deps.metrics.write('email_rejected', { sub: 'platform', outcome: 'error', errorCode: platformError.code });
     return { ok: false, error: platformError.toJSON() };
   }
 }

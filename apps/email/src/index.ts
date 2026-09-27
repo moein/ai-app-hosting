@@ -37,19 +37,16 @@ function sesClient(env: ReturnType<typeof parseEnv>): SesClient {
 export class PlatformMail extends WorkerEntrypoint<Env> implements PlatformMailRpc {
   async sendLoginCode(input: SendLoginCodeInput): Promise<SendLoginCodeResult> {
     const env = parseEnv(this.env);
-    const result = await sendLoginCode(
+    return sendLoginCode(
       {
         resend: createResendClient(env.RESEND_API_KEY),
         platformMailDomain: env.PLATFORM_MAIL_DOMAIN,
         environment: env.ENVIRONMENT,
         logger: Logger.root.child({ worker: 'email', entrypoint: 'PlatformMail' }),
+        metrics: createMetrics(this.env.METRICS, Logger.root.child({ worker: 'email' })),
       },
       input,
     );
-    const metrics = createMetrics(this.env.METRICS, Logger.root.child({ worker: 'email' }));
-    if (result.ok) metrics.write('email_sent', { sub: 'platform', outcome: 'ok' });
-    else metrics.write('email_rejected', { sub: 'platform', outcome: 'error', errorCode: result.error.code });
-    return result;
   }
 }
 

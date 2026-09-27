@@ -1,4 +1,4 @@
-import { Logger, PlatformError } from '@repo/shared';
+import { Logger, memoryMetrics, PlatformError } from '@repo/shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ResendClient, ResendEmail } from '../src/integrations/resend';
 import { loginCodeContent, sendLoginCode } from '../src/platform-mail/login-code';
@@ -8,6 +8,7 @@ const deps = (resend: ResendClient) => ({
   platformMailDomain: 'mail.example',
   environment: 'dev',
   logger: new Logger({ test: true }),
+  metrics: memoryMetrics(),
 });
 
 describe('login code email (MAIL-3, AUTH-1.8)', () => {
@@ -57,5 +58,23 @@ describe('login code email (MAIL-3, AUTH-1.8)', () => {
     expect(result).toMatchObject({ ok: false, error: { code: 'UPSTREAM_ERROR', retryable: true } });
     const logged = logs.flatMap((spy) => spy.mock.calls.map((call) => String(call[0]))).join('\n');
     expect(logged).not.toContain('987654');
+  });
+
+  it('counts platform emails sent and rejected, never with the code (EVT-2.5, MAIL-3.2)', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const ok = deps({ send: async () => ({ id: 'r1' }) });
+    await sendLoginCode(ok, { to: 'a@b.co', code: '482913', codeId: 'lc_1' });
+    const bad = deps({
+      send: async () => {
+        throw new PlatformError('UPSTREAM_ERROR');
+      },
+    });
+    await sendLoginCode(bad, { to: 'a@b.co', code: '482913', codeId: 'lc_2' });
+    expect([...ok.metrics.points, ...bad.metrics.points]).toEqual([
+      { event: 'email_sent', fields: { sub: 'platform', outcome: 'ok' } },
+      { event: 'email_rejected', fields: { sub: 'platform', outcome: 'error', errorCode: 'UPSTREAM_ERROR' } },
+    ]);
+    expect(JSON.stringify(ok.metrics.points)).not.toContain('482913');
   });
 });

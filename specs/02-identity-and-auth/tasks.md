@@ -33,7 +33,7 @@ Depends on: 00 (tasks 1–7), 01 (tasks 1–3), 04 (task 1–2: McpSession + too
   Satisfies: (hygiene; design.md)
   Tests: rows older than 7 days removed, newer kept.
 
-- [ ] **8. Auth metrics** (after spec 05 task for AE writer)
+- [x] **8. Auth metrics** (after spec 05 task for AE writer)
   Satisfies: EVT-2.2 (auth events)
   Tests: AE writer fake receives `login_code_requested`, `login_succeeded` (signup/signin), `login_failed`.
 

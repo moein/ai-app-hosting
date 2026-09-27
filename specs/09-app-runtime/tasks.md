@@ -14,6 +14,7 @@ Depends on: 00, 03. Tasks 1–2 are prerequisites for specs 03 (provisioning) an
   Create `apps-<env>` (untrusted), wildcard route, Always Use HTTPS, HSTS; document in runbook; start Public Suffix List submission for `APPS_DOMAIN`.
   Satisfies: RUN-1.1, RUN-1.8, RUN-2.3, RUN-2.5
   Tests: manual — curl http → https redirect; HSTS header present.
+  Status: dev done (2026-09-27): `apps-dev`, `*.motad.app` + apex routes, Universal SSL, http → 301 https, HSTS `max-age=31536000; includeSubDomains`. Open: prod (domain not chosen), PSL submission (needs the final domain).
 
 - [x] **4. Dispatcher Worker**
   Satisfies: RUN-1.2, RUN-1.3, RUN-1.4, RUN-1.5, RUN-1.6, RUN-1.7

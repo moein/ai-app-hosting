@@ -59,6 +59,10 @@ describe('DeployApp (DEP-2.9 – 2.11)', () => {
       }),
     );
     await runDeployment(deps(ctx), { deploymentId, artifactKey: key, skipMigrations: false });
+    // EVT-2.4
+    expect(ctx.metrics.points.filter((p) => p.event === 'deployment_finished').map((p) => p.fields)).toEqual([
+      expect.objectContaining({ appId: app.id, sub: 'succeeded', outcome: 'ok' }),
+    ]);
 
     const [name, metadata, modules] = (ctx.fakes.cloudflare.callsTo('uploadScript')[0]?.args ?? []) as [
       string,
@@ -111,6 +115,9 @@ describe('DeployApp (DEP-2.9 – 2.11)', () => {
       errorCode: 'DEPLOY_FAILED',
     });
     expect((await ctx.db.select().from(apps).where(eq(apps.id, app.id)).get())?.liveDeploymentId).toBe('dep_previous');
+    expect(ctx.metrics.points.filter((p) => p.event === 'deployment_finished').map((p) => p.fields)).toEqual([
+      expect.objectContaining({ sub: 'failed', outcome: 'error', errorCode: 'DEPLOY_FAILED' }),
+    ]);
   });
 
   it('fails with MIGRATION_FAILED before uploading anything', async () => {

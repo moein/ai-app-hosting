@@ -96,6 +96,10 @@ describe('ProvisionApp steps (APP-2.3, APP-2.5, APP-2.6, SRC-1)', () => {
     const { ctx, app } = await newApp();
     ctx.fakes.cloudflare.failNext('createD1', new PlatformError('UPSTREAM_ERROR'));
     await expect(runProvisioning(deps(ctx), app.id)).rejects.toBeInstanceOf(PlatformError);
+    expect(ctx.metrics.points).toContainEqual({
+      event: 'provisioning_failed',
+      fields: expect.objectContaining({ appId: app.id, sub: 'app', errorCode: 'UPSTREAM_ERROR' }),
+    });
     expect(await ctx.db.select().from(apps).where(eq(apps.id, app.id)).get()).toMatchObject({
       provisioning: 'failed',
       provisioningError: 'UPSTREAM_ERROR',
