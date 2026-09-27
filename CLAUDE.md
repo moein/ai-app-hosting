@@ -45,15 +45,15 @@ If implementation reveals the spec is wrong or incomplete, stop and update the s
 
 ### Dependency rule
 
-Always use the latest stable version. Before adding or upgrading a dependency, check `npm view <pkg> version`, and pin exact versions. Baseline as of 2026-09-26:
+Always use the latest stable version. Before adding or upgrading a dependency, check `npm view <pkg> version`, and pin exact versions. Baseline as of 2026-09-27:
 
 | Package | Version |
 |---|---|
 | react | 19.3.0 |
 | hono | 4.13.9 |
-| wrangler | 4.141.0 |
+| wrangler | 4.142.0 |
 | vite | 8.3.1 |
-| @cloudflare/vite-plugin | 1.60.2 |
+| @cloudflare/vite-plugin | 1.61.0 |
 | agents | 0.24.0 |
 | @modelcontextprotocol/sdk | 1.30.0 (pinned to the exact peer version `agents` 0.24.0 requires) |
 | drizzle-orm | 0.45.3 |

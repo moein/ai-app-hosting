@@ -12,7 +12,7 @@ One-time setup and recurring operations per environment (`dev`, `prod`). Concret
 
 | What | How |
 |---|---|
-| Account | Workers Paid + Workers for Platforms enabled. **R2 and Analytics Engine must be enabled in the dashboard** (artifacts bucket, event/log archives; `METRICS`). After enabling Analytics Engine add `"analytics_engine_datasets": [{ "binding": "METRICS", "dataset": "platform_metrics_<env>" }]` to the api and email `wrangler.jsonc` envs. |
+| Account | Workers Paid + Workers for Platforms enabled. **R2 and Analytics Engine must be enabled in the dashboard** (artifacts bucket, event/log archives; `METRICS`). |
 | API token → `CF_API_TOKEN` | Account: Workers Scripts Edit, Workers for Platforms Edit, D1 Edit, Queues Edit. Zone (`APPS_DOMAIN` zone): DNS Edit. |
 | D1, KV, queues, dispatch namespace | Created once with wrangler (`d1 create platform-db-<env>`, `kv namespace create`, `queues create email-jobs-<env>`, `dispatch-namespace create apps-<env>`); IDs go into the workers' `wrangler.jsonc`. |
 | R2 bucket | `wrangler r2 bucket create artifacts-<env>` (after R2 is enabled). |

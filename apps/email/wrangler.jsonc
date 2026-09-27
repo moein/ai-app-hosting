@@ -21,10 +21,10 @@
       "d1_databases": [
         { "binding": "DB", "database_name": "platform-db-dev", "database_id": "407bea98-c827-4fcb-a544-f4c0c4343949" }
       ],
+      "analytics_engine_datasets": [{ "binding": "METRICS", "dataset": "platform_metrics_dev" }],
       "queues": {
         "consumers": [{ "queue": "email-jobs-dev", "max_batch_size": 10, "max_retries": 10 }]
       }
-      // METRICS (Analytics Engine platform_metrics_<env>) is added once Analytics Engine is enabled on the account.
       // secrets: RESEND_API_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, CF_API_TOKEN (scripts/set-secrets.mjs)
     },
     "prod": {
@@ -41,6 +41,7 @@
       "d1_databases": [
         { "binding": "DB", "database_name": "platform-db-prod", "database_id": "983837a1-bc37-4678-8061-830a71637516" }
       ],
+      "analytics_engine_datasets": [{ "binding": "METRICS", "dataset": "platform_metrics_prod" }],
       "queues": {
         "consumers": [{ "queue": "email-jobs-prod", "max_batch_size": 10, "max_retries": 10 }]
       }

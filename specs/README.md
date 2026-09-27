@@ -21,6 +21,7 @@ Implement roughly in this order; later specs depend on earlier ones.
 | 10 | [logs](10-logs/) | `LOG` | Build logs and runtime logs for the AI |
 | 11 | [email](11-email/) | `MAIL` | Platform email via Resend; customer app email via SES (tenant per org), bounces |
 | 12 | [e2e-testing](12-e2e-testing/) | `E2E` | E2E suite on deployed dev for every flow; real test inbox. **Implement right after 00.** |
+| 13 | [usage-metering](13-usage-metering/) | `USG` | Per-app daily usage of everything that costs us (Workers, D1, email, logs, builds, storage), cost estimates |
 
 Deferred work: [backlog.md](backlog.md).
 
@@ -122,3 +123,5 @@ Specs never contain concrete domains or account names. They use placeholders (`P
 | 24 | Every flow has e2e tests runnable on dev; no local setup | 12 (`E2E-1`–`E2E-3`), 00 (`FND-7.2`, `FND-2.4`) |
 | 26 | Deploys run from the terminal with authenticated wrangler; CI only checks | 00 (`FND-7`) |
 | 25 | Platform emails via Resend; SES only for customer apps | 11 (`MAIL-3`, `MAIL-2`) |
+| 27 | Track per-app usage of everything that costs us (email, CPU, D1, logs, builds, storage) | 13 (`USG-1`, `USG-2`) |
+| 28 | Each app sends email from its own domain `mail.<slug>.APPS_DOMAIN` | 11 (`MAIL-1.5`–`MAIL-1.8`, `MAIL-2.3`) |

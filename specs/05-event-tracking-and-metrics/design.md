@@ -88,7 +88,7 @@ Event names: `tool_call`, `session_init`, `login_code_requested`, `login_succeed
 
 Workers that write: `api` (most), `email` (email_*). Both bind the same dataset as `METRICS`.
 
-The helper lives in `packages/shared/src/metrics.ts` (`createMetrics(dataset, logger)`); a missing binding or a throwing `writeDataPoint` is logged and swallowed (EVT-2.7). The `METRICS` binding is declared in `wrangler.jsonc` only once Analytics Engine is enabled on the account (a dashboard switch); until then it is optional in code and metrics are skipped with one warning per isolate.
+The helper lives in `packages/shared/src/metrics.ts` (`createMetrics(dataset, logger)`); a missing binding or a throwing `writeDataPoint` is logged and swallowed (EVT-2.7).
 
 Feature metrics are written where the fact is known:
 

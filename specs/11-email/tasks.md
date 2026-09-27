@@ -5,7 +5,7 @@ Depends on: 00, 03 (organizations, quota service). Task 3 is needed early by spe
 - [ ] **1. SES setup (dev, prod)** — DMARC at the `APPS_DOMAIN` apex, configuration sets, SNS topic + event destination, IAM user, production access request; document in runbook. (SES is for customer apps only.)
   Satisfies: MAIL non-functional
   Tests: manual — send a test email in dev.
-  Status: dev done with `scripts/setup-ses.mjs` (DMARC, configuration set; test email via an org tenant arrived in the e2e inbox). Open: SNS step (IAM user lacks SNS permissions), prod run (prod domain not chosen).
+  Status: dev done with `scripts/setup-ses.mjs` (DMARC, configuration set, SNS topic + event destination, subscription confirmed by the api; test email arrived in the e2e inbox). Open: prod run (prod domain not chosen).
 
 - [x] **1b. Resend setup (dev, prod)** — verify `PLATFORM_MAIL_DOMAIN` in Resend (SPF, DKIM, DMARC), create an API key per environment, `wrangler secret put RESEND_API_KEY --env <env>`, set `PLATFORM_MAIL_DOMAIN` var in `apps/email/wrangler.jsonc`; document in runbook.
   Satisfies: MAIL non-functional
