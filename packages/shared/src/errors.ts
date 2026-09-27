@@ -116,6 +116,33 @@ export const ERROR_CATALOG = {
     hint: 'Re-read the affected files at `details.head_commit_sha`, reapply your changes, and retry.',
     retryable: true,
   },
+  // spec 06 — app contract
+  CONTRACT_VIOLATION: {
+    message: 'The code breaks the app contract.',
+    hint: 'Fix every item in `details.violations` (each has a `fix`), then write the files again.',
+    retryable: false,
+  },
+  // spec 08 — build & deploy
+  BUILD_FAILED: {
+    message: 'The build failed.',
+    hint: 'Read `errors` and `build_log_excerpt` for the failing step, fix the code, and write_files again.',
+    retryable: false,
+  },
+  MIGRATION_FAILED: {
+    message: 'A database migration failed.',
+    hint: 'Never edit an applied migration — add a new numbered one. Fix the SQL named in `details.file` and write again.',
+    retryable: false,
+  },
+  DEPLOY_FAILED: {
+    message: 'Publishing the app failed.',
+    hint: 'Call redeploy.',
+    retryable: true,
+  },
+  DEPLOYMENT_NOT_ROLLBACKABLE: {
+    message: 'That deployment cannot be restored.',
+    hint: 'Only previously live (`superseded`) deployments can be restored. Use list_deployments to pick one.',
+    retryable: false,
+  },
 } as const satisfies Record<string, CatalogEntry>;
 
 export type ErrorCode = keyof typeof ERROR_CATALOG;
@@ -189,6 +216,11 @@ export const ERROR_HTTP_STATUS = {
   FILE_TOO_LARGE: 413,
   PAYLOAD_TOO_LARGE: 413,
   COMMIT_CONFLICT: 409,
+  CONTRACT_VIOLATION: 422,
+  BUILD_FAILED: 422,
+  MIGRATION_FAILED: 422,
+  DEPLOY_FAILED: 502,
+  DEPLOYMENT_NOT_ROLLBACKABLE: 409,
 } as const satisfies Record<ErrorCode, number>;
 
 /** Rebuilds a PlatformError from its JSON form (e.g. a result returned over Workers RPC). */

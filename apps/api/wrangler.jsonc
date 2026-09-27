@@ -23,9 +23,13 @@
       "durable_objects": { "bindings": [{ "name": "MCP_SESSION", "class_name": "McpSession" }] },
       "services": [{ "binding": "MAIL", "service": "email-dev", "entrypoint": "PlatformMail" }],
       "queues": { "producers": [{ "binding": "EMAIL_JOBS", "queue": "email-jobs-dev" }] },
-      "triggers": { "crons": ["0 3 * * *", "0 * * * *"] },
+      "triggers": { "crons": ["0 3 * * *", "0 * * * *", "*/5 * * * *"] },
       "kv_namespaces": [{ "binding": "APP_ROUTES", "id": "4acad1cfc1ea43d9b25f6f2f10e5055f" }],
-      "workflows": [{ "binding": "PROVISION_APP", "name": "provision-app-dev", "class_name": "ProvisionApp" }],
+      "workflows": [
+        { "binding": "PROVISION_APP", "name": "provision-app-dev", "class_name": "ProvisionApp" },
+        { "binding": "DEPLOY_APP", "name": "deploy-app-dev", "class_name": "DeployApp" }
+      ],
+      "r2_buckets": [{ "binding": "ARTIFACTS", "bucket_name": "artifacts-dev" }],
       "ratelimits": [{ "name": "TOOL_RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 120, "period": 60 } }],
       "d1_databases": [
         {
@@ -50,9 +54,13 @@
       "durable_objects": { "bindings": [{ "name": "MCP_SESSION", "class_name": "McpSession" }] },
       "services": [{ "binding": "MAIL", "service": "email-prod", "entrypoint": "PlatformMail" }],
       "queues": { "producers": [{ "binding": "EMAIL_JOBS", "queue": "email-jobs-prod" }] },
-      "triggers": { "crons": ["0 3 * * *", "0 * * * *"] },
+      "triggers": { "crons": ["0 3 * * *", "0 * * * *", "*/5 * * * *"] },
       "kv_namespaces": [{ "binding": "APP_ROUTES", "id": "b0aca44ad9d3482792e13d4a559e3a7b" }],
-      "workflows": [{ "binding": "PROVISION_APP", "name": "provision-app-prod", "class_name": "ProvisionApp" }],
+      "workflows": [
+        { "binding": "PROVISION_APP", "name": "provision-app-prod", "class_name": "ProvisionApp" },
+        { "binding": "DEPLOY_APP", "name": "deploy-app-prod", "class_name": "DeployApp" }
+      ],
+      "r2_buckets": [{ "binding": "ARTIFACTS", "bucket_name": "artifacts-prod" }],
       "ratelimits": [{ "name": "TOOL_RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 120, "period": 60 } }],
       "d1_databases": [
         {

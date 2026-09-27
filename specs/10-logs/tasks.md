@@ -2,11 +2,11 @@
 
 Depends on: 00, 04, 07 (`GitHubClient.getJobLog`), 08 (deployments, fail callback).
 
-- [ ] **1. `parseBuildErrors`**
+- [x] **1. `parseBuildErrors`**
   Satisfies: LOG-1.2
   Tests: fixtures of real outputs (tsc both formats, vite unresolved import, esbuild error, npm ERESOLVE, npm E404, unknown) → expected structured errors; path normalization; max 20; de-dup.
 
-- [ ] **2. Build log in `get_deployment` + GitHub fallback**
+- [x] **2. Build log in `get_deployment` + GitHub fallback**
   Satisfies: LOG-1.1, LOG-1.3, LOG-1.4
   Tests: failed deployment returns step, excerpt, errors; contract failure returns violations only; missing excerpt triggers one `getJobLog` call, result persisted (second call makes no GitHub request); ANSI/timestamps stripped.
 

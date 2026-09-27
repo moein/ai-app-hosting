@@ -39,6 +39,12 @@ export class McpSession extends McpAgent<Env> {
           await this.env.PROVISION_APP.create({ id: `provision-${appId}-${Date.now()}`, params: { appId } });
         },
       },
+      artifacts: this.env.ARTIFACTS,
+      deployer: {
+        start: async (params) => {
+          await this.env.DEPLOY_APP.create({ id: `deploy-${params.deploymentId}-${Date.now()}`, params });
+        },
+      },
       sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     };
   }

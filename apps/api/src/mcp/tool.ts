@@ -1,6 +1,7 @@
 import type { Clock, EmailJob, Logger, OrgId, PlatformMailRpc, Random, UserId } from '@repo/shared';
 import type { z } from 'zod';
 import type { SessionStore } from '../auth/session-store';
+import type { ArtifactStore, DeployParams } from '../builds/deploy';
 import type { Db } from '../db/client';
 import type { CloudflareClient } from '../integrations/cloudflare';
 import type { GitHubClient } from '../integrations/github';
@@ -35,6 +36,9 @@ export type ToolContext = {
   github: GitHubClient;
   routes: RouteStore;
   provisioner: Provisioner;
+  artifacts: ArtifactStore;
+  /** Starts the DeployApp workflow (spec 08). */
+  deployer: { start(params: DeployParams): Promise<void> };
   /** Waits between polls (real timers in production, instant in tests). */
   sleep(ms: number): Promise<void>;
   userId?: UserId;

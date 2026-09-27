@@ -26,6 +26,8 @@ export function fakeGitHub() {
   const failures = new Map<keyof GitHubClient, Error>();
   /** Makes the next updateMain behave as if main moved (race), once. */
   let raceNextUpdate = 0;
+  const jobLogs = new Map<number, string>();
+  const runJobs = new Map<number, { id: number; name: string; conclusion: string | null }[]>();
 
   const repo = (name: string) => {
     const found = repos.get(name);
@@ -119,8 +121,11 @@ export function fakeGitHub() {
     async dispatchWorkflow(name, _workflow, inputs) {
       repo(name).dispatches.push(inputs);
     },
-    async getJobLog() {
-      return 'fake log';
+    async getJobLog(_name, jobId) {
+      return jobLogs.get(jobId) ?? 'fake log';
+    },
+    async getRunJobs(_name, runId) {
+      return runJobs.get(runId) ?? [];
     },
   };
 
@@ -129,6 +134,8 @@ export function fakeGitHub() {
     repos,
     failNext: (method: keyof GitHubClient, error: Error) => failures.set(method, error),
     clearFailures: () => failures.clear(),
+    jobLogs,
+    runJobs,
     raceNextUpdate: (times = 1) => {
       raceNextUpdate = times;
     },

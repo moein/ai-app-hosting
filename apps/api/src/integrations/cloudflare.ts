@@ -36,8 +36,11 @@ export interface CloudflareClient {
   uploadScript(name: string, metadata: ScriptMetadata, modules: WorkerModule[]): Promise<void>;
   deleteScript(name: string): Promise<'deleted' | 'not_found'>;
   createAssetsUploadSession(script: string, manifest: AssetManifest): Promise<{ jwt: string; buckets: string[][] }>;
-  /** Uploads one bucket (base64 file contents keyed by hash); the last bucket returns the completion token. */
-  uploadAssetBucket(uploadJwt: string, files: Record<string, string>): Promise<{ jwt?: string }>;
+  /** Uploads one bucket (base64 contents keyed by hash); the last bucket returns the completion token. */
+  uploadAssetBucket(
+    uploadJwt: string,
+    files: Record<string, { base64: string; contentType: string }>,
+  ): Promise<{ jwt?: string }>;
   putSecret(script: string, name: string, value: string): Promise<void>;
   deleteSecret(script: string, name: string): Promise<'deleted' | 'not_found'>;
 }
@@ -153,7 +156,9 @@ export function createCloudflareClient(options: {
     },
     async uploadAssetBucket(uploadJwt, files) {
       const form = new FormData();
-      for (const [hash, base64] of Object.entries(files)) form.set(hash, base64);
+      for (const [hash, file] of Object.entries(files)) {
+        form.set(hash, new File([file.base64], hash, { type: file.contentType }));
+      }
       const result = unwrap(
         await call<{ jwt?: string } | null>('POST', `${account}/workers/assets/upload?base64=true`, form, {
           auth: `Bearer ${uploadJwt}`,

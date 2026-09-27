@@ -67,7 +67,9 @@ describe('CloudflareClient (spec 09 design)', () => {
     const { client, call } = setup(ok(null), ok({ jwt: 'done' }));
     await client.putSecret('todo', 'API_KEY', 'value');
     expect(JSON.parse(String(call(0)[1].body))).toEqual({ name: 'API_KEY', text: 'value', type: 'secret_text' });
-    expect(await client.uploadAssetBucket('upload-jwt', { abc: 'aGk=' })).toEqual({ jwt: 'done' });
+    expect(
+      await client.uploadAssetBucket('upload-jwt', { abc: { base64: 'aGk=', contentType: 'text/plain' } }),
+    ).toEqual({ jwt: 'done' });
     expect(call(1)[0]).toContain('/workers/assets/upload?base64=true');
     expect(call(1)[1].headers).toMatchObject({ authorization: 'Bearer upload-jwt' });
   });

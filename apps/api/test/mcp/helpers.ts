@@ -12,6 +12,7 @@ import {
 import { z } from 'zod';
 import { runProvisioning } from '../../src/apps/provision';
 import { createSessionStore, memoryStorage } from '../../src/auth/session-store';
+import { runDeployment } from '../../src/builds/deploy';
 import { createDb } from '../../src/db/client';
 import { memberships, organizations, users } from '../../src/db/schema';
 import { defineTool, type ToolContext } from '../../src/mcp/tool';
@@ -68,6 +69,7 @@ export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =
     github: github.client,
     routes: env.APP_ROUTES,
     sleep: async () => {},
+    artifacts: env.ARTIFACTS,
     fakes: { cloudflare, github },
     ...overrides,
   } as TestContext;
@@ -86,6 +88,23 @@ export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =
         },
         appId,
       ).catch(() => {});
+    },
+  };
+  // Deployments run inline against the fakes, as the DeployApp workflow would.
+  ctx.deployer = overrides.deployer ?? {
+    start: async (params) => {
+      await runDeployment(
+        {
+          db: ctx.db,
+          cloudflare: ctx.cloudflare,
+          routes: ctx.routes,
+          artifacts: ctx.artifacts,
+          clock: ctx.clock,
+          logger: ctx.logger,
+          environment: 'dev',
+        },
+        params,
+      );
     },
   };
   return ctx;

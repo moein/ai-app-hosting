@@ -26,6 +26,7 @@ export interface GitHubClient {
   readBlob(repo: string, sha: string): Promise<Uint8Array>;
   dispatchWorkflow(repo: string, workflow: string, inputs: Record<string, string>): Promise<void>;
   getJobLog(repo: string, jobId: number): Promise<string>;
+  getRunJobs(repo: string, runId: number): Promise<{ id: number; name: string; conclusion: string | null }[]>;
 }
 
 const API = 'https://api.github.com';
@@ -254,6 +255,13 @@ export function createGitHubClient(options: {
 
     async getJobLog(repo, jobId) {
       return (await repoCall('GET', repo, `/actions/jobs/${jobId}/logs`)).text();
+    },
+
+    async getRunJobs(repo, runId) {
+      const body = await json<{ jobs: { id: number; name: string; conclusion: string | null }[] }>(
+        await repoCall('GET', repo, `/actions/runs/${runId}/jobs`),
+      );
+      return body.jobs.map(({ id, name, conclusion }) => ({ id, name, conclusion }));
     },
   };
   return client;

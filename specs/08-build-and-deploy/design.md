@@ -122,7 +122,7 @@ Two route groups (00 design "HTTP routing"):
 
 ### OIDC verification
 
-- JWKS: `https://token.actions.githubusercontent.com/.well-known/jwks`, cached 1 h (refetch on unknown `kid`); verify with `jose`.
+- JWKS: `https://token.actions.githubusercontent.com/.well-known/jwks`, cached 1 h (refetch on unknown `kid`); RS256 verification with WebCrypto (`src/builds/oidc.ts`, no dependency).
 - Claims: `iss = https://token.actions.githubusercontent.com`, `aud = PLATFORM_API_ORIGIN`, `repository_owner = GITHUB_ORG`, `repository_id = apps.repo_id` (app looked up by `repository_id`), `ref = refs/heads/main`, `workflow_ref = GITHUB_ORG/<repo>/.github/workflows/deploy.yml@refs/heads/main`, `event_name ∈ {push, workflow_dispatch}`.
 - Start: if no matching deployment exists (e.g. a push not from `write_files`), create one with trigger `push` (and consume quota; if exhausted respond 429 and the workflow reports failure).
 
@@ -139,7 +139,7 @@ step "migrate"   : unless skipMigrations:
                    for file in sorted(migrations/*.sql):
                      applied? hash equal → skip; hash differs → MIGRATION_FAILED
                      else execute file, INSERT record                        → error → MIGRATION_FAILED
-step "assets"    : manifest {"/path": {hash, size}} → assets-upload-session (dispatch namespace script)
+step "assets"    : manifest {"/path": {hash, size}} (hash = first 32 hex of SHA-256(base64 + extension)) → assets-upload-session (dispatch namespace script)
                    → upload missing buckets → completion JWT
 step "script"    : multipart upload to dispatch namespace `apps-<env>` script `script_name`:
                    metadata { main_module, compatibility_date, compatibility_flags (from generated wrangler.json,
