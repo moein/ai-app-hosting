@@ -2,32 +2,32 @@
 
 Depends on: 03 (apps), 08 (deployments), 10 (AppLogBuffer), 11 (AppMail), 05 (metrics).
 
-- [ ] **1. Catalog, pricing, schema**
+- [x] **1. Catalog, pricing, schema**
   `packages/shared/src/usage.ts` (metric catalog), `pricing.ts` (`estimateCostUsd`), migration `app_usage_daily` + `deployments.build_billable_ms`.
   Satisfies: USG-1.1 (data), USG-2.1
   Tests: every catalog metric has a price entry; estimate for a known usage matches a hand-computed value; storage metrics prorate per day.
 
-- [ ] **2. `CloudflareAnalyticsClient` + fake**
+- [x] **2. `CloudflareAnalyticsClient` + fake**
   Satisfies: USG-1.2 (source)
   Tests: query and variables per dataset (namespace filter, single day, limit); response mapping (cpuTimeUs → ms); GraphQL errors / non-200 → `UPSTREAM_ERROR`.
 
-- [ ] **3. AppLogBuffer usage counters + `usage(days)` RPC**
+- [x] **3. AppLogBuffer usage counters + `usage(days)` RPC**
   Satisfies: USG-1.3 (logs)
   Tests: counts received entries (incl. dropped) and stored bytes per day; old rows removed by the alarm; purge clears them.
 
-- [ ] **4. GitHub run billable time**
+- [x] **4. GitHub run billable time**
   Satisfies: USG-1.8
   Tests: sums billable ms across OSes; 404 → 0; collector fetches only eligible deployments, once.
 
-- [ ] **5. Email usage in `AppMail.send`**
+- [x] **5. Email usage in `AppMail.send`**
   Satisfies: USG-1.4
   Tests: success adds recipients sent (suppressed not counted); failures add nothing.
 
-- [ ] **6. Hourly collector `collectUsage`**
+- [x] **6. Hourly collector `collectUsage`**
   Satisfies: USG-1.2, USG-1.3, USG-1.5, USG-1.6, USG-1.7, USG-2.3
   Tests (fakes + real D1): attribution by script / database / hostname; unknown resources ignored; deleted apps keep storage; re-run gives identical rows; yesterday and today collected; `emails` untouched by the collector; one failing source doesn't stop others and writes `usage_collection_failed`; `usage_collected` written.
 
-- [ ] **7. Report script + SQL docs**
+- [x] **7. Report script + SQL docs**
   Satisfies: USG-2.2
   Tests: `node --test` — grouping per org/app, month filter, cost sorting with a fake D1 response.
 

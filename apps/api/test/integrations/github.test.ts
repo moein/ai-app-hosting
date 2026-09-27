@@ -73,6 +73,31 @@ describe('GitHub App auth (SRC-4.1, SRC-4.2)', () => {
   });
 });
 
+describe('GitHub run billable time (USG-1.8)', () => {
+  const clientReturning = (response: Response) =>
+    createGitHubClient({
+      appId: '1',
+      privateKey: pem,
+      installationId: '99',
+      org: 'org',
+      fetch: (async (url: string) => {
+        if (url.endsWith('/access_tokens')) return Response.json({ token: 't', expires_at: '2099-01-01T00:00:00Z' });
+        expect(url).toBe('https://api.github.com/repos/org/dev-todo/actions/runs/42/timing');
+        return response;
+      }) as unknown as typeof fetch,
+    });
+
+  it('sums billable ms over runner OSes', async () => {
+    const timing = { billable: { UBUNTU: { total_ms: 90_000, jobs: 1 }, WINDOWS: { total_ms: 1_000, jobs: 1 } } };
+    expect(await clientReturning(Response.json(timing)).getRunBillableMs('dev-todo', 42)).toBe(91_000);
+    expect(await clientReturning(Response.json({ billable: {} })).getRunBillableMs('dev-todo', 42)).toBe(0);
+  });
+
+  it('returns 0 for an unknown run', async () => {
+    expect(await clientReturning(new Response('', { status: 404 })).getRunBillableMs('dev-todo', 42)).toBe(0);
+  });
+});
+
 describe('GitHub error mapping (SRC-4.3)', () => {
   const clientWith = (response: Response | Error) =>
     createGitHubClient({

@@ -28,6 +28,8 @@ export function fakeGitHub() {
   let raceNextUpdate = 0;
   const jobLogs = new Map<number, string>();
   const runJobs = new Map<number, { id: number; name: string; conclusion: string | null }[]>();
+  const runTimings = new Map<number, number>();
+  const timingCalls: number[] = [];
 
   const repo = (name: string) => {
     const found = repos.get(name);
@@ -127,6 +129,12 @@ export function fakeGitHub() {
     async getRunJobs(_name, runId) {
       return runJobs.get(runId) ?? [];
     },
+    async getRunBillableMs(_name, runId) {
+      const failure = failures.get('getRunBillableMs');
+      if (failure) throw failure;
+      timingCalls.push(runId);
+      return runTimings.get(runId) ?? 0;
+    },
   };
 
   return {
@@ -136,6 +144,8 @@ export function fakeGitHub() {
     clearFailures: () => failures.clear(),
     jobLogs,
     runJobs,
+    runTimings,
+    timingCalls,
     raceNextUpdate: (times = 1) => {
       raceNextUpdate = times;
     },

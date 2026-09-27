@@ -1,6 +1,6 @@
 // Platform D1 schema (Drizzle). Tables are added by the specs that own them (specs/00-foundation/design.md
 // "Platform D1 schema"). Conventions: TEXT primary keys holding prefixed IDs; timestamps are INTEGER epoch ms.
-import { index, integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
+import { index, integer, primaryKey, real, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 
 // spec 02
 export const users = sqliteTable('users', {
@@ -153,6 +153,7 @@ export const deployments = sqliteTable(
     createdAt: integer('created_at').notNull(),
     startedAt: integer('started_at'),
     buildFinishedAt: integer('build_finished_at'),
+    buildBillableMs: integer('build_billable_ms'), // spec 13, USG-1.8: GitHub billable build time
     finishedAt: integer('finished_at'),
   },
   (table) => [
@@ -174,4 +175,25 @@ export const appSecrets = sqliteTable(
     updatedAt: integer('updated_at').notNull(),
   },
   (table) => [primaryKey({ columns: [table.appId, table.name] })],
+);
+
+// spec 13 — per-app daily usage of everything that costs the platform (USG-1)
+export const appUsageDaily = sqliteTable(
+  'app_usage_daily',
+  {
+    appId: text('app_id')
+      .notNull()
+      .references(() => apps.id),
+    orgId: text('org_id')
+      .notNull()
+      .references(() => organizations.id),
+    day: text('day').notNull(), // YYYY-MM-DD (UTC)
+    metric: text('metric').notNull(),
+    quantity: real('quantity').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.appId, table.day, table.metric] }),
+    index('app_usage_daily_org_day').on(table.orgId, table.day),
+  ],
 );

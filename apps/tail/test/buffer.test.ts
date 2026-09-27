@@ -160,4 +160,31 @@ describe('AppLogBuffer (LOG-2.5, LOG-2.7, LOG-3)', () => {
     expect((await stub.query(all)).entries).toEqual([]);
     await runInDurableObject(stub, async (_, state) => expect(await state.storage.getAlarm()).toBeNull());
   });
+
+  it('counts received entries and stored bytes per UTC day, including dropped ones (USG-1.3)', async () => {
+    const stub = buffer();
+    const day = Date.UTC(2026, 8, 27, 12);
+    const minute = Math.floor(day / 60_000) * 60_000;
+    await stub.append([
+      entry({ ts: day, message: 'héllo', stack: 'ab' }),
+      entry({ ts: day - 86_400_000, message: 'x' }),
+    ]);
+    await stub.append(Array.from({ length: LOG_INGEST_MAX_PER_MINUTE }, () => entry({ ts: minute + 1, message: '' })));
+    await stub.append([entry({ ts: minute + 2, message: 'dropped' })]); // over the cap: counted, not stored
+    const usage = await stub.usage(['2026-09-26', '2026-09-27', '2026-09-28']);
+    expect(usage).toEqual({
+      '2026-09-26': { entries: 1, bytes: 1 },
+      '2026-09-27': { entries: 2 + LOG_INGEST_MAX_PER_MINUTE, bytes: 6 + 2 },
+    });
+    await stub.purge();
+    expect(await stub.usage(['2026-09-27'])).toEqual({});
+  });
+
+  it('forgets usage counters older than 7 days in the alarm', async () => {
+    const stub = buffer();
+    await stub.append([entry({ ts: Date.now() - 8 * 86_400_000 }), entry({ ts: Date.now() })]);
+    await runDurableObjectAlarm(stub);
+    const days = [new Date(Date.now() - 8 * 86_400_000), new Date()].map((d) => d.toISOString().slice(0, 10));
+    expect(Object.keys(await stub.usage(days))).toEqual([days[1]]);
+  });
 });

@@ -93,7 +93,7 @@ List prices after included allowances (Workers for Platforms, D1, SES, GitHub Ac
 
 ## Metrics (spec 05)
 
-`usage_collected` (double1 = rows written, double2 = duration ms, double3 = apps) and `usage_collection_failed` (blob2 = source: `workers`, `assets`, `d1`, `d1_storage`, `logs`, `builds`, `github`, `platform`).
+`usage_collected` (blob3 = `ok`/`error`, double2 = duration ms, double3 = rows written) and `usage_collection_failed` (blob2 = source: `workers`, `assets`, `d1`, `d1_storage`, `logs`, `builds`, `github`, `platform`).
 
 ## Open questions
 

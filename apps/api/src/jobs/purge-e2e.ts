@@ -5,6 +5,7 @@ import type { Db } from '../db/client';
 import {
   appSecrets,
   apps,
+  appUsageDaily,
   deployments,
   emailSuppressions,
   loginCodes,
@@ -93,6 +94,7 @@ export async function purgeE2eUsers(
     const appIds = orgApps.map((a) => a.id);
     await deps.db.batch([
       deps.db.delete(deployments).where(inArray(deployments.appId, appIds.length ? appIds : [''])),
+      deps.db.delete(appUsageDaily).where(inArray(appUsageDaily.appId, appIds.length ? appIds : [''])),
       deps.db.delete(appSecrets).where(inArray(appSecrets.appId, appIds.length ? appIds : [''])),
       deps.db.delete(apps).where(inArray(apps.id, appIds.length ? appIds : [''])),
       deps.db.delete(usageCounters).where(inArray(usageCounters.orgId, orgIds.length ? orgIds : [''])),

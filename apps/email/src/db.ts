@@ -60,3 +60,17 @@ export async function refundEmails(db: D1Database, orgId: string, amount: number
     .bind(amount, orgId, dayOf(now))
     .run();
 }
+
+/** Adds to an app's usage for a UTC day (spec 13, `add` metrics such as `emails`). */
+export async function addAppUsage(
+  db: D1Database,
+  row: { appId: string; orgId: string; day: string; metric: string; quantity: number; now: number },
+) {
+  await db
+    .prepare(
+      `INSERT INTO app_usage_daily (app_id, org_id, day, metric, quantity, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT (app_id, day, metric) DO UPDATE SET quantity = quantity + excluded.quantity, updated_at = excluded.updated_at`,
+    )
+    .bind(row.appId, row.orgId, row.day, row.metric, row.quantity, row.now)
+    .run();
+}

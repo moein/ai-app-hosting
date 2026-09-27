@@ -1,5 +1,6 @@
 import { errorResponse } from '@repo/http';
 import { createMetrics, Logger, toPlatformError } from '@repo/shared';
+import { dispatchNamespaceFor } from './apps/names';
 import { createDb } from './db/client';
 import { parseEnv } from './env';
 import { app } from './http/app';
@@ -9,6 +10,7 @@ import { purgeLoginCodes } from './jobs/purge-login-codes';
 import { reconcileRoutes } from './jobs/reconcile-routes';
 import { appLogsFor } from './logs/app-logs';
 import { createPlatform } from './platform';
+import { collectUsage } from './usage/collect';
 
 const HOURLY = '0 * * * *';
 const EVERY_5_MINUTES = '*/5 * * * *';
@@ -57,6 +59,15 @@ export default {
         Logger.root.info('purged e2e users', purged);
       }
       Logger.root.info('reconciled app routes', await reconcileRoutes(db, env.APP_ROUTES));
+      const platform = createPlatform(env);
+      const usage = await collectUsage({
+        ...platform,
+        appLogs: (appId) => appLogsFor(env, appId),
+        logger: platform.logger.child({ job: 'usage' }),
+        dispatchNamespace: dispatchNamespaceFor(platform.environment),
+        appsDomain: env.APPS_DOMAIN,
+      });
+      Logger.root.info('collected usage', usage);
       return;
     }
     const deleted = await purgeLoginCodes(db, controller.scheduledTime);

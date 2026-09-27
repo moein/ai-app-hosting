@@ -5,7 +5,7 @@ import { type AppMailDeps, sendAppEmail } from '../src/app-mail/send';
 import { sanitizeFromName } from '../src/app-mail/validate';
 import { SesError } from '../src/integrations/ses';
 import { fakeSes } from './fakes/ses';
-import { emailsUsedToday, seedApp, suppress } from './seed';
+import { appUsage, emailsUsedToday, seedApp, suppress } from './seed';
 
 const NOW = Date.UTC(2026, 8, 27, 12);
 function deps() {
@@ -31,6 +31,19 @@ const msg = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe('AppMail.send (MAIL-2)', () => {
+  it("adds the recipients actually sent to the app's daily email usage (USG-1.4)", async () => {
+    const { deps: d, ses } = deps();
+    const { props, appId, orgId } = await seedApp();
+    await suppress('gone@example.com', null);
+    await sendAppEmail(d, props, msg({ to: ['a@example.com', 'b@example.com', 'gone@example.com'] }));
+    await sendAppEmail(d, props, msg());
+    ses.fail('sendEmail', new SesError('MessageRejected', 400, 'no'));
+    await sendAppEmail(d, props, msg());
+    await sendAppEmail(d, props, msg({ subject: '' }));
+    expect(await appUsage(appId, 'emails')).toEqual({ '2026-09-27': 3 });
+    expect(await emailsUsedToday(orgId, NOW)).toBe(3);
+  });
+
   it('writes one email_sent or email_rejected data point per call (MAIL-2.9, EVT-2.5)', async () => {
     const { deps: d, metrics } = deps();
     const { props, orgId, appId } = await seedApp();

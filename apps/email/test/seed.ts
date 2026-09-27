@@ -64,3 +64,10 @@ export async function emailsUsedToday(orgId: string, now = Date.now()) {
     .first<{ count: number }>();
   return row?.count ?? 0;
 }
+
+export async function appUsage(appId: string, metric: string) {
+  const rows = await env.DB.prepare('SELECT day, quantity FROM app_usage_daily WHERE app_id = ? AND metric = ?')
+    .bind(appId, metric)
+    .all<{ day: string; quantity: number }>();
+  return Object.fromEntries(rows.results.map((r) => [r.day, r.quantity]));
+}

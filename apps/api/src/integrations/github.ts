@@ -27,6 +27,8 @@ export interface GitHubClient {
   dispatchWorkflow(repo: string, workflow: string, inputs: Record<string, string>): Promise<void>;
   getJobLog(repo: string, jobId: number): Promise<string>;
   getRunJobs(repo: string, runId: number): Promise<{ id: number; name: string; conclusion: string | null }[]>;
+  /** Billable build time of a workflow run in ms, summed over runner OSes; 0 when GitHub has no such run (spec 13). */
+  getRunBillableMs(repo: string, runId: number): Promise<number>;
 }
 
 const API = 'https://api.github.com';
@@ -262,6 +264,13 @@ export function createGitHubClient(options: {
         await repoCall('GET', repo, `/actions/runs/${runId}/jobs`),
       );
       return body.jobs.map(({ id, name, conclusion }) => ({ id, name, conclusion }));
+    },
+
+    async getRunBillableMs(repo, runId) {
+      const response = await repoCall('GET', repo, `/actions/runs/${runId}/timing`, undefined, [404]);
+      if (response.status === 404) return 0;
+      const body = await json<{ billable?: Record<string, { total_ms?: number }> }>(response);
+      return Object.values(body.billable ?? {}).reduce((sum, os) => sum + (os.total_ms ?? 0), 0);
     },
   };
   return client;

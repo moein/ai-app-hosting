@@ -3,6 +3,7 @@ import { dispatchNamespaceFor } from './apps/names';
 import type { ProvisionDeps } from './apps/provision';
 import { createDb } from './db/client';
 import { createCloudflareClient } from './integrations/cloudflare';
+import { createCloudflareAnalyticsClient } from './integrations/cloudflare-analytics';
 import { createGitHubClient } from './integrations/github';
 
 export type Environment = 'dev' | 'prod';
@@ -18,6 +19,7 @@ export function createPlatform(env: Env) {
       accountId: env.CF_ACCOUNT_ID,
       dispatchNamespace: dispatchNamespaceFor(environment),
     }),
+    analytics: createCloudflareAnalyticsClient({ apiToken: env.CF_API_TOKEN, accountId: env.CF_ACCOUNT_ID }),
     github: createGitHubClient({
       appId: env.GITHUB_APP_ID,
       privateKey: env.GITHUB_APP_PRIVATE_KEY,

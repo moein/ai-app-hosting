@@ -19,7 +19,9 @@ export type MetricEvent =
   | 'email_rejected'
   | 'email_bounced'
   | 'email_complained'
-  | 'event_emit_failed';
+  | 'event_emit_failed'
+  | 'usage_collected'
+  | 'usage_collection_failed';
 
 export type MetricFields = {
   orgId?: string | null | undefined;

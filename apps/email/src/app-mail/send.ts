@@ -7,8 +7,9 @@ import {
   type Logger,
   MAX_EMAILS_PER_ORG_PER_DAY,
   type Metrics,
+  utcDay,
 } from '@repo/shared';
-import { consumeEmails, findApp, refundEmails, suppressedAmong, tenantStatus } from '../db';
+import { addAppUsage, consumeEmails, findApp, refundEmails, suppressedAmong, tenantStatus } from '../db';
 import { type SesClient, SesError } from '../integrations/ses';
 import { sanitizeFromName, validateMessage } from './validate';
 
@@ -83,6 +84,15 @@ async function send(deps: AppMailDeps, props: AppMailProps, input: unknown): Pro
         tags: { env: deps.environment, org_id: props.orgId, app_id: props.appId },
       });
       logger.info('app email sent', { messageId, recipients: remaining.length, suppressed: suppressed.size });
+      // USG-1.4: recipients actually sent; a failed usage write must not turn a sent email into an error.
+      await addAppUsage(deps.db, {
+        appId: props.appId,
+        orgId: props.orgId,
+        day: utcDay(now),
+        metric: 'emails',
+        quantity: remaining.length,
+        now,
+      }).catch((error: unknown) => logger.error('email usage write failed', { error }));
       return { ok: true, id: messageId, suppressed: msg.to.filter((address) => suppressed.has(address)) };
     } catch (error) {
       await refundEmails(deps.db, props.orgId, remaining.length, now);

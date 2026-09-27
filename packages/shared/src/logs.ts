@@ -33,6 +33,8 @@ export type LogPage = { entries: LogEntry[]; next_cursor: string | null };
 export interface AppLogsRpc {
   append(entries: LogEntry[]): Promise<void>;
   query(filter: LogFilter): Promise<LogPage>;
+  /** Entries received and bytes stored per UTC day (spec 13, USG-1.3); days without traffic are absent. */
+  usage(days: string[]): Promise<Record<string, { entries: number; bytes: number }>>;
   /** Deletes every entry and the alarm (dev e2e purge). */
   purge(): Promise<void>;
 }
