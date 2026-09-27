@@ -2,6 +2,8 @@
 export interface DnsClient {
   /** Creates the CNAME (DNS only) unless an identical one exists; returns what it did. */
   upsertCname(name: string, target: string): Promise<'created' | 'exists' | 'updated'>;
+  /** Deletes every CNAME with this name; returns how many there were. */
+  deleteCname(name: string): Promise<number>;
 }
 
 export class DnsError extends Error {
@@ -66,6 +68,15 @@ export function createDnsClient(options: { apiToken: string; zoneName: string; f
       }
       await call('POST', `/zones/${id}/dns_records`, record);
       return 'created';
+    },
+    async deleteCname(name) {
+      const id = await zone();
+      const records = await call<{ id: string }[]>(
+        'GET',
+        `/zones/${id}/dns_records?type=CNAME&name=${encodeURIComponent(name)}`,
+      );
+      for (const record of records) await call('DELETE', `/zones/${id}/dns_records/${record.id}`);
+      return records.length;
     },
   };
 }

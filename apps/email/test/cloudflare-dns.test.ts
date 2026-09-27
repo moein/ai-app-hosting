@@ -52,3 +52,19 @@ describe('Cloudflare DNS client (per-app DKIM records)', () => {
     await expect(dns.upsertCname('x', 'y')).rejects.toBeInstanceOf(DnsError);
   });
 });
+
+describe('Cloudflare DNS client — delete', () => {
+  it('deletes every CNAME with the name', async () => {
+    const requests: string[] = [];
+    const fetchImpl = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      requests.push(`${init?.method ?? 'GET'} ${url}`);
+      if (url.includes('/zones?name=')) return Response.json({ success: true, result: [{ id: 'zone1' }] });
+      if (url.includes('/dns_records?')) return Response.json({ success: true, result: [{ id: 'r1' }] });
+      return Response.json({ success: true, result: {} });
+    };
+    const dns = createDnsClient({ apiToken: 't', zoneName: 'motad.app', fetch: fetchImpl as typeof fetch });
+    expect(await dns.deleteCname('a._domainkey.mail.x.motad.app')).toBe(1);
+    expect(requests.at(-1)).toBe('DELETE https://api.cloudflare.com/client/v4/zones/zone1/dns_records/r1');
+  });
+});

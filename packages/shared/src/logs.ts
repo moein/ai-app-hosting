@@ -33,6 +33,8 @@ export type LogPage = { entries: LogEntry[]; next_cursor: string | null };
 export interface AppLogsRpc {
   append(entries: LogEntry[]): Promise<void>;
   query(filter: LogFilter): Promise<LogPage>;
+  /** Deletes every entry and the alarm (dev e2e purge). */
+  purge(): Promise<void>;
 }
 
 /** Cuts `text` to at most `maxBytes` UTF-8 bytes without splitting a character, marking the cut with `…`. */

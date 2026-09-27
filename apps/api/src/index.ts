@@ -4,8 +4,11 @@ import { createDb } from './db/client';
 import { parseEnv } from './env';
 import { app } from './http/app';
 import { pruneArtifacts, sweepStaleDeployments } from './jobs/build-sweeps';
+import { purgeE2eUsers } from './jobs/purge-e2e';
 import { purgeLoginCodes } from './jobs/purge-login-codes';
 import { reconcileRoutes } from './jobs/reconcile-routes';
+import { appLogsFor } from './logs/app-logs';
+import { createPlatform } from './platform';
 
 const HOURLY = '0 * * * *';
 const EVERY_5_MINUTES = '*/5 * * * *';
@@ -38,6 +41,21 @@ export default {
       return;
     }
     if (controller.cron === HOURLY) {
+      // Purge first: routes of purged e2e apps then don't need reconciling.
+      const parsed = parseEnv(env);
+      if (parsed.ENVIRONMENT === 'dev' && parsed.E2E_INBOX_ADDRESS) {
+        const platform = createPlatform(env);
+        const purged = await purgeE2eUsers(
+          {
+            ...platform,
+            artifacts: env.ARTIFACTS,
+            appLogs: (appId) => appLogsFor(env, appId),
+            appsDomain: env.APPS_DOMAIN,
+          },
+          { environment: parsed.ENVIRONMENT, inboxAddress: parsed.E2E_INBOX_ADDRESS, now: controller.scheduledTime },
+        );
+        Logger.root.info('purged e2e users', purged);
+      }
       Logger.root.info('reconciled app routes', await reconcileRoutes(db, env.APP_ROUTES));
       return;
     }

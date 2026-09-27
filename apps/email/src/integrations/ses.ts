@@ -40,6 +40,8 @@ export interface SesClient {
     options: { configurationSet: string; tags: Record<string, string> },
   ): Promise<'created' | 'exists'>;
   getEmailIdentity(domain: string): Promise<{ verified: boolean; dkimTokens: string[] } | null>;
+  deleteEmailIdentity(domain: string): Promise<'deleted' | 'not_found'>;
+  deleteTenant(name: string): Promise<'deleted' | 'not_found'>;
   /** The AWS account id of the credentials (STS GetCallerIdentity), for building resource ARNs. */
   accountId(): Promise<string>;
 }
@@ -92,6 +94,16 @@ export function createSesClient(options: SesClientOptions): SesClient {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     });
+
+  const deletedOrMissing = async (request: Promise<unknown>) => {
+    try {
+      await request;
+      return 'deleted' as const;
+    } catch (error) {
+      if (error instanceof SesError && error.type === 'NotFoundException') return 'not_found' as const;
+      throw error;
+    }
+  };
 
   const createdOrExists = async (request: Promise<unknown>) => {
     try {
@@ -158,6 +170,12 @@ export function createSesClient(options: SesClientOptions): SesClient {
         if (error instanceof SesError && error.type === 'NotFoundException') return null;
         throw error;
       }
+    },
+    deleteEmailIdentity(domain) {
+      return deletedOrMissing(call('ses', `${base}/identities/${encodeURIComponent(domain)}`, { method: 'DELETE' }));
+    },
+    deleteTenant(name) {
+      return deletedOrMissing(post('/tenants/delete', { TenantName: name }));
     },
     accountId() {
       accountId ??= call<string>('sts', `https://sts.${options.region}.amazonaws.com/`, {

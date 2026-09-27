@@ -62,10 +62,21 @@ export async function provisionEmailIdentity(deps: EmailJobDeps, appId: string):
   return 'ready';
 }
 
+/** Dev e2e purge (spec 12): each identity with its DKIM CNAMEs, then the org's tenant. Idempotent. */
+export async function purgeOrgEmail(deps: EmailJobDeps, orgId: string, domains: string[]): Promise<void> {
+  for (const domain of domains) {
+    const identity = await deps.ses.getEmailIdentity(domain);
+    for (const token of identity?.dkimTokens ?? []) await deps.dns.deleteCname(`${token}._domainkey.${domain}`);
+    await deps.ses.deleteEmailIdentity(domain);
+  }
+  await deps.ses.deleteTenant(emailTenantName(deps.environment, orgId));
+}
+
 /** Exponential backoff: 10 s, 20 s, 40 s … capped at 15 min. */
 export const retryDelaySeconds = (attempts: number) => Math.min(10 * 2 ** (attempts - 1), 900);
 
 async function giveUp(deps: EmailJobDeps, job: EmailJob) {
+  if (job.type === 'org.purge_email') return; // nothing to record; the purge retries hourly anyway
   if (job.type === 'org.provision_email_tenant') {
     await setTenantStatus(deps.db, job.orgId, 'failed');
     deps.metrics.write('provisioning_failed', { orgId: job.orgId, sub: 'email_tenant', outcome: 'error' });
@@ -96,6 +107,9 @@ export async function handleEmailJobs(batch: MessageBatch<EmailJob>, deps: Email
       } else if (job?.type === 'app.provision_email_identity' && typeof job.appId === 'string') {
         const result = await provisionEmailIdentity(deps, job.appId);
         logger.info('app email identity', { appId: job.appId, result });
+      } else if (job?.type === 'org.purge_email' && typeof job.orgId === 'string' && Array.isArray(job.domains)) {
+        await purgeOrgEmail(deps, job.orgId, job.domains);
+        logger.info('org email purged', { orgId: job.orgId, identities: job.domains.length });
       } else {
         logger.error('unknown email job', {});
       }

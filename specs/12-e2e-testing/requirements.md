@@ -36,7 +36,7 @@ As the product owner, I want no flow to ship untested, so that dev always reflec
 As the operator, I want e2e runs to leave nothing behind, so that dev stays clean and cheap.
 
 - **E2E-4.1** THE SYSTEM SHALL have each test file delete the apps it created (`delete_app`) in `afterAll`, even when tests fail.
-- **E2E-4.2** WHEN the api worker's daily cron runs in `dev` THE SYSTEM SHALL hard-purge every user whose email is a subaddress of `E2E_INBOX_ADDRESS` (`<local>+%@<domain>`) and was created more than 24 hours ago, including their orgs, apps, GitHub repos, D1 databases, Worker scripts, KV routes, R2 artifacts and log buffers.
+- **E2E-4.2** WHEN the api worker's hourly cron runs in `dev` THE SYSTEM SHALL hard-purge every user whose email is a subaddress of `E2E_INBOX_ADDRESS` (`<local>+%@<domain>`) and was created more than `E2E_PURGE_AFTER_MS` (1 hour) ago, including their orgs, apps, GitHub repos, D1 databases, Worker scripts, KV routes, R2 artifacts, log buffers, SES identities with their DKIM records, and SES tenants.
 - **E2E-4.3** THE SYSTEM SHALL never run the purge in `prod` (guarded by `ENVIRONMENT === "dev"` and by `E2E_INBOX_ADDRESS` being unset in prod).
 
 ## Non-functional requirements

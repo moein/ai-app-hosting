@@ -62,3 +62,6 @@ export const BUILD_LOG_EXCERPT_MAX_BYTES = 20_000;
 // spec 11 — email
 export const MAX_EMAIL_RECIPIENTS = 50;
 export const MAX_EMAIL_BYTES = 256_000;
+
+// spec 12 — dev e2e purge: e2e users older than this are hard-purged hourly (E2E-4.2)
+export const E2E_PURGE_AFTER_MS = 60 * 60 * 1000;

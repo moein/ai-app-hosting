@@ -11,7 +11,9 @@ export interface PlatformMailRpc {
 /** Messages on the EMAIL_JOBS queue (consumed by the email worker, spec 11). */
 export type EmailJob =
   | { type: 'org.provision_email_tenant'; orgId: string }
-  | { type: 'app.provision_email_identity'; appId: string };
+  | { type: 'app.provision_email_identity'; appId: string }
+  /** Dev e2e purge only (spec 12): delete these app identities (with DKIM records) and the org's tenant. */
+  | { type: 'org.purge_email'; orgId: string; domains: string[] };
 
 /** An app's sending domain and address (spec 11): its own SES identity under APPS_DOMAIN. */
 export const appMailDomain = (slug: string, appsDomain: string) => `mail.${slug}.${appsDomain}`;

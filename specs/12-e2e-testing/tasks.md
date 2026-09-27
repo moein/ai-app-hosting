@@ -23,4 +23,5 @@ Depends on: 00 (deployed dev workers). Implemented right after spec 00; flows ar
 
 - [ ] **5. Cleanup: `afterAll` deletes + dev purge cron** (after specs 03, 07, 08 exist)
   Satisfies: E2E-4.1, E2E-4.2, E2E-4.3
-  Tests: integration — purge removes only e2e users older than 24h and calls every integration fake; no-op when `ENVIRONMENT=prod`; e2e — create app, backdate user in dev D1 via a dev-only migration-free SQL script, run purge, verify repo/D1/script gone.
+  Tests: integration — purge removes only e2e users older than `E2E_PURGE_AFTER_MS` and calls every integration fake; keeps rows when an external deletion fails; no-op when `ENVIRONMENT=prod`; e2e — create app, backdate user in dev D1 via a dev-only migration-free SQL script, run purge, verify repo/D1/script gone.
+  Status: `afterAll` deletes and the purge job with its integration tests are done; the e2e check runs once the api (with the purge cron) can be deployed — blocked on R2.

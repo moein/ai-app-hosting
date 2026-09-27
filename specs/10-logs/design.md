@@ -67,6 +67,7 @@ CREATE INDEX logs_ts ON logs (ts DESC);
 ```
 
 - `append(entries)`: insert in one transaction; per-minute counter (table `ingest(minute, count, dropped_seq)`, minute = `floor(entry.ts / 60 000)`) for LOG-2.7 — once a minute has `LOG_INGEST_MAX_PER_MINUTE` entries its further `console` entries are dropped and a single `dropped` entry (level `warn`) for that minute is inserted, then updated with the running count; if row count > `LOG_BUFFER_MAX_ENTRIES` delete oldest (by `seq`).
+- `purge()`: deletes all storage and the alarm (dev e2e purge, spec 12 E2E-4.2).
 - Alarm every hour (set on first append): delete `ts < now - LOG_BUFFER_MAX_AGE_MS` and old `ingest` rows.
 - `query(filter)`: SQL with bound params; `ORDER BY ts DESC, seq DESC LIMIT limit + 1`; cursor = `"<ts>.<seq>"` of the last entry returned (opaque to the AI), next page = rows strictly after it in that order.
 - Level filter: rank `debug`=0, `log`/`info`=1, `warn`=2, `error`=3; `level` keeps entries with rank ≥ the given one. `search` is a case-insensitive substring (`instr`, no wildcards) of `message` or `path`. `status_min` keeps only `request` entries with `status ≥ status_min`.

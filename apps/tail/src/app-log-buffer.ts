@@ -53,6 +53,10 @@ export class AppLogBuffer extends DurableObject<Env> implements AppLogsRpc {
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.sql = ctx.storage.sql;
+    this.createSchema();
+  }
+
+  private createSchema(): void {
     this.sql.exec(`
       CREATE TABLE IF NOT EXISTS logs (
         seq INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -170,6 +174,12 @@ export class AppLogBuffer extends DurableObject<Env> implements AppLogsRpc {
       entries: page.map(toEntry),
       next_cursor: rows.length > filter.limit && last ? `${last.ts}.${last.seq}` : null,
     };
+  }
+
+  async purge(): Promise<void> {
+    await this.ctx.storage.deleteAlarm();
+    await this.ctx.storage.deleteAll();
+    this.createSchema(); // deleteAll drops the tables too; this instance keeps serving
   }
 
   override async alarm(): Promise<void> {

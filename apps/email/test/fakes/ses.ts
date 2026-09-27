@@ -42,6 +42,14 @@ export function fakeSes() {
       if (!identity) return null;
       return { verified: identity.verified, dkimTokens: ['tok1', 'tok2', 'tok3'].map((t) => `${t}-${domain.length}`) };
     },
+    async deleteEmailIdentity(domain) {
+      check('deleteEmailIdentity');
+      return identities.delete(domain) ? 'deleted' : 'not_found';
+    },
+    async deleteTenant(name) {
+      check('deleteTenant');
+      return tenants.delete(name) ? 'deleted' : 'not_found';
+    },
     async accountId() {
       check('accountId');
       return '123456789012';

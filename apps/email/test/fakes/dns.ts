@@ -10,6 +10,10 @@ export function fakeDns() {
       records.set(name, target);
       return existing === undefined ? 'created' : existing === target ? 'exists' : 'updated';
     },
+    async deleteCname(name) {
+      if (failure) throw failure;
+      return records.delete(name) ? 1 : 0;
+    },
   };
   return {
     client,

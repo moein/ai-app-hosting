@@ -19,6 +19,7 @@
         "CF_ACCOUNT_ID": "ebdcbd8e905ff028ba30a0104288f65e",
         "PLATFORM_API_ORIGIN": "https://api-dev.ai-app-hosting.workers.dev",
         "APPS_DOMAIN": "motad.app",
+        "E2E_INBOX_ADDRESS": "e2e@motad.app", // dev only: enables the hourly e2e purge (spec 12)
         "GITHUB_ORG": "AI-app-hosting"
       },
       "durable_objects": {

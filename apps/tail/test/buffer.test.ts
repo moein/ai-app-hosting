@@ -152,4 +152,12 @@ describe('AppLogBuffer (LOG-2.5, LOG-2.7, LOG-3)', () => {
     expect(recent.some((e) => e.message.startsWith('lost'))).toBe(false);
     expect(recent.some((e) => e.message === 'next minute')).toBe(true);
   });
+
+  it('purge() removes every entry and the alarm', async () => {
+    const stub = buffer();
+    await stub.append([entry()]);
+    await stub.purge();
+    expect((await stub.query(all)).entries).toEqual([]);
+    await runInDurableObject(stub, async (_, state) => expect(await state.storage.getAlarm()).toBeNull());
+  });
 });

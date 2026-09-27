@@ -112,6 +112,8 @@ otherwise                                                               → retr
 final attempt still unverified → email_status='failed' + provisioning_failed (sub email_identity)
 ```
 
+Message `{ type: 'org.purge_email', orgId, domains }` (dev e2e purge only, spec 12 E2E-4.2): for each domain read the DKIM tokens, delete the CNAMEs and the identity; then delete the tenant. Not-found counts as done; failures retry with the same backoff.
+
 Backoff `min(10 s · 2^(attempt-1), 15 min)` over 10 retries gives verification about 1.5 hours; DKIM usually verifies within minutes. Retries re-run every step, which is safe because each is idempotent.
 
 ## Platform email via Resend (`PlatformMail`)

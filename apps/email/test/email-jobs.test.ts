@@ -159,4 +159,19 @@ describe('per-app email identity (MAIL-1.5–1.8)', () => {
     }
     expect(ses.identities.size).toBe(identitiesBefore);
   });
+
+  it('purges identities with their DKIM records and the tenant (dev e2e purge, E2E-4.2)', async () => {
+    const { deps: d, ses, dns } = deps();
+    const { appId, orgId, slug } = await readyTenant(d);
+    await run(d, { type: 'app.provision_email_identity', appId });
+    const domain = `mail.${slug}.motad.app`;
+    expect(dns.records.size).toBe(3);
+
+    for (let i = 0; i < 2; i++) {
+      expect((await run(d, { type: 'org.purge_email', orgId, domains: [domain] })).acked).toBe(true);
+    }
+    expect(dns.records.size).toBe(0);
+    expect(ses.identities.has(domain)).toBe(false);
+    expect(ses.tenants.has(`dev-${orgId}`)).toBe(false);
+  });
 });

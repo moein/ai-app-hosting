@@ -15,5 +15,7 @@ export const parseEnv = createEnvParser(
     GITHUB_INSTALLATION_ID: z.string().min(1),
     GITHUB_APP_PRIVATE_KEY: z.string().includes('PRIVATE KEY'),
     SES_EVENTS_TOPIC_ARN: z.string().startsWith('arn:aws:sns:').optional(),
+    /** Dev only (spec 12): the e2e inbox; enables the hourly e2e purge. Never set in prod. */
+    E2E_INBOX_ADDRESS: z.email().optional(),
   }),
 );

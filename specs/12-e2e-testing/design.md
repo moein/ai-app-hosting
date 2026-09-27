@@ -108,7 +108,9 @@ The deploy-related tests write `fixtures/contract-app` (repo root, spec 06) thro
 
 ## Purge (E2E-4.2)
 
-Dev-only branch of the api worker's daily cron: select users `WHERE email LIKE '<local>+%@<domain>' AND created_at < now - 24h` (built from `E2E_INBOX_ADDRESS`); for each app: delete Worker script, KV route, D1 database, GitHub repo, R2 artifacts, log buffer; then delete rows (deployments, app_secrets, apps, usage_counters, memberships, organizations, login_codes, users). `E2E_INBOX_ADDRESS` is a var set only in `env.dev`.
+Dev-only branch of the api worker's hourly cron (`src/jobs/purge-e2e.ts`): select users `WHERE email LIKE '<local>+%@<domain>' AND created_at < now - E2E_PURGE_AFTER_MS` (built from `E2E_INBOX_ADDRESS`, `_`/`%` escaped); for each of their orgs' apps (any status): delete Worker script, KV route, D1 database, GitHub repo, R2 artifacts (`artifacts/<appId>/`), log buffer (`AppLogBuffer.purge()`); then enqueue `{ type: 'org.purge_email', orgId, domains }` so the email worker deletes each app's SES identity with its DKIM CNAMEs and the org's tenant; then delete rows (deployments, app_secrets, apps, usage_counters, org suppressions, memberships, organizations, login_codes, users). If any external deletion for a user fails, that user's rows are kept so the next run retries (every deletion is idempotent: not-found counts as done).
+
+Hourly with a 1-hour age (rather than daily/24 h) keeps dev inside the `APPS_DOMAIN` zone's DNS record quota — every e2e app adds 3 DKIM records — while never touching a running suite (< 15 minutes). `E2E_INBOX_ADDRESS` is a var set only in `env.dev`.
 
 ## Running
 
