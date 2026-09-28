@@ -5,6 +5,11 @@ import type { Env } from './env';
 
 const app = new Hono<{ Bindings: Env }>();
 
+// Let unexpected errors escape so the runtime records them as exceptions (F-LOG-1).
+app.onError((error) => {
+  throw error;
+});
+
 /** DB binding works and migrations ran (F-DEP-1). */
 app.get('/api/health', async (c) => {
   const row = await c.env.DB.prepare('SELECT COUNT(*) AS notes FROM notes').first<{ notes: number }>();

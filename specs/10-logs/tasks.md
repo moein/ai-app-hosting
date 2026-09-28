@@ -31,6 +31,6 @@ Depends on: 00, 04, 07 (`GitHubClient.getJobLog`), 08 (deployments, fail callbac
   Satisfies: LOG-3.1, LOG-3.2, LOG-3.3, LOG-3.4, LOG-3.5
   Tests: relative/ISO time parsing; each filter; level ordering; cursor pagination; limit cap; empty result `next_step` for not-deployed vs no-match.
 
-- [ ] **8. E2E on dev** (spec 12)
+- [x] **8. E2E on dev** (spec 12)
   Flows: `F-LOG-1`, `F-DEP-3` (parsed build errors).
   Satisfies: E2E-3.3

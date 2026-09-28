@@ -1,7 +1,6 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers';
-import { NonRetryableError } from 'cloudflare:workflows';
-import { PlatformError } from '@repo/shared';
 import { createPlatform } from '../platform';
+import { stepBody } from '../workflows/step-errors';
 import { type DeployParams, runDeployment } from './deploy';
 
 /** Durable deploy with per-step retries; non-retryable platform errors fail fast (spec 08 design). */
@@ -22,15 +21,7 @@ export class DeployApp extends WorkflowEntrypoint<Env, DeployParams> {
       await step.do(
         name,
         { retries: { limit: 5, delay: '2 seconds', backoff: 'exponential' }, timeout: '5 minutes' },
-        async () => {
-          try {
-            await run();
-          } catch (error) {
-            if (error instanceof PlatformError && !error.retryable)
-              throw new NonRetryableError(JSON.stringify(error.toJSON()));
-            throw error;
-          }
-        },
+        stepBody(run),
       );
     });
   }

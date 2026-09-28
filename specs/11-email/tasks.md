@@ -45,6 +45,6 @@ Depends on: 00, 03 (organizations, quota service). Task 3 is needed early by spe
   Satisfies: MCP-2.2 (email topic)
   Tests: guide contains `AppEmailMessage`/`AppEmailResult` types and limits matching `limits.ts`.
 
-- [ ] **9. E2E on dev** (spec 12)
+- [x] **9. E2E on dev** (spec 12)
   Flows: `F-MAIL-1` (app email via SES arrives in the e2e inbox from `hello@mail.<slug>.APPS_DOMAIN`); login-code delivery via Resend is covered by `F-AUTH-1`.
   Satisfies: E2E-3.3

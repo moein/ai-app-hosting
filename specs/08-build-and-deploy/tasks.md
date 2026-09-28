@@ -39,6 +39,7 @@ Depends on: 03, 06, 07, 09 (tasks 1–2: `CloudflareClient`, bindings builder).
   Satisfies: DEP-2.12, DEP non-functional (retention)
   Tests: queued >15 min and building >20 min fail with message; retention keeps 20 newest succeeded + live.
 
-- [ ] **10. E2E on dev** (spec 12)
+- [x] **10. E2E on dev** (spec 12)
   Flows: `F-DEP-1`, `F-DEP-2`, `F-DEP-3`, `F-DEP-4`, `F-DEP-5`. Record push-to-live timing from `F-DEP-1`.
+  Timing (2026-09-28, dev): write_files → live and serving `/api/health` ≈ 57 s (GitHub Actions build included).
   Satisfies: E2E-3.3, DEP non-functional (push-to-live timing)

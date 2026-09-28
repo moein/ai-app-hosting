@@ -1,14 +1,11 @@
 import {
   type Clock,
-  ERROR_CATALOG,
   type Logger,
   MAX_ASSET_FILE_BYTES,
   MAX_ASSET_FILES,
   MAX_WORKER_BUNDLE_BYTES,
   type Metrics,
   PlatformError,
-  type PlatformErrorJson,
-  platformErrorFromJson,
 } from '@repo/shared';
 import { eq } from 'drizzle-orm';
 import { PLATFORM_COMPATIBILITY_DATE } from '../apps/provision';
@@ -18,6 +15,7 @@ import type { CloudflareClient, ScriptMetadata } from '../integrations/cloudflar
 import type { Environment } from '../platform';
 import { buildBindings } from '../runtime/bindings';
 import { putRoute, type RouteStore } from '../runtime/routes';
+import { fromStepError } from '../workflows/step-errors';
 import { type Artifact, gunzip, inspectArtifact, untar } from './artifact';
 import { prepareAssets } from './assets';
 import { recordDeploymentFinished } from './metrics';
@@ -151,17 +149,9 @@ export function deploySteps(deps: DeployDeps, params: DeployParams) {
   ];
 }
 
-/** Recovers the PlatformError behind a workflow failure (NonRetryableError carries it as JSON). */
-function asDeployError(error: unknown): PlatformError {
-  if (error instanceof PlatformError) return error;
-  try {
-    const json = JSON.parse((error as Error).message) as PlatformErrorJson;
-    if (json && typeof json.code === 'string' && json.code in ERROR_CATALOG) return platformErrorFromJson(json);
-  } catch {
-    // not a serialized PlatformError
-  }
-  return new PlatformError('DEPLOY_FAILED', { cause: error });
-}
+/** Recovers the PlatformError behind a workflow failure (it crosses step boundaries as JSON). */
+const asDeployError = (error: unknown): PlatformError =>
+  fromStepError(error) ?? new PlatformError('DEPLOY_FAILED', { cause: error });
 
 /** Marks a deployment failed with the error code/details; the previous live deployment keeps serving. */
 export async function markDeploymentFailed(deps: DeployDeps, deploymentId: string, error: unknown) {

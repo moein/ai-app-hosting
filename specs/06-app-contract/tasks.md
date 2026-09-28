@@ -34,6 +34,6 @@ Depends on: 00.
   Satisfies: CON-1.1
   Tests: managed file list is exactly `.github/workflows/deploy.yml`, `platform.json`.
 
-- [ ] **8. E2E on dev** (spec 12)
+- [x] **8. E2E on dev** (spec 12)
   Flows: `F-DEP-2` (contract violations reported); `F-DEP-1` (contract-compliant app goes live).
   Satisfies: E2E-3.3

@@ -1,5 +1,6 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers';
 import { createPlatform, provisionDeps } from '../platform';
+import { stepBody } from '../workflows/step-errors';
 import { runProvisioning } from './provision';
 
 export type ProvisionParams = { appId: string };
@@ -12,7 +13,7 @@ export class ProvisionApp extends WorkflowEntrypoint<Env, ProvisionParams> {
       await step.do(
         name,
         { retries: { limit: 5, delay: '2 seconds', backoff: 'exponential' }, timeout: '2 minutes' },
-        run,
+        stepBody(run),
       );
     });
   }

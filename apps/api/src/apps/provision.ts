@@ -7,6 +7,7 @@ import type { CloudflareClient } from '../integrations/cloudflare';
 import type { GitHubClient } from '../integrations/github';
 import { PLACEHOLDER_MODULE, placeholderMetadata } from '../runtime/placeholder';
 import { putRoute, type RouteStore } from '../runtime/routes';
+import { fromStepError } from '../workflows/step-errors';
 
 export const PLATFORM_COMPATIBILITY_DATE = '2026-08-22';
 
@@ -136,7 +137,7 @@ export function provisionSteps(deps: ProvisionDeps, appId: string): Step[] {
 
 /** Marks provisioning failed with the error code after the workflow gave up (APP-2.5). */
 export async function markProvisioningFailed(deps: ProvisionDeps, appId: string, error: unknown) {
-  const code = error instanceof PlatformError ? error.code : 'INTERNAL';
+  const code = fromStepError(error)?.code ?? 'INTERNAL';
   deps.logger.error('app provisioning failed', { appId, code, error });
   const failed = await deps.db
     .update(apps)
