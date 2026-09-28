@@ -33,6 +33,13 @@ app.post('/api/log', async (c) => {
   return c.json({ ok: true });
 });
 
+/** Tries to set a cookie for the whole domain and echoes the cookies it received (F-RUN-4). */
+app.get('/api/cookies', (c) => {
+  const parent = new URL(c.req.url).hostname.split('.').slice(1).join('.');
+  c.header('set-cookie', `sid=abc; Domain=${parent}; Path=/api; HttpOnly`);
+  return c.json({ received: c.req.header('cookie') ?? null });
+});
+
 /** Sends an email through the platform binding (F-MAIL-1). */
 app.post('/api/send-email', async (c) => {
   const { to, subject } = await c.req.json<{ to: string; subject: string }>();

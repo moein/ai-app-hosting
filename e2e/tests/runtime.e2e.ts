@@ -83,6 +83,19 @@ describe.skipIf(!isImplemented('F-RUN-1'))('app runtime', () => {
     expect(await (await api('/api/health')).json()).toEqual({ ok: true, notes: 2 });
   });
 
+  it(flow('F-RUN-4', 'cookies are host-only per app; planted and same-site cookies never reach it'), async () => {
+    const first = await api('/api/cookies');
+    expect(first.headers.getSetCookie()).toEqual(['__Host-sid=abc; HttpOnly; Path=/; Secure']);
+    expect(first.headers.get('origin-agent-cluster')).toBe('?1');
+    expect(await first.json()).toEqual({ received: null });
+
+    const cookie = '__Host-sid=abc; planted=1';
+    const own = await api('/api/cookies', { headers: { cookie } });
+    expect(await own.json()).toEqual({ received: 'sid=abc' });
+    const fromSibling = await api('/api/cookies', { headers: { cookie, 'sec-fetch-site': 'same-site' } });
+    expect(await fromSibling.json()).toEqual({ received: null });
+  });
+
   it(flow('F-LOG-1', 'get_logs shows the request, console output and the exception'), async () => {
     const marker = `m${runId}${Date.now()}`;
     expect((await post('/api/log', { marker, fail: true })).status).toBe(500);

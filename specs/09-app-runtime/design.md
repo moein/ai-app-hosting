@@ -130,6 +130,22 @@ The var-collision check (RUN-3.2) reads `vars` from the live deployment's artifa
 | `SECRET_NAME_INVALID` | false | Use UPPER_SNAKE_CASE (e.g. `STRIPE_API_KEY`), not `DB`, `ASSETS`, `EMAIL` or an existing var name. |
 | `QUERY_FAILED` | false | The database rejected the SQL (`details.message`). Check table/column names with `SELECT name, sql FROM sqlite_master`. |
 
+## Cookie isolation (RUN-5, `apps/dispatcher/src/cookies.ts`)
+
+Applied only on the dispatch path (live apps); platform pages set no cookies.
+
+```
+request → drop Cookie entirely if Sec-Fetch-Site = same-site
+        → otherwise keep pairs named "__Host-<name>" → forward as "<name>" (one prefix stripped); others dropped
+response ← for each Set-Cookie (headers.getSetCookie()):
+             "<name>=<value>; attrs" → "__Host-<name>=<value>; <attrs without Domain/Path/Secure>; Path=/; Secure"
+         ← Origin-Agent-Cluster: ?1
+```
+
+Always prefixing (also names that already start with `__Host-`) keeps the round trip exact: the app sets `sid`, the browser stores `__Host-sid`, the app reads `sid`. A cookie planted with `Domain=APPS_DOMAIN` (by another app's server or browser JS) can't carry the `__Host-` prefix — browsers refuse `__Host-` cookies with a `Domain` — so it never reaches an app. A link from another app (`same-site`) arrives without cookies, like a cross-site request; links from any other site behave normally.
+
+Remaining gap without the PSL: browser features keyed on "site" (e.g. reputation lists, storage partitioning heuristics). Submitting the prod domain to the PSL stays optional (≥ 2 years of registration needed).
+
 ## Open questions
 
 1. Abuse handling: a `suspended` route state + admin tool to take down phishing/malware apps quickly (needed before public launch).

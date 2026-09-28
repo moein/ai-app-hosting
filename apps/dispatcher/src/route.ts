@@ -1,5 +1,6 @@
 import { APP_ERROR_HTML, BEING_BUILT_HTML, htmlResponse, NO_APP_HTML } from '@repo/http';
 import { APP_CPU_MS_PER_REQUEST, APP_SUBREQUESTS_PER_REQUEST, Logger } from '@repo/shared';
+import { isolateRequest, isolateResponse } from './cookies';
 
 /** KV value per app slug (spec 09 design), written by the api worker. */
 export type AppRoute = { appId: string; scriptName: string; state: 'live' | 'not_deployed' };
@@ -52,7 +53,7 @@ export async function routeRequest(request: Request, deps: RouterDeps): Promise<
       cpuMs: APP_CPU_MS_PER_REQUEST,
       subRequests: APP_SUBREQUESTS_PER_REQUEST,
     });
-    return withHsts(await worker.fetch(request));
+    return withHsts(isolateResponse(await worker.fetch(isolateRequest(request))));
   } catch (error) {
     Logger.root.error('dispatch failed', { appId: route.appId, scriptName: route.scriptName, error });
     return withHsts(htmlResponse(APP_ERROR_HTML, 502));

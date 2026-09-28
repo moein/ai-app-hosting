@@ -46,6 +46,13 @@ describe('platform guide (MCP-2, CON-1)', () => {
     expect(email).toContain('hello@mail.<slug>.apps.example');
   });
 
+  it('explains per-app cookies (RUN-5.5)', () => {
+    const contract = render('contract');
+    expect(contract).toContain('## Cookies');
+    expect(contract).toContain('__Host-<name>');
+    expect(contract).toContain('`Secure; Path=/`');
+  });
+
   it('states that the AI writes every file and there are no templates (MCP-2.4, CON-1.1)', () => {
     const workflow = render('workflow');
     expect(workflow).toContain("You write all of the app's code");

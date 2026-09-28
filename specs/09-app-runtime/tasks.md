@@ -32,6 +32,10 @@ Depends on: 00, 03. Tasks 1–2 are prerequisites for specs 03 (provisioning) an
   Satisfies: RUN-4.1, RUN-4.2, RUN-4.3, RUN-4.4, RUN-4.5
   Tests: read-only classifier table (SELECT ok; INSERT/UPDATE/DELETE/DROP/WITH rejected without `allow_writes`; `SELECT 1; DROP …` rejected; allowed pragmas only); `_platform_migrations`/`_cf_` writes rejected; truncation by rows and bytes; D1 error → `QUERY_FAILED`.
 
+- [x] **9. Cookie isolation in the dispatcher + guide note**
+  Satisfies: RUN-5.1, RUN-5.2, RUN-5.3, RUN-5.4, RUN-5.5
+  Tests: Set-Cookie rewrite table (Domain/Path/Secure/case, multiple cookies, deletion cookies, names already prefixed); request cookie filtering (prefixed kept and stripped, others dropped, header removed when empty); same-site requests lose cookies, same-origin/cross-site/none keep them; `Origin-Agent-Cluster` on app responses only; guide contains the cookie note; e2e `F-RUN-4`.
+
 - [x] **8. E2E on dev** (spec 12)
   Flows: `F-RUN-1`, `F-RUN-2`, `F-RUN-3`.
   Satisfies: E2E-3.3

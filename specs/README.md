@@ -124,4 +124,5 @@ Specs never contain concrete domains or account names. They use placeholders (`P
 | 26 | Deploys run from the terminal with authenticated wrangler; CI only checks | 00 (`FND-7`) |
 | 25 | Platform emails via Resend; SES only for customer apps | 11 (`MAIL-3`, `MAIL-2`) |
 | 27 | Track per-app usage of everything that costs us (email, CPU, D1, logs, builds, storage) | 13 (`USG-1`, `USG-2`) |
+| 29 | Apps can't tamper with each other's cookies despite sharing `APPS_DOMAIN` | 09 (`RUN-5`) |
 | 28 | Each app sends email from its own domain `mail.<slug>.APPS_DOMAIN` | 11 (`MAIL-1.5`–`MAIL-1.8`, `MAIL-2.3`) |

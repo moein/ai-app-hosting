@@ -86,6 +86,13 @@ The platform provides exactly these at runtime; declare them in your `Env` inter
 - Each request may use up to {{APP_CPU_MS_PER_REQUEST}} ms of CPU and {{APP_SUBREQUESTS_PER_REQUEST}} outbound requests.
 - Hash passwords with WebCrypto (PBKDF2) or `bcryptjs`, never native `bcrypt`.
 
+## Cookies
+
+Every app's cookies are private to it; other apps can't read or plant them.
+- Set cookies from the API (`Set-Cookie` / Hono's `setCookie`) as usual; they come back to your API under the same name. The platform stores them as `__Host-<name>` (host-only, `Secure`, `Path=/`), so `Domain` and `Path` attributes are ignored.
+- Browser JavaScript sees server-set cookies as `__Host-<name>` in `document.cookie`. A cookie set from browser JavaScript only reaches your API if it's named `__Host-<name>` and has `Secure; Path=/`. Prefer `HttpOnly` cookies set by the API.
+- A request coming from a link on another app arrives without cookies, as if from another website.
+
 ## Rules checked before every build
 
 {{RULES}}

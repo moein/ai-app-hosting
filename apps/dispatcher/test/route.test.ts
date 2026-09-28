@@ -38,6 +38,25 @@ describe('dispatcher routing (RUN-1)', () => {
     expect(dispatched).toEqual([{ scriptName: 'todo', cpuMs: 100, subRequests: 50 }]);
   });
 
+  it('isolates cookies on the dispatch path only (RUN-5)', async () => {
+    let seenCookie: string | null = 'unset';
+    const app = {
+      fetch: async (req: Request) => {
+        seenCookie = req.headers.get('cookie');
+        return new Response('ok', { headers: { 'set-cookie': 'sid=1; Domain=motad.app' } });
+      },
+    } as Fetcher;
+    const res = await routeRequest(
+      new Request('https://todo.motad.app/', { headers: { cookie: '__Host-sid=1; planted=x' } }),
+      deps({ dispatch: () => app }),
+    );
+    expect(seenCookie).toBe('sid=1');
+    expect(res.headers.getSetCookie()).toEqual(['__Host-sid=1; Path=/; Secure']);
+    expect(res.headers.get('origin-agent-cluster')).toBe('?1');
+    expect(res.headers.get('strict-transport-security')).toContain('max-age=');
+    expect((await get('https://nope.motad.app/')).headers.has('origin-agent-cluster')).toBe(false);
+  });
+
   it('is case-insensitive on the host', async () => {
     expect((await get('https://TODO.Motad.App/')).status).toBe(200);
   });

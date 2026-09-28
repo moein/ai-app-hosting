@@ -46,6 +46,17 @@ As an AI client, I want to inspect and fix my app's data, so that I can debug pr
 - **RUN-4.4** THE SYSTEM SHALL return at most `QUERY_MAX_ROWS` rows and `QUERY_MAX_BYTES` of result, setting `truncated: true` otherwise.
 - **RUN-4.5** IF D1 reports an error THEN THE SYSTEM SHALL return `QUERY_FAILED` with D1's error message.
 
+### RUN-5 — Isolation between apps in the browser
+As a user, I want other apps on the platform unable to tamper with my app's cookies or ride on my users' sessions, even though all apps share `APPS_DOMAIN`.
+
+`APPS_DOMAIN` is not on the Public Suffix List, so browsers treat every app under it as one "site". The dispatcher enforces the separation instead:
+
+- **RUN-5.1** WHEN an app response sets cookies THE SYSTEM SHALL rewrite each `Set-Cookie` into a host-only cookie: remove `Domain`, set `Path=/`, add `Secure`, and prefix the name with `__Host-` (always, so the name the app sees on later requests is exactly the one it set).
+- **RUN-5.2** WHEN forwarding a request to an app THE SYSTEM SHALL pass only cookies whose name starts with `__Host-`, with that prefix removed, and drop all others (cookies planted for the whole `APPS_DOMAIN` can never have the prefix).
+- **RUN-5.3** WHEN a request carries `Sec-Fetch-Site: same-site` (it comes from another app under `APPS_DOMAIN`) THE SYSTEM SHALL forward it without cookies.
+- **RUN-5.4** THE SYSTEM SHALL add `Origin-Agent-Cluster: ?1` to every app response.
+- **RUN-5.5** THE platform guide SHALL tell the AI that cookies are per app, that cookies set in browser JavaScript must be named `__Host-<name>` with `Secure; Path=/`, and that browser code reading `document.cookie` sees server-set cookies with the `__Host-` prefix.
+
 ## Non-functional requirements
 
 - Dispatcher overhead p95 < 5 ms (KV read, cached at edge with `cacheTtl: 30`).

@@ -30,6 +30,7 @@ export const FLOW_CATALOG: Record<FlowId, { implemented: boolean }> = {
   'F-RUN-1': { implemented: true },
   'F-RUN-2': { implemented: true },
   'F-RUN-3': { implemented: true },
+  'F-RUN-4': { implemented: true },
   'F-LOG-1': { implemented: true },
   'F-MAIL-1': { implemented: true },
   'F-EVT-1': { implemented: false },
