@@ -1,5 +1,4 @@
 // Tail consumer for user Workers; hosts the AppLogBuffer Durable Object (spec 10).
-// LOG_ARCHIVE (pipeline app-logs-<env>) is added once R2 is enabled on the account; code treats it as optional.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "tail",
@@ -14,7 +13,8 @@
       "workers_dev": false,
       "preview_urls": false,
       "vars": { "ENVIRONMENT": "dev" },
-      "durable_objects": { "bindings": [{ "name": "APP_LOGS", "class_name": "AppLogBuffer" }] }
+      "durable_objects": { "bindings": [{ "name": "APP_LOGS", "class_name": "AppLogBuffer" }] },
+      "pipelines": [{ "binding": "LOG_ARCHIVE", "stream": "0299f868cd7a42bebf2f1b969af80b27" }] // stream app_logs_dev
     },
     "prod": {
       "name": "tail-prod",

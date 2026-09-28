@@ -13,7 +13,6 @@ const TODAY = '2026-09-26'; // fakeClock starts at 2026-09-26T00:00Z
 const YESTERDAY = '2026-09-25';
 
 function fakeAnalytics(data: {
-  workers?: Record<string, { scriptName: string; requests: number; cpuMs: number; subrequests: number }[]>;
   assets?: Record<string, { hostname: string; requests: number }[]>;
   d1?: Record<string, { databaseId: string; rowsRead: number; rowsWritten: number }[]>;
   d1Storage?: Record<string, { databaseId: string; bytes: number }[]>;
@@ -25,10 +24,6 @@ function fakeAnalytics(data: {
     if (failures.has(method)) throw new PlatformError('UPSTREAM_ERROR');
   };
   const client: CloudflareAnalyticsClient = {
-    async workers(_ns, day) {
-      fail('workers');
-      return data.workers?.[day] ?? [];
-    },
     async assets(day) {
       fail('assets');
       return data.assets?.[day] ?? [];
@@ -59,7 +54,6 @@ const deps = (ctx: TestContext, analytics: CloudflareAnalyticsClient): UsageDeps
   clock: ctx.clock,
   metrics: ctx.metrics,
   logger: ctx.logger,
-  dispatchNamespace: 'apps-dev',
   appsDomain: 'motad.app',
 });
 
@@ -76,13 +70,6 @@ async function setup() {
   const gone = await newApp(ctx, 'Gone');
   await runTool(deleteApp, { app: gone.slug, confirm_slug: gone.slug }, ctx);
   const analytics = fakeAnalytics({
-    workers: {
-      [TODAY]: [
-        { scriptName: live.scriptName, requests: 120, cpuMs: 340.5, subrequests: 12 },
-        { scriptName: 'dispatcher-dev', requests: 999, cpuMs: 1, subrequests: 0 }, // not an app
-      ],
-      [YESTERDAY]: [{ scriptName: live.scriptName, requests: 30, cpuMs: 40, subrequests: 0 }],
-    },
     assets: { [TODAY]: [{ hostname: `${live.slug}.motad.app`, requests: 55 }] },
     d1: {
       [TODAY]: [
@@ -98,10 +85,17 @@ async function setup() {
     },
   });
   const now = ctx.clock.now();
-  await ctx.appLogs(live.id).append([
-    { ts: now, kind: 'request', level: 'info', message: 'GET / 200', invocation_id: 'i' },
-    { ts: now, kind: 'console', level: 'log', message: 'hello', invocation_id: 'i' },
-  ]);
+  await ctx.db.update(apps).set({ liveDeploymentId: 'dep_live0000001' }).where(eq(apps.id, live.id));
+  await ctx.appLogs(live.id).append(
+    [
+      { ts: now, kind: 'request', level: 'info', message: 'GET / 200', invocation_id: 'i' },
+      { ts: now, kind: 'console', level: 'log', message: 'hello', invocation_id: 'i' },
+    ],
+    [
+      ...Array.from({ length: 120 }, () => ({ ts: now, cpuMs: 2.5 })),
+      ...Array.from({ length: 30 }, () => ({ ts: now - 86_400_000, cpuMs: 1 })),
+    ],
+  );
   const base = {
     appId: live.id,
     orgId: live.orgId,
@@ -135,8 +129,7 @@ describe('collectUsage (USG-1)', () => {
     expect(result.failed).toEqual([]);
     expect(await usageOf(ctx, live.id)).toEqual({
       [`${TODAY} requests`]: 120,
-      [`${TODAY} cpu_ms`]: 340.5,
-      [`${TODAY} subrequests`]: 12,
+      [`${TODAY} cpu_ms`]: 300,
       [`${TODAY} asset_requests`]: 55,
       [`${TODAY} d1_rows_read`]: 1_000,
       [`${TODAY} d1_rows_written`]: 20,
@@ -148,7 +141,7 @@ describe('collectUsage (USG-1)', () => {
       [`${TODAY} deploys`]: 1,
       [`${TODAY} artifact_bytes`]: 4_000,
       [`${YESTERDAY} requests`]: 30,
-      [`${YESTERDAY} cpu_ms`]: 40,
+      [`${YESTERDAY} cpu_ms`]: 30,
     });
     // USG-1.6: a deleted app's database still costs storage.
     expect(await usageOf(ctx, gone.id)).toEqual({ [`${TODAY} d1_storage_bytes`]: 12_288 });
@@ -183,12 +176,17 @@ describe('collectUsage (USG-1)', () => {
     ]);
   });
 
-  it('asks every app log buffer when Workers analytics is unavailable', async () => {
-    const { ctx, live, analytics } = await setup();
-    analytics.failures.add('workers');
-    await collectUsage(deps(ctx, analytics.client));
-    const usage = await usageOf(ctx, live.id);
-    expect(usage[`${TODAY} log_entries`]).toBe(2);
-    expect(usage[`${TODAY} requests`]).toBeUndefined();
+  it('only asks log buffers of apps that went live and can have had traffic', async () => {
+    const { ctx, live, gone, analytics } = await setup();
+    const asked: string[] = [];
+    await collectUsage({
+      ...deps(ctx, analytics.client),
+      appLogs: (appId) => {
+        asked.push(appId);
+        return ctx.appLogs(appId);
+      },
+    });
+    expect(asked).toContain(live.id); // earlier tests' live apps share this D1; `gone` never went live
+    expect(asked).not.toContain(gone.id);
   });
 });

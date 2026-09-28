@@ -161,7 +161,7 @@ describe('AppLogBuffer (LOG-2.5, LOG-2.7, LOG-3)', () => {
     await runInDurableObject(stub, async (_, state) => expect(await state.storage.getAlarm()).toBeNull());
   });
 
-  it('counts received entries and stored bytes per UTC day, including dropped ones (USG-1.3)', async () => {
+  it('counts invocations, CPU time, received entries and stored bytes per UTC day (USG-1.3)', async () => {
     const stub = buffer();
     const day = Date.UTC(2026, 8, 27, 12);
     const minute = Math.floor(day / 60_000) * 60_000;
@@ -171,10 +171,17 @@ describe('AppLogBuffer (LOG-2.5, LOG-2.7, LOG-3)', () => {
     ]);
     await stub.append(Array.from({ length: LOG_INGEST_MAX_PER_MINUTE }, () => entry({ ts: minute + 1, message: '' })));
     await stub.append([entry({ ts: minute + 2, message: 'dropped' })]); // over the cap: counted, not stored
+    await stub.append(
+      [],
+      [
+        { ts: day, cpuMs: 1.5 },
+        { ts: day, cpuMs: 2 },
+      ],
+    );
     const usage = await stub.usage(['2026-09-26', '2026-09-27', '2026-09-28']);
     expect(usage).toEqual({
-      '2026-09-26': { entries: 1, bytes: 1 },
-      '2026-09-27': { entries: 2 + LOG_INGEST_MAX_PER_MINUTE, bytes: 6 + 2 },
+      '2026-09-26': { entries: 1, bytes: 1, requests: 0, cpu_ms: 0 },
+      '2026-09-27': { entries: 2 + LOG_INGEST_MAX_PER_MINUTE, bytes: 6 + 2, requests: 2, cpu_ms: 3.5 },
     });
     await stub.purge();
     expect(await stub.usage(['2026-09-27'])).toEqual({});

@@ -1,0 +1,104 @@
+{
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "type",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "ts",
+      "type": "int64",
+      "required": true
+    },
+    {
+      "name": "env",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "session_hash",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "user_id",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "org_id",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "app_id",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "app_slug",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "client_name",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "client_version",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "protocol_version",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "tool",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "outcome",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "error_code",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "duration_ms",
+      "type": "int64",
+      "required": false
+    },
+    {
+      "name": "args_json",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "args_truncated",
+      "type": "bool",
+      "required": true
+    },
+    {
+      "name": "result_bytes",
+      "type": "int64",
+      "required": false
+    },
+    {
+      "name": "email_hash",
+      "type": "string",
+      "required": false
+    }
+  ]
+}

@@ -34,6 +34,11 @@ describe('normalize (LOG-2.2–2.4)', () => {
     expect(new Set(entries.map((e) => e.invocation_id)).size).toBe(1);
   });
 
+  it('reports every trace event as one invocation with its CPU time (spec 13)', () => {
+    expect(normalize(traceItem({ cpuTime: 7 })).invocation).toEqual({ ts: 1_790_000_000_000, cpuMs: 7 });
+    expect(normalize(traceItem({ event: { cron: '* * * * *' }, logs: [] })).invocation.cpuMs).toBe(2);
+  });
+
   it('keeps no headers, cookies, query strings or IPs (LOG-2.3)', () => {
     const json = JSON.stringify(normalize(traceItem()).entries);
     for (const secret of ['token=secret', 'session=abc', 'Bearer', '1.2.3.4', 'todo.motad.app']) {

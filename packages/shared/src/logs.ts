@@ -30,11 +30,16 @@ export type LogFilter = {
 export type LogPage = { entries: LogEntry[]; next_cursor: string | null };
 
 /** RPC surface of the AppLogBuffer Durable Object (one per app). */
+/** One app invocation seen by the tail worker (spec 13: requests and CPU time). */
+export type Invocation = { ts: number; cpuMs: number };
+
+export type DailyLogUsage = { entries: number; bytes: number; requests: number; cpu_ms: number };
+
 export interface AppLogsRpc {
-  append(entries: LogEntry[]): Promise<void>;
+  append(entries: LogEntry[], invocations?: Invocation[]): Promise<void>;
   query(filter: LogFilter): Promise<LogPage>;
   /** Entries received and bytes stored per UTC day (spec 13, USG-1.3); days without traffic are absent. */
-  usage(days: string[]): Promise<Record<string, { entries: number; bytes: number }>>;
+  usage(days: string[]): Promise<Record<string, DailyLogUsage>>;
   /** Deletes every entry and the alarm (dev e2e purge). */
   purge(): Promise<void>;
 }

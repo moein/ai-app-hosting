@@ -1,0 +1,64 @@
+{
+  "fields": [
+    {
+      "name": "app_id",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "ts",
+      "type": "int64",
+      "required": true
+    },
+    {
+      "name": "kind",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "level",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "message",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "method",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "path",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "status",
+      "type": "int64",
+      "required": false
+    },
+    {
+      "name": "outcome",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "duration_ms",
+      "type": "int64",
+      "required": false
+    },
+    {
+      "name": "stack",
+      "type": "string",
+      "required": false
+    },
+    {
+      "name": "invocation_id",
+      "type": "string",
+      "required": true
+    }
+  ]
+}

@@ -2,11 +2,11 @@
 
 Depends on: 00, 04 (task 2 middleware chain).
 
-- [ ] **1. Provision stream, pipeline, sink (dev + prod)**
+- [x] **1. Provision stream, pipeline, sink (dev + prod)**
   Create `mcp-events-<env>` stream with schema, pipeline, R2 Data Catalog sink `mcp_events` in `datalake-<env>`; add `EVENTS` binding to `apps/api/wrangler.jsonc`. Same for the runtime-log archive (spec 10): `app-logs-<env>` stream + sink table `app_logs`, and the `LOG_ARCHIVE` binding in `apps/tail/wrangler.jsonc`. Record commands in `docs/runbook.md`. Needs R2 enabled on the account.
   Satisfies: EVT-1.7, LOG-2.6 (infrastructure)
   Tests: manual — send a test event in dev and query it with R2 SQL / catalog.
-  Status: blocked — R2 is not enabled on the account. Code already treats `EVENTS` / `LOG_ARCHIVE` as optional.
+  Status: dev done with `scripts/setup-pipelines.mjs` (streams `mcp_events_dev`, `app_logs_dev`; Iceberg tables `platform.mcp_events`, `platform.app_logs` in `datalake-dev`); prod runs with the prod setup.
 
 - [x] **2. Event schema + redaction + capping**
   Satisfies: EVT-1.3, EVT-1.4, EVT-1.5, EVT-1.8
@@ -34,6 +34,6 @@ Depends on: 00, 04 (task 2 middleware chain).
   Tests: manual run against dev AE SQL API.
   Status: all six queries run against `platform_metrics_dev` (2026-09-28).
 
-- [ ] **8. E2E on dev** (spec 12)
+- [x] **8. E2E on dev** (spec 12)
   Flows: `F-EVT-1` (slow).
   Satisfies: E2E-3.3

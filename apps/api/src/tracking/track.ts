@@ -1,4 +1,4 @@
-import { type McpEvent, newId, sha256Hex } from '@repo/shared';
+import { type McpEvent, newId, sha256Hex, withoutNulls } from '@repo/shared';
 import type { ToolOutcome } from '../mcp/pipeline';
 import type { ToolContext } from '../mcp/tool';
 import { redactArgs } from './redact';
@@ -15,7 +15,7 @@ export type TrackedCall = {
 export async function emitEvent(ctx: Pick<ToolContext, 'events' | 'metrics' | 'logger'>, event: McpEvent) {
   if (!ctx.events) return; // stream not provisioned yet (spec 05 task 1)
   try {
-    await ctx.events.send([event]);
+    await ctx.events.send([withoutNulls(event)]);
   } catch (error) {
     ctx.logger.error('event emit failed', { type: event.type, tool: event.tool, error });
     ctx.metrics.write('event_emit_failed', { orgId: event.org_id, sub: event.type });

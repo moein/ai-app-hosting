@@ -36,6 +36,7 @@
         { "binding": "DEPLOY_APP", "name": "deploy-app-dev", "class_name": "DeployApp" }
       ],
       "analytics_engine_datasets": [{ "binding": "METRICS", "dataset": "platform_metrics_dev" }],
+      "pipelines": [{ "binding": "EVENTS", "stream": "635b62378bdc473e834436a4c70e68c6" }], // stream mcp_events_dev (scripts/setup-pipelines.mjs)
       "r2_buckets": [{ "binding": "ARTIFACTS", "bucket_name": "artifacts-dev" }],
       "ratelimits": [{ "name": "TOOL_RATE_LIMITER", "namespace_id": "1001", "simple": { "limit": 120, "period": 60 } }],
       "d1_databases": [

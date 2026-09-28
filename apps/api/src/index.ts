@@ -1,6 +1,5 @@
 import { errorResponse } from '@repo/http';
 import { createMetrics, Logger, toPlatformError } from '@repo/shared';
-import { dispatchNamespaceFor } from './apps/names';
 import { createDb } from './db/client';
 import { parseEnv } from './env';
 import { app } from './http/app';
@@ -52,7 +51,6 @@ export default {
         ...platform,
         appLogs,
         logger: platform.logger.child({ job: 'usage' }),
-        dispatchNamespace: dispatchNamespaceFor(platform.environment),
         appsDomain: env.APPS_DOMAIN,
       });
       Logger.root.info('collected usage', usage);

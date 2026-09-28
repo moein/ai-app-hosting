@@ -63,6 +63,12 @@ Run `pnpm secrets:<env>` before the deploy that first needs a new secret. `deplo
 
 Deploy order matters: `email-<env>` and `tail-<env>` before `api-<env>` (service binding and the cross-script `APP_LOGS` Durable Object binding).
 
-## 5. Pipelines (spec 05 task 1, spec 10 task 5) — after R2 is enabled
+## 5. Pipelines (spec 05 task 1, spec 10 LOG-2.6)
 
-Streams `mcp-events-<env>` and `app-logs-<env>` with R2 Data Catalog sinks in `datalake-<env>` (tables `mcp_events`, `app_logs`); then add the `EVENTS` binding to `apps/api/wrangler.jsonc` and `LOG_ARCHIVE` to `apps/tail/wrangler.jsonc`. Exact commands are recorded here when that task is done.
+```
+node scripts/setup-pipelines.mjs <env>
+```
+
+Idempotent. Creates `datalake-<env>` with its R2 Data Catalog, the Iceberg namespace `platform` (create it once with the catalog REST API if the sink step reports "not authorized": the error is misleading), and for `mcp_events` and `app_logs`: a stream with the schema in `scripts/pipelines/*.schema.json`, an R2 Data Catalog sink, and the pipeline between them. It prints the stream ids; put them into the `EVENTS` binding (`apps/api/wrangler.jsonc`) and the `LOG_ARCHIVE` binding (`apps/tail/wrangler.jsonc`) as `"stream": "<id>"`. `CF_API_TOKEN` needs Workers R2 Data Catalog Edit, Workers R2 Storage Edit and Workers R2 SQL Read; the script passes it to the sink and never prints it.
+
+Query: `POST https://api.sql.cloudflarestorage.com/api/v1/accounts/<account>/r2-sql/query/datalake-<env>` with `{"query": "SELECT … FROM platform.mcp_events …"}`.

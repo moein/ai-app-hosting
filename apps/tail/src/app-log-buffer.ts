@@ -1,6 +1,8 @@
 import { DurableObject } from 'cloudflare:workers';
 import {
   type AppLogsRpc,
+  type DailyLogUsage,
+  type Invocation,
   LOG_BUFFER_MAX_AGE_MS,
   LOG_BUFFER_MAX_ENTRIES,
   LOG_INGEST_MAX_PER_MINUTE,
@@ -12,6 +14,7 @@ import {
 const HOUR_MS = 60 * 60 * 1000;
 const USAGE_RETENTION_DAYS = 7;
 const utf8Bytes = (text: string) => new TextEncoder().encode(text).byteLength;
+const utcDayOf = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 const MINUTE_MS = 60 * 1000;
 const LEVEL_RANK_SQL = "CASE level WHEN 'debug' THEN 0 WHEN 'warn' THEN 2 WHEN 'error' THEN 3 ELSE 1 END";
 const RANK = { debug: 0, info: 1, warn: 2, error: 3 } as const;
@@ -67,13 +70,26 @@ export class AppLogBuffer extends DurableObject<Env> implements AppLogsRpc {
         invocation_id TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS logs_ts ON logs (ts DESC);
-      CREATE TABLE IF NOT EXISTS usage (day TEXT PRIMARY KEY, entries INTEGER NOT NULL, bytes INTEGER NOT NULL);
+      DROP TABLE IF EXISTS usage; -- replaced by daily_usage (spec 13: requests and CPU time added)
+      CREATE TABLE IF NOT EXISTS daily_usage (
+        day TEXT PRIMARY KEY,
+        entries INTEGER NOT NULL DEFAULT 0, bytes INTEGER NOT NULL DEFAULT 0,
+        requests INTEGER NOT NULL DEFAULT 0, cpu_ms REAL NOT NULL DEFAULT 0
+      );
       CREATE TABLE IF NOT EXISTS ingest (minute INTEGER PRIMARY KEY, count INTEGER NOT NULL, dropped INTEGER NOT NULL DEFAULT 0, dropped_seq INTEGER);
     `);
   }
 
-  async append(entries: LogEntry[]): Promise<void> {
+  async append(entries: LogEntry[], invocations: Invocation[] = []): Promise<void> {
     this.ctx.storage.transactionSync(() => {
+      for (const invocation of invocations) {
+        this.sql.exec(
+          `INSERT INTO daily_usage (day, requests, cpu_ms) VALUES (?, 1, ?)
+           ON CONFLICT (day) DO UPDATE SET requests = requests + 1, cpu_ms = cpu_ms + excluded.cpu_ms`,
+          utcDayOf(invocation.ts),
+          invocation.cpuMs,
+        );
+      }
       for (const entry of entries) this.ingest(entry);
       const total = this.sql.exec<{ n: number }>('SELECT count(*) AS n FROM logs').one().n;
       if (total > LOG_BUFFER_MAX_ENTRIES) {
@@ -90,9 +106,9 @@ export class AppLogBuffer extends DurableObject<Env> implements AppLogsRpc {
     const stored = entry.kind !== 'console' || !this.overCap(entry);
     const bytes = stored ? utf8Bytes(entry.message) + utf8Bytes(entry.stack ?? '') : 0;
     this.sql.exec(
-      `INSERT INTO usage (day, entries, bytes) VALUES (?, 1, ?)
+      `INSERT INTO daily_usage (day, entries, bytes) VALUES (?, 1, ?)
        ON CONFLICT (day) DO UPDATE SET entries = entries + 1, bytes = bytes + excluded.bytes`,
-      new Date(entry.ts).toISOString().slice(0, 10),
+      utcDayOf(entry.ts),
       bytes,
     );
     const minute = Math.floor(entry.ts / MINUTE_MS);
@@ -194,13 +210,13 @@ export class AppLogBuffer extends DurableObject<Env> implements AppLogsRpc {
     return (counter?.count ?? 0) >= LOG_INGEST_MAX_PER_MINUTE;
   }
 
-  async usage(days: string[]): Promise<Record<string, { entries: number; bytes: number }>> {
-    const result: Record<string, { entries: number; bytes: number }> = {};
+  async usage(days: string[]): Promise<Record<string, DailyLogUsage>> {
+    const result: Record<string, DailyLogUsage> = {};
     for (const day of days) {
       const row = this.sql
-        .exec<{ entries: number; bytes: number }>('SELECT entries, bytes FROM usage WHERE day = ?', day)
+        .exec<DailyLogUsage>('SELECT entries, bytes, requests, cpu_ms FROM daily_usage WHERE day = ?', day)
         .toArray()[0];
-      if (row) result[day] = { entries: row.entries, bytes: row.bytes };
+      if (row) result[day] = { entries: row.entries, bytes: row.bytes, requests: row.requests, cpu_ms: row.cpu_ms };
     }
     return result;
   }
@@ -216,7 +232,7 @@ export class AppLogBuffer extends DurableObject<Env> implements AppLogsRpc {
     this.sql.exec('DELETE FROM logs WHERE ts < ?', cutoff);
     this.sql.exec('DELETE FROM ingest WHERE minute < ?', Math.floor(cutoff / MINUTE_MS));
     const usageCutoff = new Date(Date.now() - USAGE_RETENTION_DAYS * 86_400_000).toISOString().slice(0, 10);
-    this.sql.exec('DELETE FROM usage WHERE day < ?', usageCutoff);
+    this.sql.exec('DELETE FROM daily_usage WHERE day < ?', usageCutoff);
     await this.ctx.storage.setAlarm(Date.now() + HOUR_MS);
   }
 }

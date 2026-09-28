@@ -107,6 +107,7 @@ pnpm secrets:dev          # upload Worker secrets for dev from .env.dev (values 
                           # Run it BEFORE the deploy that first needs a new secret — workers reject requests while a required secret is missing.
 node scripts/setup-ses.mjs <env>              # SES identity/DNS/config set/SNS for customer-app email (idempotent; docs/runbook.md)
 node scripts/requeue-email-provisioning.mjs <env>  # re-enqueue SES org tenants / app identities stuck pending or failed
+node scripts/setup-pipelines.mjs <env>       # event/log archive streams, Iceberg sinks, pipelines (idempotent)
 node scripts/usage-report.mjs <env> [--month YYYY-MM] [--org <id>]  # per-app usage + estimated cost (spec 13)
 pnpm -F @repo/api db:generate   # Drizzle: generate a SQL migration from src/db/schema.ts
 pnpm -F @repo/<worker> types    # regenerate worker-configuration.d.ts after changing wrangler.jsonc

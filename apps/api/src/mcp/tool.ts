@@ -4,7 +4,7 @@ import type {
   EmailJob,
   Logger,
   McpClientInfo,
-  McpEvent,
+  McpEventRecord,
   Metrics,
   OrgId,
   PlatformMailRpc,
@@ -56,7 +56,7 @@ export type ToolContext = {
   /** Waits between polls (real timers in production, instant in tests). */
   sleep(ms: number): Promise<void>;
   /** The `EVENTS` pipeline (spec 05); undefined until the stream is provisioned. */
-  events: { send(events: McpEvent[]): Promise<void> } | undefined;
+  events: { send(records: McpEventRecord[]): Promise<void> } | undefined;
   metrics: Metrics;
   /** Keeps background work (tracking) alive after the result is returned. */
   waitUntil(promise: Promise<unknown>): void;

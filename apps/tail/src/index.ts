@@ -1,4 +1,4 @@
-import { type LogEntry, Logger } from '@repo/shared';
+import { type Invocation, type LogEntry, Logger } from '@repo/shared';
 import { parseEnv } from './env';
 import { normalize } from './normalize';
 
@@ -6,24 +6,26 @@ export { AppLogBuffer } from './app-log-buffer';
 
 /** Normalizes trace events of user app scripts into per-app log buffers and the archive (spec 10, LOG-2). */
 export async function handleTail(events: TraceItem[], env: Env, ctx: Pick<ExecutionContext, 'waitUntil'>) {
-  const byApp = new Map<string, LogEntry[]>();
+  const byApp = new Map<string, { entries: LogEntry[]; invocations: Invocation[] }>();
   for (const item of events) {
     try {
-      const { appId, entries } = normalize(item);
+      const { appId, entries, invocation } = normalize(item);
       if (!appId) {
         Logger.root.warn('trace item without app tag', { scriptName: item.scriptName });
         continue;
       }
-      byApp.set(appId, [...(byApp.get(appId) ?? []), ...entries]);
+      const batch = byApp.get(appId) ?? { entries: [], invocations: [] };
+      batch.entries.push(...entries);
+      batch.invocations.push(invocation);
+      byApp.set(appId, batch);
     } catch (error) {
       Logger.root.error('trace item normalization failed', { scriptName: item?.scriptName, error });
     }
   }
 
   await Promise.all(
-    [...byApp].map(async ([appId, entries]) => {
-      if (entries.length === 0) return;
-      if (env.LOG_ARCHIVE) {
+    [...byApp].map(async ([appId, { entries, invocations }]) => {
+      if (env.LOG_ARCHIVE && entries.length > 0) {
         const archive = env.LOG_ARCHIVE;
         ctx.waitUntil(
           archive
@@ -32,7 +34,8 @@ export async function handleTail(events: TraceItem[], env: Env, ctx: Pick<Execut
         );
       }
       try {
-        await env.APP_LOGS.get(env.APP_LOGS.idFromName(appId)).append(entries);
+        // Invocations are counted even without log entries (spec 13: requests and CPU time).
+        await env.APP_LOGS.get(env.APP_LOGS.idFromName(appId)).append(entries, invocations);
       } catch (error) {
         Logger.root.error('log buffer append failed', { appId, count: entries.length, error });
       }

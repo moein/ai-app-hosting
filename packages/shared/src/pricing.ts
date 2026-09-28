@@ -11,7 +11,6 @@ export const PRICES = {
   perUnitUsd: {
     requests: 0.3e-6, // Workers for Platforms requests
     cpu_ms: 0.02e-6, // Workers for Platforms CPU time
-    subrequests: 0, // not billed
     asset_requests: 0, // static asset requests are free (overhead below still applies)
     d1_rows_read: 0.001e-6,
     d1_rows_written: 1.0e-6,

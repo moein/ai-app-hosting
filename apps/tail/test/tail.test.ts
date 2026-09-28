@@ -36,6 +36,9 @@ describe('tail handler (LOG-2.1–2.8)', () => {
     await Promise.all(pending);
     expect((await read(a)).entries).toHaveLength(2);
     expect((await read(b)).entries).toHaveLength(1);
+    const day = new Date(1_790_000_000_000).toISOString().slice(0, 10);
+    const usage = await env.APP_LOGS.get(env.APP_LOGS.idFromName(a)).usage([day]);
+    expect(usage[day]).toMatchObject({ requests: 1, cpu_ms: 2 });
     expect(archive.sent).toHaveLength(3);
     expect(archive.sent.filter((r) => r.app_id === a)).toHaveLength(2);
     expect(archive.sent[0]).toMatchObject({ app_id: a, kind: 'request', path: '/api/notes' });

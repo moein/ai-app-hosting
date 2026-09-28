@@ -6,7 +6,6 @@
 export const USAGE_METRICS = {
   requests: { unit: 'invocations', kind: 'flow', write: 'replace' },
   cpu_ms: { unit: 'ms', kind: 'flow', write: 'replace' },
-  subrequests: { unit: 'count', kind: 'flow', write: 'replace' },
   asset_requests: { unit: 'requests', kind: 'flow', write: 'replace' },
   d1_rows_read: { unit: 'rows', kind: 'flow', write: 'replace' },
   d1_rows_written: { unit: 'rows', kind: 'flow', write: 'replace' },

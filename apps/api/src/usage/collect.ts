@@ -25,18 +25,19 @@ export type UsageDeps = {
   clock: Clock;
   metrics: Metrics;
   logger: Logger;
-  dispatchNamespace: string;
   appsDomain: string;
 };
 
-type Source = 'workers' | 'assets' | 'd1' | 'd1_storage' | 'logs' | 'builds' | 'github';
+type Source = 'assets' | 'd1' | 'd1_storage' | 'logs' | 'builds' | 'github';
 type AppRef = {
   id: string;
   orgId: string;
   slug: string;
-  scriptName: string;
   d1DatabaseId: string | null;
   repoName: string;
+  status: 'active' | 'deleted';
+  liveDeploymentId: string | null;
+  deletedAt: number | null;
 };
 
 /** Totals per `<appId>|<day>` and metric. */
@@ -48,9 +49,6 @@ class Totals {
     const metrics = this.values.get(key) ?? new Map<UsageMetric, number>();
     metrics.set(metric, (metrics.get(metric) ?? 0) + quantity);
     this.values.set(key, metrics);
-  }
-  has(appId: string, day: string, metric: UsageMetric) {
-    return (this.values.get(`${appId}|${day}`)?.get(metric) ?? 0) > 0;
   }
 }
 
@@ -103,14 +101,15 @@ export async function collectUsage(deps: UsageDeps): Promise<{ rows: number; app
       id: apps.id,
       orgId: apps.orgId,
       slug: apps.slug,
-      scriptName: apps.scriptName,
       d1DatabaseId: apps.d1DatabaseId,
       repoName: apps.repoName,
+      status: apps.status,
+      liveDeploymentId: apps.liveDeploymentId,
+      deletedAt: apps.deletedAt,
     })
     .from(apps)
     .all();
   const byId = new Map(all.map((a) => [a.id, a]));
-  const byScript = new Map(all.map((a) => [a.scriptName, a]));
   const byDatabase = new Map(all.filter((a) => a.d1DatabaseId).map((a) => [a.d1DatabaseId as string, a]));
   const byHost = new Map(all.map((a) => [`${a.slug}.${deps.appsDomain}`.toLowerCase(), a]));
 
@@ -123,15 +122,6 @@ export async function collectUsage(deps: UsageDeps): Promise<{ rows: number; app
   await attempt('github', () => backfillBuildTimes(deps, byId, now));
 
   for (const day of days) {
-    await attempt('workers', async () => {
-      for (const row of await deps.analytics.workers(deps.dispatchNamespace, day)) {
-        const app = byScript.get(row.scriptName);
-        if (!app) continue;
-        totals.add(app.id, day, 'requests', row.requests);
-        totals.add(app.id, day, 'cpu_ms', row.cpuMs);
-        totals.add(app.id, day, 'subrequests', row.subrequests);
-      }
-    });
     await attempt('assets', async () => {
       for (const row of await deps.analytics.assets(day)) {
         const app = byHost.get(row.hostname.toLowerCase());
@@ -153,24 +143,26 @@ export async function collectUsage(deps: UsageDeps): Promise<{ rows: number; app
       }
     });
   }
-  if (!failed.includes('workers')) done('requests', 'cpu_ms', 'subrequests');
   if (!failed.includes('assets')) done('asset_requests');
   if (!failed.includes('d1')) done('d1_rows_read', 'd1_rows_written');
   if (!failed.includes('d1_storage')) done('d1_storage_bytes');
 
-  // Log buffers are only asked about apps that served requests (all apps if Workers analytics failed).
+  // Invocations, CPU time and logs, counted by the tail worker in each app's log buffer (Workers analytics can't
+  // attribute Workers for Platforms scripts). Only apps that can have had traffic in the window are asked.
   await attempt('logs', async () => {
     const candidates = all.filter(
-      (a) => failed.includes('workers') || days.some((day) => totals.has(a.id, day, 'requests')),
+      (a) => a.liveDeploymentId !== null && (a.status === 'active' || (a.deletedAt ?? 0) >= now - 2 * DAY_MS),
     );
     for (const app of candidates) {
       const usage = await deps.appLogs(app.id).usage(days);
-      for (const [day, { entries, bytes }] of Object.entries(usage)) {
-        totals.add(app.id, day, 'log_entries', entries);
-        totals.add(app.id, day, 'log_bytes', bytes);
+      for (const [day, daily] of Object.entries(usage)) {
+        totals.add(app.id, day, 'requests', daily.requests);
+        totals.add(app.id, day, 'cpu_ms', daily.cpu_ms);
+        totals.add(app.id, day, 'log_entries', daily.entries);
+        totals.add(app.id, day, 'log_bytes', daily.bytes);
       }
     }
-    done('log_entries', 'log_bytes');
+    done('requests', 'cpu_ms', 'log_entries', 'log_bytes');
   });
 
   await attempt('builds', async () => {

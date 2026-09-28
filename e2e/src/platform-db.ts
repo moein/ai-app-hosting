@@ -1,24 +1,13 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { parseJsonc } from '../../packages/app-contract/src/jsonc';
-import { e2eEnv } from './env';
-
-type Config = { account_id: string; env: { dev: { d1_databases: { database_id: string }[] } } };
+import { cfToken, devConfig } from './cloudflare';
 
 /** Read-only queries against the dev platform D1 through the Cloudflare API (F-USG-1). */
 export async function platformQuery<T>(sql: string, params: unknown[] = []): Promise<T[]> {
-  const env = e2eEnv();
-  const token = env.E2E_CF_API_TOKEN ?? env.CF_API_TOKEN;
-  if (!token) throw new Error('E2E_CF_API_TOKEN (or CF_API_TOKEN) is needed for platform data checks');
-  const config = parseJsonc(
-    readFileSync(fileURLToPath(new URL('../../apps/api/wrangler.jsonc', import.meta.url)), 'utf8'),
-  ) as Config;
-  const db = config.env.dev.d1_databases[0]?.database_id;
+  const { accountId, databaseId } = devConfig();
   const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${config.account_id}/d1/database/${db}/query`,
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${databaseId}/query`,
     {
       method: 'POST',
-      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      headers: { authorization: `Bearer ${cfToken()}`, 'content-type': 'application/json' },
       body: JSON.stringify({ sql, params }),
     },
   );

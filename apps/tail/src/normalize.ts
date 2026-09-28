@@ -1,5 +1,6 @@
 import {
   type AppLogLevel,
+  type Invocation,
   LOG_MESSAGE_MAX_BYTES,
   LOG_STACK_MAX_BYTES,
   type LogEntry,
@@ -29,7 +30,10 @@ function pathOf(url: string): string {
 }
 
 /** Turns one trace item into log entries (LOG-2.2–2.4). Keeps no headers, query strings, bodies or IPs. */
-export function normalize(item: TraceItem, now = Date.now()): { appId: string | null; entries: LogEntry[] } {
+export function normalize(
+  item: TraceItem,
+  now = Date.now(),
+): { appId: string | null; entries: LogEntry[]; invocation: Invocation } {
   const appId = item.scriptTags?.find((tag) => tag.startsWith('app_')) ?? null;
   const invocation_id = crypto.randomUUID();
   const ts = item.eventTimestamp ?? item.logs[0]?.timestamp ?? item.exceptions[0]?.timestamp ?? now;
@@ -73,5 +77,6 @@ export function normalize(item: TraceItem, now = Date.now()): { appId: string | 
       invocation_id,
     });
   }
-  return { appId, entries };
+  // spec 13: every trace event is one invocation of the app, with its exact CPU time.
+  return { appId, entries, invocation: { ts, cpuMs: item.cpuTime ?? 0 } };
 }

@@ -3,7 +3,7 @@ import {
   cryptoRandom,
   type EmailJob,
   Logger,
-  type McpEvent,
+  type McpEventRecord,
   memoryMetrics,
   newId,
   type OrgId,
@@ -51,7 +51,7 @@ export type TestContext = ToolContext & {
   clock: ReturnType<typeof fakeClock>;
   metrics: ReturnType<typeof memoryMetrics>;
   /** Events sent to the fake EVENTS stream. */
-  sentEvents: McpEvent[];
+  sentEvents: McpEventRecord[];
   /** Background work handed to waitUntil (tracking); await `flush(ctx)` before asserting on it. */
   pending: Promise<unknown>[];
   mailer: FakeMailer;
@@ -62,7 +62,7 @@ export type TestContext = ToolContext & {
 export const testContext = (overrides: Partial<ToolContext> = {}): TestContext => {
   const cloudflare = fakeCloudflare({ d1: env.DB });
   const github = fakeGitHub();
-  const sentEvents: McpEvent[] = [];
+  const sentEvents: McpEventRecord[] = [];
   const pending: Promise<unknown>[] = [];
   const ctx = {
     env: env as Env,
@@ -86,7 +86,7 @@ export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =
     client: { name: 'test-client', version: '1.0.0', protocolVersion: '2025-06-18' },
     sentEvents,
     pending,
-    events: { send: async (events: McpEvent[]) => void sentEvents.push(...events) },
+    events: { send: async (records: McpEventRecord[]) => void sentEvents.push(...records) },
     waitUntil: (promise: Promise<unknown>) => void pending.push(promise),
     ...overrides,
   } as TestContext;

@@ -21,7 +21,7 @@ Depends on: 00, 04, 07 (`GitHubClient.getJobLog`), 08 (deployments, fail callbac
 - [x] **5. Pipeline archival (`app-logs-<env>`)**
   Satisfies: LOG-2.6
   Tests: fake pipeline receives each entry with `app_id`; send failure doesn't affect DO write.
-  The stream/sink and the `LOG_ARCHIVE` binding are provisioned with spec 05 task 1 (needs R2); until then archival is skipped.
+  The stream/sink and the `LOG_ARCHIVE` binding are provisioned with spec 05 task 1 (`scripts/setup-pipelines.mjs`); live on dev.
 
 - [x] **6. Attach tail consumer in deploy** (coordinate with spec 08 task 7)
   Satisfies: LOG-2.1

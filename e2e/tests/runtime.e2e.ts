@@ -141,22 +141,26 @@ describe.skipIf(!isImplemented('F-RUN-1'))('app runtime', () => {
     expect(message.from).toBe(`hello@mail.${slug}.${e2eEnv().E2E_APPS_DOMAIN}`);
   });
 
-  slowIt(flow('F-USG-1', 'traffic, a D1 query and an email show up in the app usage after collection'), async () => {
-    const [app] = await platformQuery<{ id: string }>('SELECT id FROM apps WHERE slug = ?', [slug]);
-    const wanted = ['requests', 'cpu_ms', 'd1_rows_read', 'emails', 'builds', 'deploys', 'artifact_bytes'];
-    // Collection runs hourly and Cloudflare analytics lag a few minutes.
-    const usage = await until(
-      async () => {
-        const rows = await platformQuery<{ metric: string; quantity: number }>(
-          'SELECT metric, SUM(quantity) AS quantity FROM app_usage_daily WHERE app_id = ? GROUP BY metric',
-          [app?.id],
-        );
-        const byMetric = Object.fromEntries(rows.map((r) => [r.metric, r.quantity]));
-        return wanted.every((m) => (byMetric[m] ?? 0) > 0) ? byMetric : undefined;
-      },
-      75 * 60_000,
-      60_000,
-    );
-    expect(usage.emails).toBeGreaterThanOrEqual(1);
-  });
+  slowIt(
+    flow('F-USG-1', 'traffic, a D1 query and an email show up in the app usage after collection'),
+    async () => {
+      const [app] = await platformQuery<{ id: string }>('SELECT id FROM apps WHERE slug = ?', [slug]);
+      const wanted = ['requests', 'cpu_ms', 'd1_rows_read', 'emails', 'builds', 'deploys', 'artifact_bytes'];
+      // Collection runs hourly and Cloudflare analytics lag a few minutes.
+      const usage = await until(
+        async () => {
+          const rows = await platformQuery<{ metric: string; quantity: number }>(
+            'SELECT metric, SUM(quantity) AS quantity FROM app_usage_daily WHERE app_id = ? GROUP BY metric',
+            [app?.id],
+          );
+          const byMetric = Object.fromEntries(rows.map((r) => [r.metric, r.quantity]));
+          return wanted.every((m) => (byMetric[m] ?? 0) > 0) ? byMetric : undefined;
+        },
+        75 * 60_000,
+        60_000,
+      );
+      expect(usage.emails).toBeGreaterThanOrEqual(1);
+    },
+    80 * 60_000,
+  ); // waits for the hourly collection
 });

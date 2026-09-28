@@ -33,7 +33,9 @@ describe('mcp_tool_call events (EVT-1.1, EVT-1.3, EVT-1.6)', () => {
     const ctx = testContext();
     await run(ctx, tool, args, ctx);
     expect(ctx.sentEvents).toHaveLength(1);
-    expect(ctx.sentEvents[0]).toMatchObject({ type: 'mcp_tool_call', tool: tool.name, outcome, error_code: code });
+    expect(ctx.sentEvents[0]).toMatchObject({ type: 'mcp_tool_call', tool: tool.name, outcome });
+    // Null fields are left out of the record (the stream treats missing as null).
+    expect(ctx.sentEvents[0]?.error_code).toBe(code ?? undefined);
     expect(ctx.metrics.points.filter((p) => p.event === 'tool_call')).toHaveLength(1);
   });
 

@@ -4,14 +4,16 @@ import { z } from 'zod';
 const GRAPHQL = 'https://api.cloudflare.com/client/v4/graphql';
 const LIMIT = 10_000;
 
-export type WorkersUsage = { scriptName: string; requests: number; cpuMs: number; subrequests: number };
 export type AssetsUsage = { hostname: string; requests: number };
 export type D1Usage = { databaseId: string; rowsRead: number; rowsWritten: number };
 export type D1Storage = { databaseId: string; bytes: number };
 
-/** Per-day usage from the Cloudflare GraphQL Analytics API (spec 13). One query per dataset per day. */
+/**
+ * Per-day usage from the Cloudflare GraphQL Analytics API (spec 13). One query per dataset per day. Worker
+ * invocations aren't here: GraphQL reports Workers for Platforms user scripts as `__unknown__`, so the tail worker
+ * counts them instead.
+ */
 export interface CloudflareAnalyticsClient {
-  workers(dispatchNamespace: string, day: string): Promise<WorkersUsage[]>;
   assets(day: string): Promise<AssetsUsage[]>;
   d1(day: string): Promise<D1Usage[]>;
   d1Storage(day: string): Promise<D1Storage[]>;
@@ -28,12 +30,6 @@ const Envelope = z.object({
     .nullable()
     .optional(),
 });
-const WorkersRows = z.array(
-  z.object({
-    dimensions: z.object({ scriptName: z.string() }),
-    sum: z.object({ requests: num, cpuTimeUs: num, subrequests: num }),
-  }),
-);
 const AssetRows = z.array(
   z.object({ dimensions: z.object({ hostname: z.string() }), sum: z.object({ requests: num }) }),
 );
@@ -45,9 +41,6 @@ const D1StorageRows = z.array(
 );
 
 export const QUERIES = {
-  workers: `query($account: String!, $day: Date!, $namespace: String!) { viewer { accounts(filter: { accountTag: $account }) {
-    rows: workersInvocationsAdaptive(limit: ${LIMIT}, filter: { date_geq: $day, date_leq: $day, dispatchNamespaceName: $namespace }) {
-      dimensions { scriptName } sum { requests cpuTimeUs subrequests } } } } }`,
   assets: `query($account: String!, $day: Date!) { viewer { accounts(filter: { accountTag: $account }) {
     rows: workersAssetsRequestsAdaptiveGroups(limit: ${LIMIT}, filter: { date_geq: $day, date_leq: $day }) {
       dimensions { hostname } sum { requests } } } } }`,
@@ -89,14 +82,6 @@ export function createCloudflareAnalyticsClient(options: {
   }
 
   return {
-    async workers(namespace, day) {
-      return WorkersRows.parse(await rows(QUERIES.workers, { day, namespace })).map((r) => ({
-        scriptName: r.dimensions.scriptName,
-        requests: r.sum.requests,
-        cpuMs: r.sum.cpuTimeUs / 1000,
-        subrequests: r.sum.subrequests,
-      }));
-    },
     async assets(day) {
       return AssetRows.parse(await rows(QUERIES.assets, { day })).map((r) => ({
         hostname: r.dimensions.hostname,
