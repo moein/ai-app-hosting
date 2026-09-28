@@ -2,6 +2,7 @@ import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { appUrl, createReadyApp, deleteApps, waitForStatus } from '../src/apps';
 import { logIn } from '../src/auth';
+import { isImplemented } from '../src/catalog';
 import { type DeploymentView, fixtureFiles, waitForDeployment, writeAndDeploy } from '../src/deploy';
 import { flow } from '../src/flows';
 import { callTool, connect } from '../src/mcp';
@@ -13,7 +14,8 @@ let first: DeploymentView | undefined;
 
 const health = async () => (await waitForStatus(`${appUrl(slug)}/api/health`, 200)).json();
 
-describe('build and deploy', () => {
+// Needs a live deployment (Workers Paid plan on the account); runs once F-DEP-1 is marked implemented.
+describe.skipIf(!isImplemented('F-DEP-1'))('build and deploy', () => {
   beforeAll(async () => {
     client = await connect();
     await logIn(client, testEmail('deploy'));

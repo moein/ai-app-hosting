@@ -35,3 +35,6 @@ export const FLOW_CATALOG: Record<FlowId, { implemented: boolean }> = {
   'F-EVT-1': { implemented: false },
   'F-USG-1': { implemented: false },
 };
+
+/** Tests of flows not marked implemented are skipped, so a blocked feature doesn't fail every deploy. */
+export const isImplemented = (id: FlowId) => FLOW_CATALOG[id]?.implemented === true;

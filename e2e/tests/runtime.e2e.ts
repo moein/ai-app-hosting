@@ -3,6 +3,7 @@ import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { appUrl, createReadyApp, deleteApps, waitForStatus } from '../src/apps';
 import { logIn } from '../src/auth';
+import { isImplemented } from '../src/catalog';
 import { fixtureFiles, writeAndDeploy } from '../src/deploy';
 import { e2eEnv } from '../src/env';
 import { flow, slowIt } from '../src/flows';
@@ -27,7 +28,8 @@ const api = (path: string, init?: RequestInit) => fetch(`${appUrl(slug)}${path}`
 const post = (path: string, body: unknown) =>
   api(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
 
-describe('app runtime', () => {
+// Needs a live deployment (Workers Paid plan on the account); runs once F-RUN-1 is marked implemented.
+describe.skipIf(!isImplemented('F-RUN-1'))('app runtime', () => {
   beforeAll(async () => {
     client = await connect();
     await logIn(client, testEmail('runtime'));
