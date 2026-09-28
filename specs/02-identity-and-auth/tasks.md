@@ -40,3 +40,19 @@ Depends on: 00 (tasks 1–7), 01 (tasks 1–3), 04 (task 1–2: McpSession + too
 - [x] **9. E2E on dev** (spec 12)
   Flows: `F-AUTH-1`, `F-AUTH-2`, `F-AUTH-3`, `F-AUTH-4`, `F-AUTH-5`.
   Satisfies: E2E-3.3
+
+- [ ] **10. OAuth provider in front of the api** (`@cloudflare/workers-oauth-provider`, `OAUTH_KV`, metadata, DCR + CIMD)
+  Satisfies: AUTH-4.1, AUTH-4.2, AUTH-4.3, AUTH-4.5, AUTH-4.6
+  Tests: `/mcp` without token → 401 with `resource_metadata`; both metadata documents; register → authorize → token → MCP call works; wrong verifier / redirect rejected; refresh rotates.
+
+- [ ] **11. Sign-in pages + login-code service**
+  Satisfies: AUTH-1.*, AUTH-2.*, AUTH-4.4, AUTH-4.8
+  Tests: every AUTH-1/2 rule through the pages (rate limits incl. per-sign-in and per-IP, suppression, send failure, wrong/expired/exhausted code, signup vs signin, blocked); client name + redirect host shown; foreign `Origin` → 403; unknown/expired pending → error page; `completeAuthorization` props; no-store + CSP headers.
+
+- [ ] **12. MCP identity from token props; remove login tools**
+  Satisfies: AUTH-3.6, AUTH-4.7
+  Tests: tools see `userId`/`orgId` from props; blocked user → `ACCOUNT_BLOCKED`; `whoami` shape; catalog no longer has the login tools; tracking carries the user.
+
+- [ ] **13. E2E on dev** (spec 12) — harness signs in through OAuth (register, authorize page, emailed code, token).
+  Flows: `F-AUTH-1`…`F-AUTH-5` (updated), `F-MCP-1`…`F-MCP-3`.
+  Satisfies: E2E-3.3

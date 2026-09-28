@@ -41,10 +41,9 @@ Who will use it:
 <many> Several people. Let people sign up and sign in with their email address (a one-time code sent by email). Each person should only see their own data, unless sharing is part of what the app does.
 
 How to do it:
-1. Sign me in to the connector: ask for my email, then for the 6-digit code I receive.
-2. Before writing any code, read the platform guide (all topics) and follow it exactly.
-3. Create the app, write all of its code, deploy it and follow the build until it's live. If anything fails, read the errors and logs, fix it and deploy again.
-4. When it works, give me the link and a short, non-technical explanation of how to use it.
+1. Before writing any code, read the platform guide (all topics) and follow it exactly.
+2. Create the app, write all of its code, deploy it and follow the build until it's live. If anything fails, read the errors and logs, fix it and deploy again.
+3. When it works, give me the link and a short, non-technical explanation of how to use it.
 
 I'm not technical: make the technical decisions yourself and only ask me about what the app should do.
 ```

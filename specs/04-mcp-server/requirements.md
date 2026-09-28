@@ -7,12 +7,12 @@ The remote MCP server is the product's only interface. It must work with any MCP
 ### MCP-1 — Client-agnostic protocol surface
 As a user of any AI assistant (Claude, ChatGPT, others), I want to connect the platform by pasting one URL, so that I can use the assistant I already have.
 
-- **MCP-1.1** THE SYSTEM SHALL serve MCP over Streamable HTTP at `PLATFORM_API_ORIGIN/mcp`, and SHALL accept connections without any `Authorization` header.
+- **MCP-1.1** THE SYSTEM SHALL serve MCP over Streamable HTTP at `PLATFORM_API_ORIGIN/mcp`, protected by OAuth 2.1 bearer tokens per the MCP authorization spec (spec 02, AUTH-4).
 - **MCP-1.2** THE SYSTEM SHALL rely only on MCP tools and the `instructions` field of the initialize result; it SHALL NOT require resources, prompts, sampling, elicitation, roots or any client-specific extension for any user journey.
 - **MCP-1.3** THE SYSTEM SHALL return every successful tool result both as `structuredContent` conforming to the tool's declared `outputSchema` and as a single text content block containing the same JSON.
 - **MCP-1.4** THE SYSTEM SHALL name tools in `snake_case` and SHALL write tool descriptions that are self-contained and never refer to a specific AI product.
 - **MCP-1.5** THE SYSTEM SHALL NOT expose organization identifiers in any tool input or output (APP-1.4).
-- **MCP-1.6** THE SYSTEM SHALL set MCP tool annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) for every tool as listed in design.md.
+- **MCP-1.6** THE SYSTEM SHALL give every tool a human-readable `title` and set MCP tool annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`) as listed in design.md.
 
 ### MCP-2 — Teaching the AI what to ship
 As an AI client, I want precise instructions from the server, so that the code I write builds and runs on the first try.

@@ -55,32 +55,31 @@ serialize   — { structuredContent: out, content: [{ type:'text', text: JSON.st
 
 Annotations: R = readOnly, D = destructive, I = idempotent, O = openWorld.
 
-| Tool | Public | Ann. | Spec | Purpose |
+| Tool | Title | Ann. | Spec | Purpose |
 |---|---|---|---|---|
-| `get_platform_guide` | ✓ | R I | 04 | How to build/ship apps here (contract, workflow, limits) |
-| `request_login_code` | ✓ | O | 02 | Email a 6-digit login code |
-| `verify_login_code` | ✓ | — | 02 | Sign in / sign up with the code |
-| `whoami` | ✓ | R I | 02 | Current login state |
-| `logout` |  | I | 02 | Unbind the session |
-| `get_usage` |  | R I | 03 | Quotas and usage |
-| `check_slug` |  | R I | 01 | Is an app address valid/available |
-| `create_app` |  | — | 03 | Create app (repo, DB, placeholder Worker, subdomain) |
-| `retry_provisioning` |  | I | 03 | Retry failed setup |
-| `list_apps` |  | R I | 03 | List active apps |
-| `get_app` |  | R I | 03 | App details + deployment state |
-| `delete_app` |  | D | 03 | Take app offline (deletes Worker only) |
-| `list_files` |  | R I | 07 | List repo files (paths, sizes) |
-| `read_file` |  | R I | 07 | Read file contents |
-| `write_files` |  | D | 07 | Create/update/delete files in one commit; triggers a deploy |
-| `list_deployments` |  | R I | 08 | Deployment history |
-| `get_deployment` |  | R I | 08/10 | Status, errors, build log excerpt; optional wait |
-| `redeploy` |  | — | 08 | Rebuild + deploy current `main` |
-| `rollback` |  | — | 08 | Re-ship a previous successful artifact |
-| `get_logs` |  | R I | 10 | Runtime logs of the live app |
-| `set_secret` |  | I | 09 | Set an env secret |
-| `list_secrets` |  | R I | 09 | Secret names (never values) |
-| `delete_secret` |  | D I | 09 | Remove a secret |
-| `query_database` |  | D | 09 | Run SQL against the app's D1 |
+| `get_platform_guide` | Read the platform guide | R I | 04 | How to build/ship apps here (contract, workflow, limits) |
+| `whoami` | Who am I | R I | 02 | The signed-in user |
+| `get_usage` | Show usage and quotas | R I | 03 | Quotas and usage |
+| `check_slug` | Check an app address | R I | 01 | Is an app address valid/available |
+| `create_app` | Create an app | — | 03 | Create app (repo, DB, placeholder Worker, subdomain) |
+| `retry_provisioning` | Retry app setup | I | 03 | Retry failed setup |
+| `list_apps` | List my apps | R I | 03 | List active apps |
+| `get_app` | Show an app | R I | 03 | App details + deployment state |
+| `delete_app` | Delete an app | D | 03 | Take app offline (deletes Worker only) |
+| `list_files` | List app files | R I | 07 | List repo files (paths, sizes) |
+| `read_file` | Read an app file | R I | 07 | Read file contents |
+| `write_files` | Write app files | D | 07 | Create/update/delete files in one commit; triggers a deploy |
+| `list_deployments` | List deployments | R I | 08 | Deployment history |
+| `get_deployment` | Show a deployment | R I | 08/10 | Status, errors, build log excerpt; optional wait |
+| `redeploy` | Redeploy the app | — | 08 | Rebuild + deploy current `main` |
+| `rollback` | Roll back to a deployment | — | 08 | Re-ship a previous successful artifact |
+| `get_logs` | Show app logs | R I | 10 | Runtime logs of the live app |
+| `set_secret` | Set a secret | I | 09 | Set an env secret |
+| `list_secrets` | List secrets | R I | 09 | Secret names (never values) |
+| `delete_secret` | Delete a secret | D I | 09 | Remove a secret |
+| `query_database` | Query the app database | D | 09 | Run SQL against the app's D1 |
+
+Every tool requires the OAuth bearer token (spec 02, AUTH-4); there are no public tools.
 
 `write_files`, `delete_app`, `delete_secret`, `query_database` descriptions tell the AI when to confirm with the user.
 
@@ -90,15 +89,14 @@ Annotations: R = readOnly, D = destructive, I = idempotent, O = openWorld.
 This server hosts full-stack web apps. You (the AI) write ALL of the app's code; the platform
 stores, builds, deploys and runs it at https://<app>.APPS_DOMAIN. The platform never generates code.
 
-1. Login: call whoami. If not authenticated, ask the user for their email, call request_login_code,
-   ask the user for the 6-digit code from their inbox, then call verify_login_code.
-2. Before writing any code, call get_platform_guide and follow its app contract exactly
+The user is already signed in through the connector (whoami shows who).
+1. Before writing any code, call get_platform_guide and follow its app contract exactly
    (Hono API + React SPA on one Cloudflare Worker, D1 database, wrangler.jsonc).
-3. create_app (or list_apps to continue an existing one).
-4. write_files to commit code. Every commit to main is built and deployed automatically.
-5. get_deployment with wait_seconds to follow the build. If it fails, read the errors, fix the
+2. create_app (or list_apps to continue an existing one).
+3. write_files to commit code. Every commit to main is built and deployed automatically.
+4. get_deployment with wait_seconds to follow the build. If it fails, read the errors, fix the
    files, and write again. When live, give the user the URL.
-6. Use get_logs, query_database, set_secret to debug and operate the app.
+5. Use get_logs, query_database, set_secret to debug and operate the app.
 Every error includes a `hint` telling you what to do next.
 ```
 

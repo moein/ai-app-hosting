@@ -3,23 +3,59 @@
 ## Flow
 
 ```
-User            AI client                         apps/api (/mcp)                McpSession DO     D1            PlatformMail
- │ "host my app"   │                                    │                               │            │                  │
- │                 │── whoami ─────────────────────────▶│── read binding ──────────────▶│            │                  │
- │                 │◀─ {authenticated:false, next_step} │                               │            │                  │
- │◀─ "your email?" │                                    │                               │            │                  │
- │── a@b.com ─────▶│── request_login_code(a@b.com) ────▶│── per-session limit ─────────▶│            │                  │
- │                 │                                    │── per-email limits ──────────────────────▶│                  │
- │                 │                                    │── invalidate old, insert code hash ──────▶│                  │
- │                 │                                    │── sendLoginCode ─────────────────────────────────────────────▶│── Resend
- │                 │◀─ {sent:true, expires_in:600}      │                               │            │                  │
- │◀─ "code?"       │                                    │                               │            │                  │
- │── 482913 ──────▶│── verify_login_code(a@b.com,…) ───▶│── load latest code, compare ─────────────▶│                  │
- │                 │                                    │   (new user → batch: user+org+membership)  │                  │
- │                 │                                    │── enqueue org.provision_email_tenant (EMAIL_JOBS)            │
- │                 │                                    │── bind {userId, orgId} ──────▶│            │                  │
- │                 │◀─ {authenticated:true, is_new_user}│                               │            │                  │
+User          AI client (e.g. Claude)                       apps/api                                         D1 / KV / PlatformMail
+ │ adds connector │── POST /mcp (no token) ───────────────────▶│ 401 WWW-Authenticate: resource_metadata=…     │
+ │                │── GET /.well-known/oauth-protected-resource ▶ { resource: …/mcp, authorization_servers }  │
+ │                │── GET /.well-known/oauth-authorization-server ▶ endpoints, S256, registration              │
+ │                │── POST /oauth/register (DCR) or CIMD client id ▶ client                                    │
+ │◀── browser ────│── GET /authorize?client_id&redirect_uri&code_challenge&state&resource&scope               │
+ │── email ──────────────────────────────────────────────────▶ POST /authorize/email ── code → Resend ─────────▶│
+ │── 482913 ─────────────────────────────────────────────────▶ POST /authorize/code  ── verify, signup? ───────▶│
+ │                │◀─ 302 redirect_uri?code&state ────────────│ completeAuthorization(props {userId,orgId,email})│
+ │                │── POST /oauth/token (code + verifier) ────▶ access + refresh token                           │
+ │                │── POST /mcp  Authorization: Bearer … ─────▶ McpSession (this.props = identity)             │
 ```
+
+`apps/api` default export is `OAuthProvider` from `@cloudflare/workers-oauth-provider` (after env validation):
+
+```ts
+new OAuthProvider({
+  apiRoute: '/mcp', apiHandler: McpSession.serve('/mcp', { binding: 'MCP_SESSION' }),
+  defaultHandler: honoApp,                       // /healthz, /v1/*, /authorize pages
+  authorizeEndpoint: '/authorize', tokenEndpoint: '/oauth/token', clientRegistrationEndpoint: '/oauth/register',
+  scopesSupported: ['apps'], accessTokenTTL: OAUTH_ACCESS_TOKEN_TTL_S, refreshTokenTTL: OAUTH_REFRESH_TOKEN_TTL_S,
+  clientIdMetadataDocumentEnabled: true,
+  resourceMetadata: { resource: `${PLATFORM_API_ORIGIN}/mcp`, authorization_servers: [PLATFORM_API_ORIGIN] },
+})
+```
+
+It stores clients, grants and token hashes in the `OAUTH_KV` namespace (props encrypted with the token, AUTH-4.6).
+
+## Sign-in page (`src/http/routes/authorize.ts`, server-rendered HTML, no JavaScript)
+
+| Request | Behaviour |
+|---|---|
+| `GET /authorize?…` | `parseAuthRequest` + `lookupClient` (invalid → error page, no redirect). Stores a *pending sign-in* `{ oauthReq, clientName, redirectHost, codesSent: 0 }` in `OAUTH_KV` under `pending:<random 32 bytes>` with TTL `OAUTH_PENDING_TTL_S`; renders the email form with the pending id in a hidden field and "<client> wants to use your AI App Hosting account (returns to <host>)". |
+| `POST /authorize/email` | Origin check (AUTH-4.8); per-IP limit; load pending; per-sign-in and per-email limits; suppression; issue code (hash, invalidate older), send via `PlatformMail`; save email + `codesSent` on the pending record; render the code form. |
+| `POST /authorize/code` | Origin check; load pending (must have an email); verify (algorithm below); signup or `last_login_at`; `completeAuthorization({ request: oauthReq, userId, scope, metadata: { label: email }, props: { userId, orgId, email } })`; delete the pending record; `302` to the returned `redirectTo`. |
+| `POST /authorize/resend`, `POST /authorize/restart` | Resend a code to the same email (limits apply) / back to the email form. |
+
+Pages share the website's look (inline CSS), send `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'`, and `Cache-Control: no-store`. Errors are shown in plain language on the same form.
+
+The login-code service (`src/auth/login-codes.ts`: `issueLoginCode`, `verifyLoginCode`) holds the rules of AUTH-1/AUTH-2 and is used only by these pages.
+
+## MCP identity
+
+`McpSession` reads `this.props` (`{ userId, orgId, email }`) set by the provider. The auth guard (every tool, spec 04):
+
+```
+props missing                     → AUTH_REQUIRED (can't happen behind the provider; defensive)
+user = D1 users by id             (PK lookup; AUTH-4.7)
+missing → AUTH_REQUIRED; blocked → ACCOUNT_BLOCKED
+ctx.userId / ctx.orgId / ctx.email = props
+```
+
+Tools `request_login_code`, `verify_login_code` and `logout` no longer exist; `whoami` returns `{ email, member_since }`. Disconnecting is done in the AI client (it drops the tokens).
 
 ## Data model (platform D1)
 
@@ -64,60 +100,6 @@ Organizations/memberships tables are owned by spec 03 but created in the same mi
 | `LOGIN_CODES_PER_SESSION_PER_10_MIN` | 3 |
 | `SESSION_IDLE_TTL_MS` | 30 days |
 
-## MCP session Durable Object
-
-`McpSession extends McpAgent` (agents SDK). One instance per `Mcp-Session-Id`. Stored state:
-
-```ts
-type SessionState = {
-  auth: { userId: UserId; orgId: OrgId; authenticatedAt: number; lastSeenAt: number } | null;
-  client: { name: string; version: string } | null;   // from MCP initialize (spec 05)
-  loginCodeRequests: number[];                         // epoch ms of recent request_login_code sends; entries
-                                                       // older than 10 min are dropped on each call
-};
-```
-
-Per-session login-code limit (AUTH-1.6): `request_login_code` drops timestamps older than 10 minutes from `loginCodeRequests`; if `LOGIN_CODES_PER_SESSION_PER_10_MIN` remain → `RATE_LIMITED` with `retry_after_seconds` = time until the oldest one expires; otherwise it runs the per-email checks (D1), inserts the code, sends it via `PlatformMail` (Resend, spec 11), and appends `now`. Only sends that actually happened are recorded; if sending fails the new code row is invalidated (AUTH-1.9).
-
-Implementation: a `SessionStore` (`apps/api/src/auth/session-store.ts`) wraps `this.ctx.storage` with `getAuth / setAuth / clearAuth / recentLoginCodeRequests / recordLoginCodeRequest`; tool handlers get it as `ctx.session`, and tests use an in-memory implementation.
-
-Auth guard (wraps every tool, spec 04):
-
-```
-if tool ∈ PUBLIC_TOOLS: run
-elif auth == null or now - auth.lastSeenAt > SESSION_IDLE_TTL_MS: clear auth; AUTH_REQUIRED
-else:
-  user = D1 users by id   (cheap PK lookup; enforces AUTH-3.7)
-  if user.status == 'blocked': clear auth; ACCOUNT_BLOCKED
-  auth.lastSeenAt = now; run tool with ctx { userId, orgId }
-```
-
-`PUBLIC_TOOLS = ['request_login_code', 'verify_login_code', 'whoami', 'get_platform_guide']`.
-
-## Tool contracts
-
-```ts
-// request_login_code
-in:  { email: string }                                  // z.string().trim().toLowerCase().email().max(254)
-out: { sent: true; email: string; expires_in_seconds: 600;
-       next_step: "Ask the user for the 6-digit code we just emailed to <email>, then call verify_login_code." }
-
-// verify_login_code
-in:  { email: string; code: string }                    // code: strip [\s-], then /^\d{6}$/
-out: { authenticated: true; email: string; is_new_user: boolean;
-       next_step: "Call get_platform_guide before writing any code, then create_app." }
-
-// logout
-in:  {}   out: { authenticated: false }
-
-// whoami — one object shape (MCP output schemas must be objects)
-in:  {}
-out: { authenticated: boolean; email?: string; member_since?: string /* ISO */; next_step?: string }
-     // authenticated: false ⇒ next_step "Ask the user for their email address, then call request_login_code." 
-```
-
-Organizations never appear in these outputs (MCP-1.5).
-
 ## Verify algorithm
 
 ```
@@ -134,37 +116,31 @@ user = by email
 if !user: D1 batch [INSERT users, INSERT organizations (slug via generateSlug), INSERT memberships]; enqueue job
 elif user.status == 'blocked': ACCOUNT_BLOCKED
 else: UPDATE last_login_at
-bind session
+complete the OAuth authorization (props = identity)
 ```
 
 The conditional `UPDATE … WHERE consumed_at IS NULL` makes consumption single-use under concurrency. Org slug collisions inside the batch are retried per SLUG-3.3.
 
 ## Mail and secrets
 
-- The api calls the email worker's `PlatformMail.sendLoginCode({ to, code, codeId })` over the `MAIL` service binding and rethrows a failed result as a `PlatformError` (spec 11). Tools receive it as `ctx.mailer`, so tests inject a fake.
+- The api calls the email worker's `PlatformMail.sendLoginCode({ to, code, codeId })` over the `MAIL` service binding and rethrows a failed result as a `PlatformError` (spec 11). The sign-in routes receive it through their deps, so tests inject a fake.
 - `LOGIN_CODE_PEPPER` is a per-environment api secret, generated by `pnpm secrets:<env>` into `.env.<env>` as `LOGIN_CODE_PEPPER` (each environment has its own file, hence its own value). Rotating it invalidates outstanding codes only.
 
-## Error codes (added)
+## Error codes
 
-| Code | retryable | Hint |
-|---|---|---|
-| `CODE_INVALID` | false | The code is wrong. Ask the user to re-check the latest email (`details.attempts_remaining` left). If 0, call `request_login_code` again. |
-| `CODE_EXPIRED` | false | The code expired. Call `request_login_code` again and ask the user for the new code. |
-| `CODE_ATTEMPTS_EXCEEDED` | false | Too many wrong tries. Call `request_login_code` to send a new code. |
-| `EMAIL_UNDELIVERABLE` | false | We can't deliver to this address (it bounced or reported spam before). Ask the user for a different email. |
-| `ACCOUNT_BLOCKED` | false | This account is blocked. Tell the user to contact support. |
+`ACCOUNT_BLOCKED` (retryable false): "This account is blocked. Tell the user to contact support." `AUTH_REQUIRED` stays for defensive use. The sign-in page shows plain-language messages instead of codes: wrong code (attempts left), expired, too many attempts, undeliverable address, couldn't send.
 
 ## Tracking
 
-Every tool call is tracked by spec 05 middleware (the `code` argument is always redacted). Additional Analytics Engine events: `login_code_requested`, `login_succeeded` (blob: `signup`|`signin`), `login_failed` (blob: error code).
+The sign-in routes write the Analytics Engine events `login_code_requested`, `login_succeeded` (sub `signup`|`signin`, with the client name) and `login_failed` (sub = reason). Tool calls are tracked by spec 05; their events carry the user from the token.
 
 ## Security notes
 
-- **Brute force:** 5 attempts/code × 5 codes/hour/email ⇒ ≤ 25 guesses/hour against 10^6 codes.
-- **Enumeration:** identical `request_login_code` responses (AUTH-1.3). `is_new_user` is only revealed after proving control of the mailbox.
-- **Phishing by a third party's AI:** mitigated by email copy (AUTH-1.8) and short TTL; the attacker still needs the victim to hand over the code.
-- **Code exposure in chat transcripts:** acceptable — single-use, 10-minute TTL, bound to the requesting email.
-- **Session possession:** `Mcp-Session-Id` is a server-generated random value held by the AI client; anyone holding it acts as the user. Not returned in tool output and not logged in events (spec 05).
+- **Brute force:** 5 attempts/code × 5 codes/hour/email ⇒ ≤ 25 guesses/hour against 10^6 codes; plus the per-IP limit.
+- **Enumeration:** identical responses for known and unknown emails (AUTH-1.3).
+- **Confused deputy / phishing by a malicious client:** the page names the requesting client and its redirect host before any code is sent (AUTH-4.4); PKCE and exact redirect-URI matching are enforced by the provider.
+- **CSRF on the sign-in forms:** `Origin` must be `PLATFORM_API_ORIGIN`, and every post references an unguessable pending id bound to one authorization request (AUTH-4.8).
+- **Token theft:** only hashes are stored; access tokens are short-lived; refresh tokens rotate.
 
 ## Open questions
 

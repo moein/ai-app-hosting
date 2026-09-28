@@ -3,7 +3,7 @@
 Depends on: 00. Feature tools are implemented in their own specs; this spec provides the framework, guide and catalog check.
 
 - [x] **1. `McpSession` Durable Object + `/mcp` route**
-  agents SDK `McpAgent`, Streamable HTTP, no auth header required.
+  agents SDK `McpAgent`, Streamable HTTP (OAuth bearer tokens since spec 02 task 10).
   Satisfies: MCP-1.1
   Tests (pool-workers): `initialize` without Authorization succeeds and returns `Mcp-Session-Id`; `tools/list` works on that session.
 
@@ -14,7 +14,7 @@ Depends on: 00. Feature tools are implemented in their own specs; this spec prov
 
 - [x] **3. Server instructions**
   Satisfies: MCP-2.1
-  Tests: `initialize` result contains instructions ≤ 2,000 chars mentioning `get_platform_guide`, `request_login_code`, `write_files`, `get_deployment`.
+  Tests: `initialize` result contains instructions ≤ 2,000 chars mentioning `get_platform_guide`, `whoami`, `write_files`, `get_deployment`.
 
 - [x] **4. Guide assembly + `get_platform_guide`** (content written in spec 06 task 1)
   Satisfies: MCP-2.2, MCP-2.3, MCP-2.4, MCP-2.5

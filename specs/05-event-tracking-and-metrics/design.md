@@ -36,7 +36,7 @@ type McpEvent = {
   args_json: string | null;    // redacted, ≤ 8 KB
   args_truncated: boolean;
   result_bytes: number | null;
-  email_hash: string | null;   // for pre-login funnel analysis
+  email_hash: string | null;   // always null since sign-in moved to OAuth (kept: additive schema)
 };
 ```
 
@@ -55,8 +55,6 @@ A per-tool redactor map; default = pass-through.
 
 | Tool | Field | Replacement |
 |---|---|---|
-| `request_login_code`, `verify_login_code` | `email` | removed; `email_hash` set |
-| `verify_login_code` | `code` | `"[redacted]"` |
 | `set_secret` | `value` | `"[redacted]"` |
 | `write_files` | `files[].content` | removed; `files[] = { path, op, bytes, sha256 }` |
 | `query_database` | `sql` | first 1,000 chars |
@@ -95,7 +93,7 @@ Feature metrics are written where the fact is known:
 | Metric | Written by |
 |---|---|
 | `tool_call` | `trackToolCall` |
-| `login_code_requested`, `login_succeeded`, `login_failed` | `trackToolCall`, from `request_login_code` / `verify_login_code` outcomes (`login_succeeded.sub` = `signup` when the verify output says the account was created) |
+| `login_code_requested`, `login_succeeded`, `login_failed` | the sign-in pages (spec 02), `login_succeeded.sub` = `signup`/`signin` |
 | `app_created`, `app_deleted` | `trackToolCall`, from `create_app` / `delete_app` successes |
 | `provisioning_failed` | `markProvisioningFailed` (sub `app`); email worker after the last tenant retry (sub `email_tenant`) |
 | `deployment_finished` | `recordDeploymentFinished(db, metrics, ids)` after every transition to `succeeded`, `failed` or `cancelled` (DeployApp, build callbacks, sweeps, redeploy, cancellations) |

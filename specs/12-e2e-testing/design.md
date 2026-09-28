@@ -73,14 +73,14 @@ The deploy-related tests write `fixtures/contract-app` (repo root, spec 06) thro
 |---|---|---|
 | `F-E2E-1` | Inbox self-test: a probe sent via Resend to a fresh `E2E_INBOX_ADDRESS` subaddress arrives in the e2e inbox | 12 |
 | `F-FND-1` | `GET /healthz` on the dev API reports `status: "ok"`, `environment: "dev"` | 00 |
-| `F-MCP-1` | `initialize` (no auth header) returns a session and instructions; every tool in `tools/list` is in the spec 04 catalog with its public flag reflected in behavior and its annotations; once every feature is implemented, `tools/list` equals the catalog | 04 |
-| `F-MCP-2` | `get_platform_guide` returns every topic without login | 04 |
+| `F-MCP-1` | `initialize` (with a token) returns a session and instructions; every tool in `tools/list` is in the spec 04 catalog with its public flag reflected in behavior and its annotations; once every feature is implemented, `tools/list` equals the catalog | 04 |
+| `F-MCP-2` | `get_platform_guide` returns every topic | 04 |
 | `F-MCP-3` | Invalid tool input → `INVALID_INPUT` with issue paths | 04 |
-| `F-AUTH-1` | Sign up: request code → real email → verify → `is_new_user: true`, `whoami` authenticated | 02, 11 |
-| `F-AUTH-2` | Sign in again from a new MCP session → `is_new_user: false` | 02 |
-| `F-AUTH-3` | Wrong code → `CODE_INVALID` with `attempts_remaining`; 5 wrong → `CODE_ATTEMPTS_EXCEEDED` | 02 |
-| `F-AUTH-4` | Protected tool without login → `AUTH_REQUIRED`; `logout` → `AUTH_REQUIRED` again | 02 |
-| `F-AUTH-5` | Per-session login-code limit → `RATE_LIMITED` | 02 |
+| `F-AUTH-1` | Sign up through OAuth: register a client, the sign-in page names it, email → real emailed code → redirect with an authorization code → token → `whoami` shows the email | 02, 11 |
+| `F-AUTH-2` | Sign in again with another client → same user; refresh token rotates | 02 |
+| `F-AUTH-3` | Wrong code on the sign-in page → attempts left shown; 5 wrong → a new code is needed | 02 |
+| `F-AUTH-4` | `/mcp` without or with an invalid token → 401 with `resource_metadata`; both metadata documents are served | 02 |
+| `F-AUTH-5` | Per-sign-in code limit → "too many attempts"; a post from another origin → 403 | 02 |
 | `F-SLUG-1` | `check_slug`: available / taken (with suggestion) / reserved / invalid | 01 |
 | `F-APP-1` | `create_app` → `ready`; `list_apps`/`get_app` show it; URL serves the 503 "being built" page | 03, 09 |
 | `F-APP-2` | `create_app` with a taken slug → `SLUG_UNAVAILABLE` + suggestion | 01, 03 |
