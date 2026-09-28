@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Event and runtime-log archives (spec 05 task 1, spec 10 LOG-2.6): per dataset a stream (with schema), an R2 Data
 // Catalog sink (Iceberg table in datalake-<env>, namespace `platform`) and the pipeline between them. Idempotent.
-// Usage: node scripts/setup-pipelines.mjs <dev|prod>   — prints the stream ids for the wrangler.jsonc bindings.
+// Usage: node scripts/setup-pipelines.mjs <dev|prod> [--rotate-token]   — prints the stream ids for the bindings.
+// --rotate-token recreates the sinks (and their pipelines) with the current CF_API_TOKEN after it was rotated;
+// streams stay, so the Worker bindings keep working (events sent meanwhile are dropped).
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -9,6 +11,7 @@ import { parseJsonc } from '../packages/app-contract/src/jsonc.ts';
 import { readEnvFile } from './env-file.mjs';
 
 const env = process.argv[2];
+const rotate = process.argv.includes('--rotate-token');
 if (env !== 'dev' && env !== 'prod') {
   process.stderr.write('usage: node scripts/setup-pipelines.mjs <dev|prod>\n');
   process.exit(2);
@@ -69,6 +72,11 @@ wrangler(['r2', 'bucket', 'catalog', 'enable', bucket]);
 for (const { table, schema, binding } of DATASETS) {
   const stream = `${table}_${env}`;
   const sink = `${table}_${env}_sink`;
+  if (rotate) {
+    if (list('pipelines').some((p) => p.name === stream)) wrangler(['pipelines', 'delete', stream, '--force']);
+    if (list('sinks').some((s) => s.name === sink)) wrangler(['pipelines', 'sinks', 'delete', sink, '--force']);
+    say(`sink ${sink}: removed for token rotation`);
+  }
   if (!list('streams').some((s) => s.name === stream)) {
     wrangler(['pipelines', 'streams', 'create', stream, '--schema-file', resolve(schema), '--http-enabled', 'false']);
     say(`stream ${stream}: created`);
