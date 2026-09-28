@@ -21,7 +21,7 @@ Depends on: 00 (deployed dev workers). Implemented right after spec 00; flows ar
   Satisfies: E2E-1.6
   Tests: `pnpm deploy:dev` exits non-zero on a failing e2e test (verified once).
 
-- [ ] **5. Cleanup: `afterAll` deletes + dev purge cron** (after specs 03, 07, 08 exist)
+- [x] **5. Cleanup: `afterAll` deletes + dev purge cron** (after specs 03, 07, 08 exist)
   Satisfies: E2E-4.1, E2E-4.2, E2E-4.3
   Tests: integration — purge removes only e2e users older than `E2E_PURGE_AFTER_MS` and calls every integration fake; keeps rows when an external deletion fails; no-op when `ENVIRONMENT=prod`; e2e — create app, backdate user in dev D1 via a dev-only migration-free SQL script, run purge, verify repo/D1/script gone.
-  Status: `afterAll` deletes and the purge job with its integration tests are done; the e2e check runs once the api (with the purge cron) can be deployed — blocked on R2.
+  Status: verified on dev 2026-09-28 — the hourly purge removed every e2e user of the previous day's runs with their D1 databases (rows are only deleted after all external resources are gone); no e2e user older than 1 hour remains.

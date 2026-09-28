@@ -26,6 +26,6 @@
   Satisfies: SLUG-4.3
   Tests: valid+free, valid+taken (with suggestion), invalid (with reason + suggestion).
 
-- [ ] **7. E2E on dev** (spec 12)
+- [x] **7. E2E on dev** (spec 12)
   Flows: `F-SLUG-1`, `F-APP-2`.
   Satisfies: E2E-3.3

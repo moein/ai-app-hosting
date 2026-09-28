@@ -37,6 +37,6 @@ Depends on: 00, 01, 02 (tasks 1, 5), 04 (tool framework). Steps calling GitHub/C
   Satisfies: APP-4.1, APP-4.2, APP-4.3, APP-4.4, APP-4.5, APP-4.6, APP-4.7
   Tests: only the Cloudflare "delete script" call is made (fakes record no repo/D1/R2 deletions); wrong `confirm_slug` deletes nothing; script-404 still succeeds; in-progress deployments cancelled; KV route removed; secrets rows removed; slug still taken afterwards.
 
-- [ ] **9. E2E on dev** (spec 12)
+- [x] **9. E2E on dev** (spec 12)
   Flows: `F-APP-1`, `F-APP-2`, `F-APP-3`, `F-APP-4`.
   Satisfies: E2E-3.3

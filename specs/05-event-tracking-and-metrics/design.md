@@ -108,7 +108,7 @@ Feature metrics are written where the fact is known:
 -- error rate by tool and client, last 24h
 SELECT blob2 AS tool, blob5 AS client,
        SUM(_sample_interval * double1) AS calls,
-       SUM(IF(blob3 = 'error', _sample_interval * double1, 0)) / calls AS error_rate
+       SUM(IF(blob3 = 'error', _sample_interval * double1, 0.0)) / calls AS error_rate
 FROM platform_metrics_prod
 WHERE blob1 = 'tool_call' AND timestamp > NOW() - INTERVAL '1' DAY
 GROUP BY tool, client ORDER BY calls DESC;

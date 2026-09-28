@@ -29,10 +29,10 @@ Depends on: 00, 04 (task 2 middleware chain).
   Satisfies: EVT-2.2 (spec 02 task 8), EVT-2.3 (spec 03), EVT-2.4 (spec 08), EVT-2.5 (spec 11)
   Tests: in each feature's tests, assert the fake AE received the data point.
 
-- [ ] **7. `docs/metrics/*.sql`**
+- [x] **7. `docs/metrics/*.sql`**
   Satisfies: EVT non-functional
   Tests: manual run against dev AE SQL API.
-  Status: queries written in `docs/metrics/`; the manual run waits for Analytics Engine to be enabled on the account (the `METRICS` binding is optional until then).
+  Status: all six queries run against `platform_metrics_dev` (2026-09-28).
 
 - [ ] **8. E2E on dev** (spec 12)
   Flows: `F-EVT-1` (slow).
