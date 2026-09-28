@@ -27,7 +27,8 @@ Depends on: 00. Feature tools are implemented in their own specs; this spec prov
 - [ ] **6. Client compatibility check (manual, before launch)**
   Connect via MCP Inspector, Claude, ChatGPT; run the full journey (login → create → write → deploy → logs).
   Satisfies: MCP non-functional
-  Tests: checklist recorded in PR description.
+  Tests: checklist recorded in `docs/connect.md`.
+  Status: MCP Inspector done (2026-09-28); Claude and ChatGPT runs are manual — steps and starter prompt in `docs/connect.md`.
 
 - [x] **7. E2E on dev** — `F-MCP-1` re-asserts full catalog equality once every feature has landed (spec 12)
   Flows: `F-MCP-1`, `F-MCP-2`, `F-MCP-3`.
