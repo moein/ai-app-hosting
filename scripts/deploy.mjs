@@ -44,10 +44,11 @@ try {
     ]);
   }
 
-  const workers = ['email', 'tail', 'api', 'dispatcher', ...(env === 'dev' ? ['e2e-inbox'] : [])];
+  const workers = ['email', 'tail', 'api', 'dispatcher', 'website', ...(env === 'dev' ? ['e2e-inbox'] : [])];
   for (const worker of workers.filter((w) => existsSync(`apps/${w}/wrangler.jsonc`))) {
     say(`deploy ${worker} (${env})`);
-    run('pnpm', ['--filter', `@repo/${worker}`, 'exec', 'wrangler', 'deploy', '--env', env]);
+    // Each worker's deploy:<env> script (the website builds with Vite first).
+    run('pnpm', ['--filter', `@repo/${worker}`, 'run', `deploy:${env}`]);
   }
 
   if (env === 'dev' && existsSync('e2e/package.json')) {

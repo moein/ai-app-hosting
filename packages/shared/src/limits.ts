@@ -65,3 +65,6 @@ export const MAX_EMAIL_BYTES = 256_000;
 
 // spec 12 — dev e2e purge: e2e users older than this are hard-purged hourly (E2E-4.2)
 export const E2E_PURGE_AFTER_MS = 60 * 60 * 1000;
+
+// spec 14 — website
+export const WEBSITE_APP_DESCRIPTION_MAX_CHARS = 2_000;

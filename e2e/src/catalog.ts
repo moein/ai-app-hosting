@@ -35,6 +35,7 @@ export const FLOW_CATALOG: Record<FlowId, { implemented: boolean }> = {
   'F-MAIL-1': { implemented: true },
   'F-EVT-1': { implemented: true },
   'F-USG-1': { implemented: true },
+  'F-WEB-1': { implemented: true },
 };
 
 /** Tests of flows not marked implemented are skipped, so a blocked feature doesn't fail every deploy. */

@@ -23,6 +23,7 @@ Implement roughly in this order; later specs depend on earlier ones.
 | 12 | [e2e-testing](12-e2e-testing/) | `E2E` | E2E suite on deployed dev for every flow; real test inbox. **Implement right after 00.** |
 | 13 | [usage-metering](13-usage-metering/) | `USG` | Per-app daily usage of everything that costs us (Workers, D1, email, logs, builds, storage), cost estimates |
 
+| 14 | [website](14-website/) | `WEB` | Homepage on the `APPS_DOMAIN` apex: pick your AI, connect it (screenshots), describe your app, get the prompt |
 Deferred work: [backlog.md](backlog.md).
 
 ## Architecture overview
@@ -124,5 +125,6 @@ Specs never contain concrete domains or account names. They use placeholders (`P
 | 26 | Deploys run from the terminal with authenticated wrangler; CI only checks | 00 (`FND-7`) |
 | 25 | Platform emails via Resend; SES only for customer apps | 11 (`MAIL-3`, `MAIL-2`) |
 | 27 | Track per-app usage of everything that costs us (email, CPU, D1, logs, builds, storage) | 13 (`USG-1`, `USG-2`) |
+| 30 | A homepage walks non-technical people to a ready-made prompt for their AI | 14 (`WEB-1`) |
 | 29 | Apps can't tamper with each other's cookies despite sharing `APPS_DOMAIN` | 09 (`RUN-5`) |
 | 28 | Each app sends email from its own domain `mail.<slug>.APPS_DOMAIN` | 11 (`MAIL-1.5`–`MAIL-1.8`, `MAIL-2.3`) |
