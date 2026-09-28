@@ -31,6 +31,6 @@ Depends on: 03 (apps), 08 (deployments), 10 (AppLogBuffer), 11 (AppMail), 05 (me
   Satisfies: USG-2.2
   Tests: `node --test` — grouping per org/app, month filter, cost sorting with a fake D1 response.
 
-- [ ] **8. E2E on dev** (spec 12)
+- [x] **8. E2E on dev** (spec 12)
   Flows: `F-USG-1` (slow): deploy the fixture app, make requests and a D1 query, send one email; within the next collection runs `app_usage_daily` shows `requests`, `cpu_ms`, `d1_rows_*`, `emails`, `builds`, `deploys` and `artifact_bytes` for the app.
   Satisfies: E2E-3.3
