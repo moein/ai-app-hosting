@@ -6,9 +6,10 @@ Depends on: 03, 06, 07, 09 (tasks 1–2: `CloudflareClient`, bindings builder).
   Satisfies: DEP-3.1 (status mapping), DEP-2.5
   Tests: every allowed transition succeeds; disallowed transitions change 0 rows; `succeeded` maps to `live`/`superseded`.
 
-- [ ] **2. Managed `deploy.yml`**
+- [x] **2. Managed `deploy.yml`**
   Satisfies: DEP-1.1, DEP-1.2, DEP-1.3, DEP-1.4, DEP-1.5, DEP-1.6, DEP-1.7, CON-4.5
   Tests: `actionlint` passes; YAML assertions (triggers, concurrency, permissions, timeout, step order, pinned action SHAs, no `secrets.` references); run it for real against `fixtures/contract-app` in a dev test repo (task 9).
+  Status: actionlint (+ shellcheck) runs in the app-contract tests and CI; real runs on dev build, validate and report failures (F-DEP-2, F-DEP-3 pass; F-DEP-1 reaches `deploying`).
 
 - [x] **3. OIDC verifier**
   Satisfies: DEP-2.1

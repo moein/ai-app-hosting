@@ -1,3 +1,7 @@
+import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import {
@@ -89,5 +93,16 @@ describe('managed deploy workflow (DEP-1)', () => {
     expect(packaging).toContain('tar czf /tmp/artifact.tgz dist migrations manifest.json');
     expect(packaging).toContain('commit_sha');
     expect(packaging).toContain('contract_version');
+  });
+
+  it('passes actionlint, including shellcheck of the run scripts (spec 08 task 2)', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'deploy-workflow-'));
+    mkdirSync(join(dir, '.github/workflows'), { recursive: true });
+    writeFileSync(join(dir, DEPLOY_WORKFLOW_PATH), renderDeployWorkflow({ apiOrigin: 'https://api.example' }));
+    const result = spawnSync('actionlint', [DEPLOY_WORKFLOW_PATH], { cwd: dir, encoding: 'utf8' });
+    if ((result.error as NodeJS.ErrnoException | undefined)?.code === 'ENOENT') {
+      throw new Error('actionlint is required for this test (brew install actionlint shellcheck); CI installs it');
+    }
+    expect(result.status, `${result.stdout}${result.stderr}`).toBe(0);
   });
 });

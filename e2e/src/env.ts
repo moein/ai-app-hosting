@@ -10,6 +10,9 @@ const schema = z.object({
   // Only for the inbox self-test (F-E2E-1): sends a probe through Resend.
   RESEND_API_KEY: z.string().optional(),
   E2E_PROBE_FROM: z.email().optional(),
+  // Read-only checks of platform data (F-USG-1, F-EVT-1); falls back to the operator's CF_API_TOKEN.
+  E2E_CF_API_TOKEN: z.string().optional(),
+  CF_API_TOKEN: z.string().optional(),
 });
 
 export type E2eEnv = z.infer<typeof schema>;

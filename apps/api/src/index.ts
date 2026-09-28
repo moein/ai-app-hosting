@@ -43,31 +43,27 @@ export default {
       return;
     }
     if (controller.cron === HOURLY) {
-      // Purge first: routes of purged e2e apps then don't need reconciling.
+      // Usage first, so apps purged below still get their last hour recorded (spec 13); then the dev e2e purge
+      // (spec 12), then route reconciliation, which no longer needs to consider purged apps.
       const parsed = parseEnv(env);
-      if (parsed.ENVIRONMENT === 'dev' && parsed.E2E_INBOX_ADDRESS) {
-        const platform = createPlatform(env);
-        const purged = await purgeE2eUsers(
-          {
-            ...platform,
-            artifacts: env.ARTIFACTS,
-            appLogs: (appId) => appLogsFor(env, appId),
-            appsDomain: env.APPS_DOMAIN,
-          },
-          { environment: parsed.ENVIRONMENT, inboxAddress: parsed.E2E_INBOX_ADDRESS, now: controller.scheduledTime },
-        );
-        Logger.root.info('purged e2e users', purged);
-      }
-      Logger.root.info('reconciled app routes', await reconcileRoutes(db, env.APP_ROUTES));
       const platform = createPlatform(env);
+      const appLogs = (appId: string) => appLogsFor(env, appId);
       const usage = await collectUsage({
         ...platform,
-        appLogs: (appId) => appLogsFor(env, appId),
+        appLogs,
         logger: platform.logger.child({ job: 'usage' }),
         dispatchNamespace: dispatchNamespaceFor(platform.environment),
         appsDomain: env.APPS_DOMAIN,
       });
       Logger.root.info('collected usage', usage);
+      if (parsed.ENVIRONMENT === 'dev' && parsed.E2E_INBOX_ADDRESS) {
+        const purged = await purgeE2eUsers(
+          { ...platform, artifacts: env.ARTIFACTS, appLogs, appsDomain: env.APPS_DOMAIN },
+          { environment: parsed.ENVIRONMENT, inboxAddress: parsed.E2E_INBOX_ADDRESS, now: controller.scheduledTime },
+        );
+        Logger.root.info('purged e2e users', purged);
+      }
+      Logger.root.info('reconciled app routes', await reconcileRoutes(db, env.APP_ROUTES));
       return;
     }
     const deleted = await purgeLoginCodes(db, controller.scheduledTime);

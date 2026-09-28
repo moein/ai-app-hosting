@@ -23,8 +23,8 @@ export const FLOW_CATALOG: Record<FlowId, { implemented: boolean }> = {
   'F-SRC-1': { implemented: true },
   'F-SRC-2': { implemented: true },
   'F-DEP-1': { implemented: false },
-  'F-DEP-2': { implemented: false },
-  'F-DEP-3': { implemented: false },
+  'F-DEP-2': { implemented: true },
+  'F-DEP-3': { implemented: true },
   'F-DEP-4': { implemented: false },
   'F-DEP-5': { implemented: false },
   'F-RUN-1': { implemented: false },
@@ -33,4 +33,5 @@ export const FLOW_CATALOG: Record<FlowId, { implemented: boolean }> = {
   'F-LOG-1': { implemented: false },
   'F-MAIL-1': { implemented: false },
   'F-EVT-1': { implemented: false },
+  'F-USG-1': { implemented: false },
 };

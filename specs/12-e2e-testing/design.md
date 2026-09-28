@@ -101,7 +101,7 @@ The deploy-related tests write `fixtures/contract-app` (repo root, spec 06) thro
 | `F-EVT-1` (slow) | A tool call's event appears in the R2 `mcp_events` table and a `tool_call` data point in Analytics Engine | 05 |
 | `F-USG-1` (slow) | Traffic, a D1 query and an email of a deployed app show up in its `app_usage_daily` rows after collection | 13 |
 
-`F-EVT-1` needs `E2E_CF_API_TOKEN` (read-only: Account Analytics, R2 Data Catalog) and runs only with `E2E_INCLUDE_SLOW=1`.
+`F-EVT-1` and `F-USG-1` need `E2E_CF_API_TOKEN` (read-only: Account Analytics, D1, R2 Data Catalog; falls back to `CF_API_TOKEN` from `.env.dev`) and run only with `E2E_INCLUDE_SLOW=1`.
 
 ## Coverage check (E2E-3.2)
 

@@ -95,7 +95,7 @@ specs/              Specs (source of truth)
 ## Commands
 
 ```
-pnpm install              # install everything (Node 24, pnpm 10)
+pnpm install              # install everything (Node 24, pnpm 10); tests also need actionlint + shellcheck (brew install actionlint shellcheck)
 pnpm lint                 # Biome (pnpm format to auto-fix)
 pnpm typecheck            # tsc in every workspace
 pnpm test                 # Vitest in every workspace (unit + vitest-pool-workers)
