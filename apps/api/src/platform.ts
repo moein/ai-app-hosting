@@ -48,4 +48,5 @@ export const provisionDeps = (platform: Pick<Platform, keyof ProvisionDeps>): Pr
   metrics: platform.metrics,
   emailJobs: platform.emailJobs,
   apiOrigin: platform.apiOrigin,
+  environment: platform.environment,
 });

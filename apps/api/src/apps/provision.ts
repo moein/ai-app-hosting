@@ -5,9 +5,11 @@ import type { Db } from '../db/client';
 import { apps } from '../db/schema';
 import type { CloudflareClient } from '../integrations/cloudflare';
 import type { GitHubClient } from '../integrations/github';
+import type { Environment } from '../platform';
 import { PLACEHOLDER_MODULE, placeholderMetadata } from '../runtime/placeholder';
 import { putRoute, type RouteStore } from '../runtime/routes';
 import { fromStepError } from '../workflows/step-errors';
+import { r2BucketNameFor } from './names';
 
 export const PLATFORM_COMPATIBILITY_DATE = '2026-08-22';
 
@@ -22,6 +24,7 @@ export type ProvisionDeps = {
   /** The email worker's queue; the app's SES identity is provisioned there (spec 11, MAIL-1.5). */
   emailJobs: { send(job: EmailJob): Promise<unknown> };
   apiOrigin: string;
+  environment: Environment;
 };
 
 type Step = { name: string; run: () => Promise<void> };
@@ -53,6 +56,16 @@ export function provisionSteps(deps: ProvisionDeps, appId: string): Step[] {
         const existing = await deps.cloudflare.findD1(app.d1DatabaseName);
         const { id } = existing ?? (await deps.cloudflare.createD1(app.d1DatabaseName));
         await save({ d1DatabaseId: id });
+      },
+    },
+    {
+      name: 'r2',
+      run: async () => {
+        const app = await load();
+        if (app.r2BucketName) return;
+        const bucketName = r2BucketNameFor(app.slug, deps.environment);
+        if (!(await deps.cloudflare.findR2(bucketName))) await deps.cloudflare.createR2(bucketName);
+        await save({ r2BucketName: bucketName });
       },
     },
     {

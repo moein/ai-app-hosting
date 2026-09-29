@@ -102,6 +102,8 @@ export const apps = sqliteTable(
     repoId: integer('repo_id'),
     d1DatabaseId: text('d1_database_id'),
     d1DatabaseName: text('d1_database_name').notNull(),
+    // spec 15: the app's own R2 bucket (FILES binding); null until provisioned; bucket name is its own id
+    r2BucketName: text('r2_bucket_name'),
     liveDeploymentId: text('live_deployment_id'),
     createdBy: text('created_by')
       .notNull()

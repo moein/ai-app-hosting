@@ -18,6 +18,7 @@ const deps = (ctx: TestContext) => ({
   metrics: ctx.metrics,
   emailJobs: ctx.emailJobs,
   apiOrigin: 'https://api.test',
+  environment: 'dev' as const,
 });
 
 async function newApp(name = `Prov ${Math.random().toString(36).slice(2, 8)}`) {
@@ -34,9 +35,15 @@ describe('ProvisionApp steps (APP-2.3, APP-2.5, APP-2.6, SRC-1)', () => {
     const { ctx, app } = await newApp();
     await runProvisioning(deps(ctx), app.id);
     const row = await ctx.db.select().from(apps).where(eq(apps.id, app.id)).get();
-    expect(row).toMatchObject({ provisioning: 'ready', d1DatabaseId: 'd1-1', repoName: `dev-${app.slug}` });
+    expect(row).toMatchObject({
+      provisioning: 'ready',
+      d1DatabaseId: 'd1-1',
+      repoName: `dev-${app.slug}`,
+      r2BucketName: `app-${app.slug}-dev`,
+    });
     expect(row?.repoId).toBeGreaterThan(0);
     expect(ctx.fakes.cloudflare.databases.get(`app-${app.slug}-dev`)).toBe('d1-1');
+    expect(ctx.fakes.cloudflare.buckets.has(`app-${app.slug}-dev`)).toBe(true);
 
     const files = ctx.fakes.github.mainFiles(`dev-${app.slug}`);
     expect(Object.keys(files).sort()).toEqual(['.github/workflows/deploy.yml', 'platform.json']);
@@ -62,7 +69,18 @@ describe('ProvisionApp steps (APP-2.3, APP-2.5, APP-2.6, SRC-1)', () => {
     const commits = ctx.fakes.github.repos.get(`dev-${app.slug}`)?.commits.size;
     await runProvisioning(deps(ctx), app.id);
     expect(ctx.fakes.cloudflare.callsTo('createD1')).toHaveLength(1);
+    expect(ctx.fakes.cloudflare.callsTo('createR2')).toHaveLength(1);
     expect(ctx.fakes.github.repos.get(`dev-${app.slug}`)?.commits.size).toBe(commits);
+  });
+
+  it('the r2 step finds an existing bucket instead of recreating it (APP-2.6, retry_provisioning)', async () => {
+    const { ctx, app } = await newApp();
+    const bucketName = `app-${app.slug}-dev`;
+    await ctx.cloudflare.createR2(bucketName);
+    await runProvisioning(deps(ctx), app.id);
+    expect(ctx.fakes.cloudflare.callsTo('createR2')).toHaveLength(1); // only the pre-seeded call above
+    expect(ctx.fakes.cloudflare.callsTo('findR2').length).toBeGreaterThan(0);
+    expect((await ctx.db.select().from(apps).where(eq(apps.id, app.id)).get())?.r2BucketName).toBe(bucketName);
   });
 
   it('reuses an existing repo that belongs to the app, and refuses one that does not (SRC-1.3)', async () => {

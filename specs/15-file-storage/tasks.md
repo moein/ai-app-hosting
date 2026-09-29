@@ -2,7 +2,7 @@
 
 Depends on: 03 (app provisioning steps, `apps` schema), 09 (bindings, `CloudflareClient`, contract validator), 11 (`aws4fetch` SigV4 precedent, task 3), 12 (e2e purge job, task 5), 13 (usage collector, pricing, task 6).
 
-- [ ] **1. `CloudflareClient.createR2` / `findR2` + schema + provisioning step**
+- [x] **1. `CloudflareClient.createR2` / `findR2` + schema + provisioning step**
   `apps.r2_bucket_name`, `appResourceNames.r2BucketName`, the `r2` `provisionSteps` entry.
   Satisfies: FILE-1.1, FILE-1.2, FILE-1.3, FILE-1.4
   Tests: creates a bucket named `app-<slug>-<env>`; idempotent re-run when the bucket already exists (both "we created it" and "found by `findR2`" paths); `retry_provisioning` re-runs it like any other step; `delete_app` does not touch `r2_bucket_name` or the bucket.

@@ -171,6 +171,9 @@ describe('delete_app (APP-4)', () => {
     expect(result).toEqual({ slug, status: 'deleted', kept: ['source code', 'database', 'deployment history'] });
     expect(ctx.fakes.cloudflare.scripts.has(slug)).toBe(false);
     expect(ctx.fakes.cloudflare.callsTo('deleteD1')).toHaveLength(0);
+    // FILE-1.4: the R2 bucket (spec 15) is kept too, same as the D1 database.
+    expect(ctx.fakes.cloudflare.buckets.has(`app-${slug}-dev`)).toBe(true);
+    expect((await ctx.db.select().from(apps).where(eq(apps.slug, slug)).get())?.r2BucketName).toBe(`app-${slug}-dev`);
     expect(ctx.fakes.github.repos.has(`dev-${slug}`)).toBe(true);
     expect(await getRoute(ctx.routes, slug)).toBeNull();
     expect(

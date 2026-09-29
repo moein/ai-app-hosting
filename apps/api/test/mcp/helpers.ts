@@ -101,6 +101,7 @@ export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =
           metrics: ctx.metrics,
           emailJobs: ctx.emailJobs,
           apiOrigin: ctx.env.PLATFORM_API_ORIGIN,
+          environment: 'dev',
         },
         appId,
       ).catch(() => {});

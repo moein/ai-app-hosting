@@ -1,0 +1,1 @@
+ALTER TABLE `apps` ADD `r2_bucket_name` text;

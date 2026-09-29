@@ -12,6 +12,7 @@ type Script = { metadata: ScriptMetadata; modules: WorkerModule[]; secrets: Map<
 export function fakeCloudflare(options: { d1?: D1Database } = {}) {
   const calls: { method: keyof CloudflareClient; args: unknown[] }[] = [];
   const databases = new Map<string, string>(); // name → id
+  const buckets = new Set<string>();
   const scripts = new Map<string, Script>();
   const failures = new Map<keyof CloudflareClient, Error>();
   let dbSeq = 0;
@@ -38,6 +39,15 @@ export function fakeCloudflare(options: { d1?: D1Database } = {}) {
       record('deleteD1', [id]);
       for (const [name, value] of databases) if (value === id) return databases.delete(name) ? 'deleted' : 'not_found';
       return 'not_found';
+    },
+    async createR2(name) {
+      record('createR2', [name]);
+      buckets.add(name);
+      return { name };
+    },
+    async findR2(name) {
+      record('findR2', [name]);
+      return buckets.has(name) ? { name } : null;
     },
     async d1Query(dbId, sql, params = []) {
       record('d1Query', [dbId, sql, params]);
@@ -90,6 +100,7 @@ export function fakeCloudflare(options: { d1?: D1Database } = {}) {
     client,
     calls,
     databases,
+    buckets,
     scripts,
     failNext: (method: keyof CloudflareClient, error: Error) => failures.set(method, error),
     clearFailures: () => failures.clear(),

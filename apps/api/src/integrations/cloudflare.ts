@@ -31,6 +31,9 @@ export interface CloudflareClient {
   createD1(name: string): Promise<{ id: string }>;
   findD1(name: string): Promise<{ id: string } | null>;
   deleteD1(id: string): Promise<'deleted' | 'not_found'>;
+  /** The app's own R2 bucket (spec 15). Bucket name is its own identifier — no separate id. */
+  createR2(name: string): Promise<{ name: string }>;
+  findR2(name: string): Promise<{ name: string } | null>;
   /** Runs one or more statements; returns one raw result per statement. */
   d1Query(dbId: string, sql: string, params?: unknown[]): Promise<D1RawResult[]>;
   uploadScript(name: string, metadata: ScriptMetadata, modules: WorkerModule[]): Promise<void>;
@@ -118,6 +121,21 @@ export function createCloudflareClient(options: {
     async deleteD1(id) {
       const result = await call('DELETE', `${account}/d1/database/${id}`, undefined, { allowNotFound: true });
       return result === 'not_found' ? 'not_found' : 'deleted';
+    },
+    async createR2(name) {
+      const result = unwrap(await call<{ name: string }>('POST', `${account}/r2/buckets`, { name }));
+      return { name: result.name };
+    },
+    async findR2(name) {
+      const result = await call<{ name: string }>(
+        'GET',
+        `${account}/r2/buckets/${encodeURIComponent(name)}`,
+        undefined,
+        {
+          allowNotFound: true,
+        },
+      );
+      return result === 'not_found' ? null : { name: result.name };
     },
     async d1Query(dbId, sql, params = []) {
       const results = unwrap(
