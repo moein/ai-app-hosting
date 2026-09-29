@@ -16,6 +16,8 @@ function fakeAnalytics(data: {
   assets?: Record<string, { hostname: string; requests: number }[]>;
   d1?: Record<string, { databaseId: string; rowsRead: number; rowsWritten: number }[]>;
   d1Storage?: Record<string, { databaseId: string; bytes: number }[]>;
+  r2Storage?: Record<string, { bucketName: string; bytes: number }[]>;
+  r2Operations?: Record<string, { bucketName: string; classA: number; classB: number }[]>;
 }) {
   const failures = new Set<keyof CloudflareAnalyticsClient>();
   const calls: string[] = [];
@@ -35,6 +37,14 @@ function fakeAnalytics(data: {
     async d1Storage(day) {
       fail('d1Storage');
       return data.d1Storage?.[day] ?? [];
+    },
+    async r2Storage(day) {
+      fail('r2Storage');
+      return data.r2Storage?.[day] ?? [];
+    },
+    async r2Operations(day) {
+      fail('r2Operations');
+      return data.r2Operations?.[day] ?? [];
     },
   };
   return { client, failures, calls };
@@ -82,6 +92,15 @@ async function setup() {
         { databaseId: live.d1DatabaseId as string, bytes: 65_536 },
         { databaseId: gone.d1DatabaseId as string, bytes: 12_288 },
       ],
+    },
+    r2Storage: {
+      [TODAY]: [
+        { bucketName: live.r2BucketName as string, bytes: 4_096 },
+        { bucketName: gone.r2BucketName as string, bytes: 2_048 },
+      ],
+    },
+    r2Operations: {
+      [TODAY]: [{ bucketName: live.r2BucketName as string, classA: 12, classB: 34 }],
     },
   });
   const now = ctx.clock.now();
@@ -134,6 +153,9 @@ describe('collectUsage (USG-1)', () => {
       [`${TODAY} d1_rows_read`]: 1_000,
       [`${TODAY} d1_rows_written`]: 20,
       [`${TODAY} d1_storage_bytes`]: 65_536,
+      [`${TODAY} r2_storage_bytes`]: 4_096,
+      [`${TODAY} r2_class_a_operations`]: 12,
+      [`${TODAY} r2_class_b_operations`]: 34,
       [`${TODAY} log_entries`]: 2,
       [`${TODAY} log_bytes`]: 'GET / 200'.length + 'hello'.length,
       [`${TODAY} builds`]: 2,
@@ -143,8 +165,11 @@ describe('collectUsage (USG-1)', () => {
       [`${YESTERDAY} requests`]: 30,
       [`${YESTERDAY} cpu_ms`]: 30,
     });
-    // USG-1.6: a deleted app's database still costs storage.
-    expect(await usageOf(ctx, gone.id)).toEqual({ [`${TODAY} d1_storage_bytes`]: 12_288 });
+    // USG-1.6: a deleted app's database and bucket still cost storage.
+    expect(await usageOf(ctx, gone.id)).toEqual({
+      [`${TODAY} d1_storage_bytes`]: 12_288,
+      [`${TODAY} r2_storage_bytes`]: 2_048,
+    });
     expect(ctx.metrics.points.find((p) => p.event === 'usage_collected')?.fields).toMatchObject({ outcome: 'ok' });
   });
 

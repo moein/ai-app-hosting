@@ -14,6 +14,8 @@ function client(respond: (body: { query: string; variables: Record<string, strin
   };
 }
 const ok = (rows: unknown[]) => Response.json({ data: { viewer: { accounts: [{ rows }] } }, errors: null });
+const okAccount = (account: Record<string, unknown>) =>
+  Response.json({ data: { viewer: { accounts: [account] } }, errors: null });
 
 describe('CloudflareAnalyticsClient (spec 13 task 2)', () => {
   it('queries a single day per dataset', async () => {
@@ -34,6 +36,37 @@ describe('CloudflareAnalyticsClient (spec 13 task 2)', () => {
     expect(await cf.assets('2026-09-27')).toEqual([{ hostname: 'todo.motad.app', requests: 7 }]);
     expect(await cf.d1('2026-09-27')).toEqual([{ databaseId: 'db1', rowsRead: 100, rowsWritten: 4 }]);
     expect(await cf.d1Storage('2026-09-27')).toEqual([{ databaseId: 'db1', bytes: 12288 }]);
+  });
+
+  it('maps R2 storage', async () => {
+    const { cf } = client(() => ok([{ dimensions: { bucketName: 'app-todo-dev' }, max: { payloadSize: 4096 } }]));
+    expect(await cf.r2Storage('2026-09-27')).toEqual([{ bucketName: 'app-todo-dev', bytes: 4096 }]);
+  });
+
+  it('merges R2 class A and class B operations by bucket, filtered by actionType_in', async () => {
+    const { cf, bodies } = client(() =>
+      okAccount({
+        classA: [
+          { dimensions: { bucketName: 'app-todo-dev' }, sum: { requests: 3 } },
+          { dimensions: { bucketName: 'app-other-dev' }, sum: { requests: 1 } },
+        ],
+        classB: [{ dimensions: { bucketName: 'app-todo-dev' }, sum: { requests: 9 } }],
+      }),
+    );
+    const result = await cf.r2Operations('2026-09-27');
+    expect(result).toEqual(
+      expect.arrayContaining([
+        { bucketName: 'app-todo-dev', classA: 3, classB: 9 },
+        { bucketName: 'app-other-dev', classA: 1, classB: 0 },
+      ]),
+    );
+    expect(bodies[0]?.query).toContain('actionType_in: $classA');
+    expect((bodies[0] as unknown as { variables: { classA: string[]; classB: string[] } }).variables.classA).toContain(
+      'PutObject',
+    );
+    expect((bodies[0] as unknown as { variables: { classA: string[]; classB: string[] } }).variables.classB).toContain(
+      'GetObject',
+    );
   });
 
   it.each([

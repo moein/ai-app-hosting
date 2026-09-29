@@ -22,6 +22,9 @@ export const PRICES = {
     build_ms: 0.008 / 60_000, // GitHub Actions Linux, private repos
     deploys: 0,
     artifact_bytes: 0.015 / 1e9, // R2 Standard, per GB-month
+    r2_storage_bytes: 0.015 / 1e9, // R2 Standard, per GB-month — same rate as artifact_bytes
+    r2_class_a_operations: 4.5 / 1e6, // writes/lists (PutObject, ListObjects, multipart, …)
+    r2_class_b_operations: 0.36 / 1e6, // reads (GetObject, HeadObject, …); egress is free on R2
   } satisfies Record<UsageMetric, number>,
   /** Platform work behind every routed request (requests + asset_requests): dispatcher invocation + KV route read. */
   perRoutedRequestUsd: 0.3e-6 + 0.5e-6,
@@ -29,7 +32,7 @@ export const PRICES = {
   perInvocationUsd: 0.3e-6 + 0.15e-6,
 };
 
-const SNAPSHOT = new Set<UsageMetric>(['d1_storage_bytes', 'artifact_bytes']);
+const SNAPSHOT = new Set<UsageMetric>(['d1_storage_bytes', 'artifact_bytes', 'r2_storage_bytes']);
 
 /**
  * Estimated cost of usage totals over a period. Flow metrics are summed over the period; snapshot metrics are

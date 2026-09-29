@@ -31,6 +31,12 @@ describe('usage catalog and pricing (USG-1.1, USG-2.1)', () => {
     // 1 GB stored for 15 of 30 days = half a GB-month.
     expect(estimateCostUsd({ d1_storage_bytes: 15 * 1e9 }, 30)).toBeCloseTo(0.75 / 2, 10);
     expect(estimateCostUsd({ artifact_bytes: 30 * 1e9 }, 30)).toBeCloseTo(0.015, 10);
+    expect(estimateCostUsd({ r2_storage_bytes: 30 * 1e9 }, 30)).toBeCloseTo(0.015, 10);
+  });
+
+  it('prices R2 class A/B operations (spec 15)', () => {
+    expect(estimateCostUsd({ r2_class_a_operations: 1e6 })).toBeCloseTo(4.5, 10);
+    expect(estimateCostUsd({ r2_class_b_operations: 1e6 })).toBeCloseTo(0.36, 10);
   });
 
   it('formats UTC days', () => {

@@ -28,12 +28,13 @@ export type UsageDeps = {
   appsDomain: string;
 };
 
-type Source = 'assets' | 'd1' | 'd1_storage' | 'logs' | 'builds' | 'github';
+type Source = 'assets' | 'd1' | 'd1_storage' | 'r2_storage' | 'r2_operations' | 'logs' | 'builds' | 'github';
 type AppRef = {
   id: string;
   orgId: string;
   slug: string;
   d1DatabaseId: string | null;
+  r2BucketName: string | null;
   repoName: string;
   status: 'active' | 'deleted';
   liveDeploymentId: string | null;
@@ -102,6 +103,7 @@ export async function collectUsage(deps: UsageDeps): Promise<{ rows: number; app
       orgId: apps.orgId,
       slug: apps.slug,
       d1DatabaseId: apps.d1DatabaseId,
+      r2BucketName: apps.r2BucketName,
       repoName: apps.repoName,
       status: apps.status,
       liveDeploymentId: apps.liveDeploymentId,
@@ -111,6 +113,7 @@ export async function collectUsage(deps: UsageDeps): Promise<{ rows: number; app
     .all();
   const byId = new Map(all.map((a) => [a.id, a]));
   const byDatabase = new Map(all.filter((a) => a.d1DatabaseId).map((a) => [a.d1DatabaseId as string, a]));
+  const byBucket = new Map(all.filter((a) => a.r2BucketName).map((a) => [a.r2BucketName as string, a]));
   const byHost = new Map(all.map((a) => [`${a.slug}.${deps.appsDomain}`.toLowerCase(), a]));
 
   const totals = new Totals();
@@ -142,10 +145,26 @@ export async function collectUsage(deps: UsageDeps): Promise<{ rows: number; app
         if (app) totals.add(app.id, day, 'd1_storage_bytes', row.bytes);
       }
     });
+    await attempt('r2_storage', async () => {
+      for (const row of await deps.analytics.r2Storage(day)) {
+        const app = byBucket.get(row.bucketName);
+        if (app) totals.add(app.id, day, 'r2_storage_bytes', row.bytes);
+      }
+    });
+    await attempt('r2_operations', async () => {
+      for (const row of await deps.analytics.r2Operations(day)) {
+        const app = byBucket.get(row.bucketName);
+        if (!app) continue;
+        totals.add(app.id, day, 'r2_class_a_operations', row.classA);
+        totals.add(app.id, day, 'r2_class_b_operations', row.classB);
+      }
+    });
   }
   if (!failed.includes('assets')) done('asset_requests');
   if (!failed.includes('d1')) done('d1_rows_read', 'd1_rows_written');
   if (!failed.includes('d1_storage')) done('d1_storage_bytes');
+  if (!failed.includes('r2_storage')) done('r2_storage_bytes');
+  if (!failed.includes('r2_operations')) done('r2_class_a_operations', 'r2_class_b_operations');
 
   // Invocations, CPU time and logs, counted by the tail worker in each app's log buffer (Workers analytics can't
   // attribute Workers for Platforms scripts). Only apps that can have had traffic in the window are asked.

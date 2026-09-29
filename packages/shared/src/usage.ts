@@ -17,6 +17,9 @@ export const USAGE_METRICS = {
   build_ms: { unit: 'billable ms', kind: 'flow', write: 'replace' },
   deploys: { unit: 'deployments', kind: 'flow', write: 'replace' },
   artifact_bytes: { unit: 'bytes', kind: 'snapshot', write: 'replace' },
+  r2_storage_bytes: { unit: 'bytes', kind: 'snapshot', write: 'replace' },
+  r2_class_a_operations: { unit: 'operations', kind: 'flow', write: 'replace' },
+  r2_class_b_operations: { unit: 'operations', kind: 'flow', write: 'replace' },
 } as const;
 
 export type UsageMetric = keyof typeof USAGE_METRICS;

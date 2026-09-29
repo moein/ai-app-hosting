@@ -8,8 +8,8 @@ api hourly cron ──▶ collectUsage(days = [yesterday, today])
    │     workersAssetsRequestsAdaptiveGroups (by hostname <slug>.APPS_DOMAIN)                → asset_requests
    │     d1AnalyticsAdaptiveGroups   (by databaseId)                                        → d1_rows_read, d1_rows_written
    │     d1StorageAdaptiveGroups     (by databaseId, max of day)                            → d1_storage_bytes
-   │     r2StorageAdaptiveGroups     (by bucketName, max of day, spec 15)                    → r2_storage_bytes
-   │     r2OperationsAdaptiveGroups  (by bucketName, spec 15)                                → r2_class_a/b_operations
+   │     r2StorageAdaptiveGroups     (by bucketName, max payloadSize of day, spec 15)        → r2_storage_bytes
+   │     r2OperationsAdaptiveGroups  (by bucketName, actionType_in class A/B, spec 15)        → r2_class_a/b_operations
    ├─ AppLogBuffer.usage(days) RPC for apps that can have traffic                          → requests, cpu_ms, log_entries, log_bytes
    ├─ platform D1: deployments                                                              → builds, build_ms, deploys
    │                 retained artifacts (artifact_key not null)                             → artifact_bytes

@@ -28,10 +28,11 @@ Depends on: 03 (app provisioning steps, `apps` schema), 09 (bindings, `Cloudflar
   Deployed and healthy on dev. Live verification of an actual purge is via the next natural hourly cron tick (no manual trigger — `wrangler dev` / forcing scheduled handlers isn't used per CLAUDE.md); unit tests cover pagination and the mid-empty-failure retry path.
   Tests: a purged app's bucket is emptied (paginated) then deleted; a bucket that's already gone (`findR2` → null path covered elsewhere) doesn't fail the purge; failure mid-empty retries the whole user next run, like every other purge resource.
 
-- [ ] **6. Usage metering: `r2_storage_bytes`, `r2_class_a_operations`, `r2_class_b_operations`**
+- [x] **6. Usage metering: `r2_storage_bytes`, `r2_class_a_operations`, `r2_class_b_operations`**
   `CloudflareAnalyticsClient.r2Storage`/`r2Operations` (confirm exact GraphQL field names against Cloudflare's schema first), `collectUsage` wiring, pricing entries.
   Satisfies: (spec 13 USG-1, extended)
   Tests: GraphQL query shape (fixture response → parsed rows, matching the `d1`/`d1Storage` test pattern); attribution by `r2_bucket_name`; snapshot vs flow write modes in `app_usage_daily`; `estimateCostUsd` includes the three metrics.
+  Confirmed the real schema by introspection against the live dev token before writing any code: types are `AccountR2StorageAdaptiveGroups` (fields `dimensions.bucketName`, `max.payloadSize`) and `AccountR2OperationsAdaptiveGroups` (`dimensions.{bucketName,actionType}`, `sum.requests`) — query field names are the type name lower-cased, confirmed against `d1`'s already-working query. `actionType` has no class field or enum (plain string); Class A/B lists came from Cloudflare's pricing docs and were checked against real recorded actionType values pulled live (PutBucket, HeadBucket, ListObjects, PutObject, CreateMultipartUpload, GetObject, UploadPart, CompleteMultipartUpload, deletes). Two aliased groups (`classA`/`classB`) filtered server-side via `actionType_in`, in one GraphQL call. Deployed; `/healthz` green. Live confirmation of an actual collection run is deferred to the next hourly cron tick, same as task 5 — no way to force-trigger it outside `wrangler dev` (not used here).
 
 - [ ] **7. Guide: `env.FILES`**
   `contract.md`'s injected-bindings list gains `FILES: R2Bucket`; a storage section (new topic or folded into `database.md`) covering `put`/`get`/`delete`/`list`, serving files by proxying through the app's own routes, and storing the key scheme in D1 if the app needs to query uploads.
