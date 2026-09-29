@@ -1,7 +1,7 @@
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createReadyApp, deleteApps } from '../src/apps';
-import { logIn } from '../src/auth';
+import { signIn } from '../src/auth';
 import { flow } from '../src/flows';
 import { callTool, connect } from '../src/mcp';
 import { appName, testEmail } from '../src/run';
@@ -11,8 +11,7 @@ let slug = '';
 
 describe('source files', () => {
   beforeAll(async () => {
-    client = await connect();
-    await logIn(client, testEmail('files'));
+    client = await connect((await signIn(testEmail('files'))).accessToken);
     slug = (await createReadyApp(client, appName('files'))).slug;
   });
 

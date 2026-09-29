@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { MIDDLEWARE, runTool } from '../../src/mcp/pipeline';
 import { defineTool } from '../../src/mcp/tool';
-import { echoTool, privateEcho, signIn, testContext } from './helpers';
+import { echoTool, privateEcho, signedInContext, signIn, testContext } from './helpers';
 
 const errorOf = (result: Awaited<ReturnType<typeof runTool>>) =>
   (result.structuredContent as { error: { code: string; hint: string; details?: Record<string, unknown> } }).error;
@@ -12,14 +12,14 @@ describe('runTool (MCP-3)', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('returns structuredContent and the same JSON as text (MCP-1.3)', async () => {
-    const result = await runTool(echoTool, { message: 'hi', times: 2 }, testContext());
+    const result = await runTool(echoTool, { message: 'hi', times: 2 }, await signedInContext());
     expect(result.isError).toBeUndefined();
     expect(result.structuredContent).toEqual({ echoed: 'hihi' });
     expect(result.content).toEqual([{ type: 'text', text: JSON.stringify({ echoed: 'hihi' }) }]);
   });
 
   it('invalid input → INVALID_INPUT tool result with issue paths (MCP-3.2, MCP-3.3)', async () => {
-    const result = await runTool(echoTool, { message: '', times: 0 }, testContext());
+    const result = await runTool(echoTool, { message: '', times: 0 }, await signedInContext());
     expect(result.isError).toBe(true);
     const error = errorOf(result);
     expect(error.code).toBe('INVALID_INPUT');
@@ -35,7 +35,7 @@ describe('runTool (MCP-3)', () => {
         throw new PlatformError('CONFLICT');
       },
     });
-    const error = errorOf(await runTool(tool, { message: 'x' }, testContext()));
+    const error = errorOf(await runTool(tool, { message: 'x' }, await signedInContext()));
     expect(error.code).toBe('CONFLICT');
     expect(error.hint.length).toBeGreaterThan(0);
   });
@@ -48,7 +48,7 @@ describe('runTool (MCP-3)', () => {
         throw new Error('secret internals');
       },
     });
-    const result = await runTool(tool, { message: 'x' }, testContext());
+    const result = await runTool(tool, { message: 'x' }, await signedInContext());
     expect(errorOf(result).code).toBe('INTERNAL');
     expect(JSON.stringify(result)).not.toContain('secret internals');
   });
@@ -56,7 +56,7 @@ describe('runTool (MCP-3)', () => {
   it('output that fails its schema → INTERNAL (MCP-3.9)', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const tool = defineTool({ ...echoTool, handler: async () => ({ echoed: 42 }) as unknown as { echoed: string } });
-    expect(errorOf(await runTool(tool, { message: 'x' }, testContext())).code).toBe('INTERNAL');
+    expect(errorOf(await runTool(tool, { message: 'x' }, await signedInContext())).code).toBe('INTERNAL');
   });
 
   it('results over the 100 KB cap → INTERNAL (MCP-3.6)', async () => {
@@ -66,7 +66,7 @@ describe('runTool (MCP-3)', () => {
       output: z.object({ echoed: z.string() }),
       handler: async () => ({ echoed: 'x'.repeat(100_001) }),
     });
-    expect(errorOf(await runTool(tool, { message: 'x' }, testContext())).code).toBe('INTERNAL');
+    expect(errorOf(await runTool(tool, { message: 'x' }, await signedInContext())).code).toBe('INTERNAL');
   });
 
   it('protected tools require a signed-in session', async () => {

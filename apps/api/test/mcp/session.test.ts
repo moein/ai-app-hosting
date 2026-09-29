@@ -1,15 +1,19 @@
-import { SELF } from 'cloudflare:test';
+import { createExecutionContext, env } from 'cloudflare:test';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { afterEach, describe, expect, it } from 'vitest';
+import { McpSession } from '../../src/mcp/session';
 
 const clients: Client[] = [];
+// Talks to the McpSession Durable Object directly, bypassing the OAuthProvider gate in front of /mcp in
+// production (spec 02, AUTH-4): these tests exercise MCP session mechanics, not the OAuth flow (test/oauth/*).
+const handler = McpSession.serve('/mcp', { binding: 'MCP_SESSION' });
 
 async function connect() {
   const client = new Client({ name: 'test-client', version: '1.0.0' });
   const transport = new StreamableHTTPClientTransport(new URL('https://api.test/mcp'), {
-    fetch: (input, init) => SELF.fetch(input, init),
+    fetch: (input, init) => handler.fetch(new Request(input, init), env as Env, createExecutionContext()),
   });
   // The SDK's transport types don't satisfy exactOptionalPropertyTypes.
   await client.connect(transport as unknown as Transport);
@@ -34,13 +38,7 @@ describe('MCP endpoint (MCP-1.1)', () => {
     const instructions = client.getInstructions() ?? '';
     expect(instructions.length).toBeGreaterThan(0);
     expect(instructions.length).toBeLessThanOrEqual(2_000);
-    for (const tool of [
-      'get_platform_guide',
-      'request_login_code',
-      'verify_login_code',
-      'write_files',
-      'get_deployment',
-    ]) {
+    for (const tool of ['get_platform_guide', 'whoami', 'write_files', 'get_deployment']) {
       expect(instructions).toContain(tool);
     }
     expect(instructions).toContain('motad.app');

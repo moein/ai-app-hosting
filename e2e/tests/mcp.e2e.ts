@@ -2,14 +2,21 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { afterAll, describe, expect, it } from 'vitest';
+import { signIn } from '../src/auth';
 import { specTools } from '../src/coverage';
 import { flow } from '../src/flows';
 import { callTool, connect } from '../src/mcp';
+import { testEmail } from '../src/run';
 
 const catalog = specTools(
   readFileSync(fileURLToPath(new URL('../../specs/04-mcp-server/design.md', import.meta.url)), 'utf8'),
 );
 const clients: Client[] = [];
+const session = async (accessToken: string) => {
+  const client = await connect(accessToken);
+  clients.push(client);
+  return client;
+};
 
 describe('MCP server', () => {
   afterAll(async () => {
@@ -17,20 +24,22 @@ describe('MCP server', () => {
   });
 
   it(
-    flow('F-MCP-1', 'initialize works without auth, returns instructions, and tools/list follows the catalog'),
+    flow('F-MCP-1', 'initialize (with a token) returns a session and instructions; tools/list equals the spec catalog'),
     async () => {
       expect(catalog.length).toBeGreaterThan(20);
-      const client = await connect();
-      clients.push(client);
+      const tokens = await signIn(testEmail('mcp-catalog'));
+      const client = await session(tokens.accessToken);
 
       const instructions = client.getInstructions() ?? '';
       expect(instructions).toContain('get_platform_guide');
       expect(instructions.length).toBeLessThanOrEqual(2_000);
 
       const { tools } = await client.listTools();
+      expect(tools.map((t) => t.name).sort()).toEqual(catalog.map((t) => t.name).sort());
       for (const tool of tools) {
         const spec = catalog.find((entry) => entry.name === tool.name);
         expect(spec, `${tool.name} is not in the spec catalog`).toBeDefined();
+        expect(tool.title).toBe(spec?.title);
         expect(tool.annotations).toEqual({
           readOnlyHint: spec?.flags.includes('R'),
           destructiveHint: spec?.flags.includes('D'),
@@ -43,9 +52,9 @@ describe('MCP server', () => {
     },
   );
 
-  it(flow('F-MCP-2', 'get_platform_guide returns every topic without login'), async () => {
-    const client = await connect();
-    clients.push(client);
+  it(flow('F-MCP-2', 'get_platform_guide returns every topic, signed in'), async () => {
+    const tokens = await signIn(testEmail('mcp-guide'));
+    const client = await session(tokens.accessToken);
     const topics = ['all', 'workflow', 'contract', 'database', 'email', 'secrets', 'limits', 'troubleshooting'];
     for (const topic of topics) {
       const result = await callTool<{ topic: string; contract_version: string; markdown: string }>(
@@ -62,8 +71,8 @@ describe('MCP server', () => {
   });
 
   it(flow('F-MCP-3', 'invalid tool input returns INVALID_INPUT with issue paths'), async () => {
-    const client = await connect();
-    clients.push(client);
+    const tokens = await signIn(testEmail('mcp-invalid'));
+    const client = await session(tokens.accessToken);
     const result = await callTool(client, 'get_platform_guide', { topic: 'recipes' });
     expect(result.ok).toBe(false);
     if (result.ok) return;

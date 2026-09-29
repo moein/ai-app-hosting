@@ -27,17 +27,6 @@ describe('argument redaction (EVT-1.4, EVT-1.5, EVT-1.8)', () => {
     expect(missing).toEqual([]);
   });
 
-  it('hashes the email of login tools and redacts the code', async () => {
-    const hash = await sha256Hex('someone@example.com');
-    expect(await redactArgs('request_login_code', { email: ' Someone@Example.com ' })).toEqual({
-      argsJson: '{}',
-      argsTruncated: false,
-      emailHash: hash,
-    });
-    const verify = await redactArgs('verify_login_code', { email: 'someone@example.com', code: '482913' });
-    expect(verify).toEqual({ argsJson: '{"code":"[redacted]"}', argsTruncated: false, emailHash: hash });
-  });
-
   it('redacts secret values and summarizes file contents', async () => {
     const secret = await redactArgs('set_secret', { app: 'todo', name: 'STRIPE_KEY', value: 'sk_live_123' });
     expect(JSON.parse(secret.argsJson ?? '')).toEqual({ app: 'todo', name: 'STRIPE_KEY', value: '[redacted]' });

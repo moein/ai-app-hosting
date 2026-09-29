@@ -5,10 +5,8 @@ import { defineTool } from '../../src/mcp/tool';
 import { createApp } from '../../src/tools/apps/create-app';
 import { deleteApp } from '../../src/tools/apps/delete-app';
 import { getApp } from '../../src/tools/apps/get-app';
-import { requestLoginCode } from '../../src/tools/auth/request-login-code';
-import { verifyLoginCode } from '../../src/tools/auth/verify-login-code';
 import { clientInfoFrom, sessionInitializedEvent } from '../../src/tracking/session-events';
-import { echoTool, flush, privateEcho, signIn, type TestContext, testContext } from '../mcp/helpers';
+import { echoTool, flush, privateEcho, signedInContext, signIn, type TestContext, testContext } from '../mcp/helpers';
 
 const failing = defineTool({
   ...echoTool,
@@ -30,7 +28,7 @@ describe('mcp_tool_call events (EVT-1.1, EVT-1.3, EVT-1.6)', () => {
     ['AUTH_REQUIRED', privateEcho, { message: 'hi' }, 'error', 'AUTH_REQUIRED'],
     ['INVALID_INPUT', echoTool, { message: '' }, 'error', 'INVALID_INPUT'],
   ] as const)('emits exactly one event for %s', async (_, tool, args, outcome, code) => {
-    const ctx = testContext();
+    const ctx = code === 'AUTH_REQUIRED' ? testContext() : await signedInContext();
     await run(ctx, tool, args, ctx);
     expect(ctx.sentEvents).toHaveLength(1);
     expect(ctx.sentEvents[0]).toMatchObject({ type: 'mcp_tool_call', tool: tool.name, outcome });
@@ -77,7 +75,7 @@ describe('mcp_tool_call events (EVT-1.1, EVT-1.3, EVT-1.6)', () => {
   });
 
   it('does not fail the tool when the stream rejects the event, and counts the failure', async () => {
-    const ctx = testContext();
+    const ctx = await signedInContext();
     ctx.events = {
       send: async () => {
         throw new Error('pipeline down');
@@ -89,7 +87,7 @@ describe('mcp_tool_call events (EVT-1.1, EVT-1.3, EVT-1.6)', () => {
   });
 
   it('skips events while the EVENTS stream is not bound', async () => {
-    const ctx = testContext({ events: undefined });
+    const ctx = await signedInContext({ events: undefined });
     const result = await run(ctx, echoTool, { message: 'hi' }, ctx);
     expect(result.isError).toBeUndefined();
     expect(ctx.metrics.points.map((p) => p.event)).toEqual(['tool_call']);
@@ -97,36 +95,6 @@ describe('mcp_tool_call events (EVT-1.1, EVT-1.3, EVT-1.6)', () => {
 });
 
 describe('feature metrics from tool outcomes (EVT-2.2, EVT-2.3)', () => {
-  it('login: code requested, signup, signin and failures', async () => {
-    const ctx = testContext();
-    const email = `metrics-${Date.now()}@example.com`;
-    await run(ctx, requestLoginCode, { email }, ctx);
-    await run(
-      ctx,
-      verifyLoginCode,
-      { email, code: '000000' === ctx.mailer.sent.at(-1)?.code ? '111111' : '000000' },
-      ctx,
-    );
-    await run(ctx, verifyLoginCode, { email, code: ctx.mailer.sent.at(-1)?.code ?? '' }, ctx);
-    const again = testContext();
-    await run(again, requestLoginCode, { email }, again);
-    await run(again, verifyLoginCode, { email, code: again.mailer.sent.at(-1)?.code ?? '' }, again);
-
-    const points = [...ctx.metrics.points, ...again.metrics.points].filter((p) => p.event !== 'tool_call');
-    expect(points.map((p) => [p.event, p.fields.sub ?? null])).toEqual([
-      ['login_code_requested', null],
-      ['login_failed', 'CODE_INVALID'],
-      ['login_succeeded', 'signup'],
-      ['login_code_requested', null],
-      ['login_succeeded', 'signin'],
-    ]);
-    // After verify the event carries the new identity, and the email only as a hash.
-    const verified = ctx.sentEvents.at(-1);
-    expect(verified?.user_id).toMatch(/^usr_/);
-    expect(verified?.email_hash).toBe(await sha256Hex(email));
-    expect(JSON.stringify(ctx.sentEvents)).not.toContain(email);
-  });
-
   it('apps: created and deleted', async () => {
     const ctx = testContext();
     await signIn(ctx);

@@ -24,7 +24,7 @@ export async function emitEvent(ctx: Pick<ToolContext, 'events' | 'metrics' | 'l
 
 /**
  * The single tracking point for a finished tool call (EVT-1.1): one `mcp_tool_call` event, one `tool_call`
- * data point, and the feature metrics derived from auth/app tool outcomes. Runs in `waitUntil`; never throws.
+ * data point, and the feature metrics derived from app tool outcomes. Runs in `waitUntil`; never throws.
  */
 export function trackToolCall(ctx: ToolContext, call: TrackedCall): void {
   // Snapshot the mutable context now; the async work runs after the result was returned.
@@ -38,12 +38,7 @@ export function trackToolCall(ctx: ToolContext, call: TrackedCall): void {
   const task = (async () => {
     const { outcome } = call;
     const errorCode = outcome.ok ? null : outcome.error.code;
-    let { userId, orgId } = snapshot;
-    if (!userId && outcome.ok && call.tool === 'verify_login_code') {
-      const auth = await ctx.session.getAuth();
-      userId = auth?.userId ?? null;
-      orgId = auth?.orgId ?? null;
-    }
+    const { userId, orgId } = snapshot;
     const redacted = await redactArgs(call.tool, call.args);
     const event: McpEvent = {
       event_id: newId('evt'),
@@ -84,14 +79,6 @@ export function trackToolCall(ctx: ToolContext, call: TrackedCall): void {
       bytes: call.resultBytes,
     });
     // Feature metrics that are facts of a tool's outcome (spec 05 design, "Feature metrics").
-    if (call.tool === 'request_login_code' && outcome.ok) ctx.metrics.write('login_code_requested', common);
-    if (call.tool === 'verify_login_code') {
-      if (outcome.ok) {
-        ctx.metrics.write('login_succeeded', { ...common, sub: outcome.output.is_new_user ? 'signup' : 'signin' });
-      } else {
-        ctx.metrics.write('login_failed', { ...common, sub: errorCode });
-      }
-    }
     if (call.tool === 'create_app' && outcome.ok) ctx.metrics.write('app_created', common);
     if (call.tool === 'delete_app' && outcome.ok) ctx.metrics.write('app_deleted', common);
 

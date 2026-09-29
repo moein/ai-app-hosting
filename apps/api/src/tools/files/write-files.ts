@@ -19,9 +19,9 @@ const FileSchema = z.union([
 
 export const writeFiles = defineTool({
   name: 'write_files',
+  title: 'Write app files',
   description:
     "Creates, updates or deletes files in the app's code as ONE commit. With deploy=true (default) the commit is built and deployed; use deploy=false for intermediate batches of a large change. You write all of the code — follow get_platform_guide. platform.json and .github/ are managed by the platform and cannot be written.",
-  public: false,
   annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
   input: z.object({
     app: z.string().describe('The app slug.'),

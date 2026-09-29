@@ -7,20 +7,8 @@ const REDACTED = '[redacted]';
 type Args = Record<string, unknown>;
 type Redactor = (args: Args) => Promise<{ args: Args; emailHash?: string }>;
 
-const normalizeEmail = (value: unknown) => (typeof value === 'string' ? value.trim().toLowerCase() : '');
-
-const hashEmail: Redactor = async ({ email, ...rest }) => ({
-  args: rest,
-  ...(email === undefined ? {} : { emailHash: await sha256Hex(normalizeEmail(email)) }),
-});
-
 /** Per-tool redaction (EVT-1.4). A test fails if a tool with a sensitive-looking field has no entry here. */
 export const REDACTORS: Record<string, Redactor> = {
-  request_login_code: hashEmail,
-  verify_login_code: async (args) => {
-    const hashed = await hashEmail(args);
-    return { ...hashed, args: { ...hashed.args, ...('code' in args ? { code: REDACTED } : {}) } };
-  },
   set_secret: async (args) => ({ args: { ...args, ...('value' in args ? { value: REDACTED } : {}) } }),
   write_files: async (args) => {
     if (!Array.isArray(args.files)) return { args };

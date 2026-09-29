@@ -1,7 +1,7 @@
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { type AppSummary, appUrl, createReadyApp, deleteApps, waitForStatus } from '../src/apps';
-import { logIn } from '../src/auth';
+import { signIn } from '../src/auth';
 import { e2eEnv } from '../src/env';
 import { flow } from '../src/flows';
 import { callTool, connect } from '../src/mcp';
@@ -12,8 +12,7 @@ const created: string[] = [];
 
 describe('apps', () => {
   beforeAll(async () => {
-    client = await connect();
-    await logIn(client, testEmail('apps'));
+    client = await connect((await signIn(testEmail('apps'))).accessToken);
   });
 
   afterAll(async () => {

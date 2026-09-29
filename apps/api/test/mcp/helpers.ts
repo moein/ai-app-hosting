@@ -7,13 +7,13 @@ import {
   memoryMetrics,
   newId,
   type OrgId,
+  type PlatformMailRpc,
   type SendLoginCodeInput,
   type SendLoginCodeResult,
   type UserId,
 } from '@repo/shared';
 import { z } from 'zod';
 import { runProvisioning } from '../../src/apps/provision';
-import { createSessionStore, memoryStorage } from '../../src/auth/session-store';
 import { runDeployment } from '../../src/builds/deploy';
 import { createDb } from '../../src/db/client';
 import { memberships, organizations, users } from '../../src/db/schema';
@@ -27,7 +27,7 @@ export const fakeClock = (start = Date.UTC(2026, 8, 26)) => {
   return { now: () => now, advance: (ms: number) => (now += ms), set: (ms: number) => (now = ms) };
 };
 
-export type FakeMailer = ToolContext['mailer'] & { sent: SendLoginCodeInput[]; fail: SendLoginCodeResult | null };
+export type FakeMailer = PlatformMailRpc & { sent: SendLoginCodeInput[]; fail: SendLoginCodeResult | null };
 
 export function fakeMailer(): FakeMailer {
   const mailer: FakeMailer = {
@@ -54,7 +54,6 @@ export type TestContext = ToolContext & {
   sentEvents: McpEventRecord[];
   /** Background work handed to waitUntil (tracking); await `flush(ctx)` before asserting on it. */
   pending: Promise<unknown>[];
-  mailer: FakeMailer;
   emailJobs: ReturnType<typeof fakeQueue>;
   fakes: { cloudflare: ReturnType<typeof fakeCloudflare>; github: ReturnType<typeof fakeGitHub> };
 };
@@ -72,8 +71,6 @@ export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =
     random: cryptoRandom,
     rateLimiter: { limit: async () => ({ success: true }) },
     db: createDb(env.DB),
-    session: createSessionStore(memoryStorage()),
-    mailer: fakeMailer(),
     emailJobs: fakeQueue(),
     cloudflare: cloudflare.client,
     github: github.client,
@@ -135,7 +132,7 @@ export async function flush(ctx: TestContext): Promise<void> {
   while (ctx.pending.length > 0) await Promise.all(ctx.pending.splice(0));
 }
 
-/** Creates a user with a personal org and binds it to the context's session. */
+/** Creates a user with a personal org and makes the context act as them (as a token's props would). */
 export async function signIn(ctx: ToolContext, options: { email?: string; status?: 'active' | 'blocked' } = {}) {
   const now = ctx.clock.now();
   const userId = newId('usr') as UserId;
@@ -159,21 +156,28 @@ export async function signIn(ctx: ToolContext, options: { email?: string; status
     }),
     ctx.db.insert(memberships).values({ orgId, userId, createdAt: now }),
   ]);
-  await ctx.session.setAuth({ userId, orgId, authenticatedAt: now, lastSeenAt: now });
-  // What the auth guard sets for protected tools, for tests that call services directly.
+  // What the OAuth token's props give every tool call (AUTH-4.7).
   ctx.userId = userId;
   ctx.orgId = orgId;
+  ctx.email = options.email ?? `${userId.toLowerCase()}@test.example`;
   return { userId, orgId };
+}
+
+/** A context already signed in, for tests that aren't about missing auth (every tool needs a user; AUTH-4.7). */
+export async function signedInContext(overrides: Partial<ToolContext> = {}): Promise<TestContext> {
+  const ctx = testContext(overrides);
+  await signIn(ctx);
+  return ctx;
 }
 
 export const echoTool = defineTool({
   name: 'echo',
+  title: 'Echo',
   description: 'Echoes a message.',
-  public: true,
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({ message: z.string().min(1), times: z.number().int().min(1).default(1) }),
   output: z.object({ echoed: z.string() }),
   handler: async ({ message, times }) => ({ echoed: message.repeat(times) }),
 });
 
-export const privateEcho = defineTool({ ...echoTool, name: 'private_echo', public: false });
+export const privateEcho = defineTool({ ...echoTool, name: 'private_echo' });

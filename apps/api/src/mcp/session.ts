@@ -1,6 +1,5 @@
-import { Logger, type McpClientInfo, type PlatformMailRpc } from '@repo/shared';
+import { Logger, type McpClientInfo, type OrgId, type UserId } from '@repo/shared';
 import { McpAgent } from 'agents/mcp';
-import { createSessionStore } from '../auth/session-store';
 import { appLogsFor } from '../logs/app-logs';
 import { createPlatform } from '../platform';
 import { clientInfoFrom, sessionInitializedEvent } from '../tracking/session-events';
@@ -10,8 +9,11 @@ import { TOOLS } from './registry';
 import { createMcpServer } from './server';
 import type { ToolContext } from './tool';
 
-/** One Durable Object per MCP session (Mcp-Session-Id). Session data lives in this.ctx.storage (spec 02). */
-export class McpSession extends McpAgent<Env> {
+/** The signed-in user, set by the OAuth provider from the access token (spec 02, AUTH-4). */
+export type SessionProps = { userId: UserId; orgId: OrgId; email: string };
+
+/** One Durable Object per MCP session (Mcp-Session-Id); the user comes from the OAuth token's props. */
+export class McpSession extends McpAgent<Env, unknown, SessionProps> {
   server = createMcpServer({
     tools: TOOLS,
     instructions: buildInstructions(this.env.APPS_DOMAIN),
@@ -54,8 +56,6 @@ export class McpSession extends McpAgent<Env> {
       random: platform.random,
       rateLimiter: this.env.TOOL_RATE_LIMITER,
       db: platform.db,
-      session: createSessionStore(this.ctx.storage),
-      mailer: this.env.MAIL as unknown as PlatformMailRpc,
       emailJobs: this.env.EMAIL_JOBS,
       cloudflare: platform.cloudflare,
       github: platform.github,
@@ -77,6 +77,7 @@ export class McpSession extends McpAgent<Env> {
       metrics: platform.metrics,
       waitUntil: (promise) => this.ctx.waitUntil(promise),
       client: this.#client,
+      ...(this.props ? { userId: this.props.userId, orgId: this.props.orgId, email: this.props.email } : {}),
     };
   }
 }

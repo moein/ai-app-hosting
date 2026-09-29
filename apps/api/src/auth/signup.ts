@@ -1,8 +1,16 @@
-import { generateSlug, newId, type OrgId, orgNameFromEmail, type UserId } from '@repo/shared';
+import {
+  type EmailJob,
+  generateSlug,
+  newId,
+  type OrgId,
+  orgNameFromEmail,
+  type Random,
+  type UserId,
+} from '@repo/shared';
 import { eq } from 'drizzle-orm';
+import type { Db } from '../db/client';
 import { isUniqueViolation } from '../db/errors';
 import { memberships, organizations, users } from '../db/schema';
-import type { ToolContext } from '../mcp/tool';
 
 const MAX_SLUG_RACES = 3;
 
@@ -10,10 +18,17 @@ const MAX_SLUG_RACES = 3;
  * Creates the user, their personal org and the owner membership in one D1 batch (AUTH-2.4), retrying with a new
  * slug if another signup took it concurrently (SLUG-3.3), then queues the org's SES tenant (spec 11).
  */
-export async function signUp(ctx: ToolContext, email: string): Promise<{ userId: UserId; orgId: OrgId }> {
+export type SignUpDeps = {
+  db: Db;
+  random: Random;
+  now: number;
+  emailJobs: { send(job: EmailJob): Promise<unknown> };
+};
+
+export async function signUp(ctx: SignUpDeps, email: string): Promise<{ userId: UserId; orgId: OrgId }> {
   const userId = newId('usr');
   const orgId = newId('org');
-  const now = ctx.clock.now();
+  const { now } = ctx;
   const name = orgNameFromEmail(email);
   const isTaken = async (slug: string) =>
     (await ctx.db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, slug)).get()) !==

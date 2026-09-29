@@ -3,14 +3,14 @@ import { TOOL_RESULT_MAX_BYTES } from '@repo/shared';
 import { describe, expect, it } from 'vitest';
 import { runTool } from '../../src/mcp/pipeline';
 import { getPlatformGuide } from '../../src/tools/platform-guide';
-import { testContext } from '../mcp/helpers';
+import { signedInContext } from '../mcp/helpers';
 
-const ctx = () => testContext();
+const ctx = () => signedInContext();
 type Guide = { contract_version: string; topic: string; markdown: string };
 
 describe('get_platform_guide (MCP-2.2)', () => {
-  it('works without login and defaults to the whole guide', async () => {
-    const result = await runTool(getPlatformGuide, {}, ctx());
+  it('defaults to the whole guide', async () => {
+    const result = await runTool(getPlatformGuide, {}, await ctx());
     expect(result.isError).toBeUndefined();
     const guide = result.structuredContent as Guide;
     expect(guide.topic).toBe('all');
@@ -20,13 +20,13 @@ describe('get_platform_guide (MCP-2.2)', () => {
   });
 
   it.each(GUIDE_TOPICS)('returns the %s topic', async (topic) => {
-    const guide = (await runTool(getPlatformGuide, { topic }, ctx())).structuredContent as Guide;
+    const guide = (await runTool(getPlatformGuide, { topic }, await ctx())).structuredContent as Guide;
     expect(guide.topic).toBe(topic);
     expect(guide.markdown.length).toBeGreaterThan(200);
   });
 
   it('rejects unknown topics with INVALID_INPUT', async () => {
-    const result = await runTool(getPlatformGuide, { topic: 'recipes' }, ctx());
+    const result = await runTool(getPlatformGuide, { topic: 'recipes' }, await ctx());
     expect(result.isError).toBe(true);
     const error = (result.structuredContent as { error: { code: string; details: { issues: { path: string[] }[] } } })
       .error;

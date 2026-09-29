@@ -1,5 +1,12 @@
+import OAuthProvider from '@cloudflare/workers-oauth-provider';
 import { errorResponse } from '@repo/http';
-import { createMetrics, Logger, toPlatformError } from '@repo/shared';
+import {
+  createMetrics,
+  Logger,
+  OAUTH_ACCESS_TOKEN_TTL_S,
+  OAUTH_REFRESH_TOKEN_TTL_S,
+  toPlatformError,
+} from '@repo/shared';
 import { createDb } from './db/client';
 import { parseEnv } from './env';
 import { app } from './http/app';
@@ -8,6 +15,7 @@ import { purgeE2eUsers } from './jobs/purge-e2e';
 import { purgeLoginCodes } from './jobs/purge-login-codes';
 import { reconcileRoutes } from './jobs/reconcile-routes';
 import { appLogsFor } from './logs/app-logs';
+import { McpSession } from './mcp/session';
 import { createPlatform } from './platform';
 import { collectUsage } from './usage/collect';
 
@@ -16,7 +24,39 @@ const EVERY_5_MINUTES = '*/5 * * * *';
 
 export { ProvisionApp } from './apps/provision-workflow';
 export { DeployApp } from './builds/deploy-workflow';
-export { McpSession } from './mcp/session';
+export { McpSession };
+
+/**
+ * OAuth 2.1 authorization server + protected resource for MCP (spec 02, AUTH-4). `/mcp` needs a bearer token; the
+ * Hono app serves everything else, including the sign-in pages at /authorize. One instance per API origin.
+ */
+const providers = new Map<string, OAuthProvider<Env>>();
+function providerFor(env: Env): OAuthProvider<Env> {
+  let provider = providers.get(env.PLATFORM_API_ORIGIN);
+  if (!provider) {
+    provider = new OAuthProvider<Env>({
+      apiRoute: '/mcp',
+      apiHandler: McpSession.serve('/mcp', { binding: 'MCP_SESSION' }),
+      defaultHandler: { fetch: (request, env, ctx) => app.fetch(request, env, ctx) },
+      authorizeEndpoint: '/authorize',
+      tokenEndpoint: '/oauth/token',
+      clientRegistrationEndpoint: '/oauth/register',
+      scopesSupported: ['apps'],
+      accessTokenTTL: OAUTH_ACCESS_TOKEN_TTL_S,
+      refreshTokenTTL: OAUTH_REFRESH_TOKEN_TTL_S,
+      clientIdMetadataDocumentEnabled: true,
+      resourceMetadata: {
+        resource: `${env.PLATFORM_API_ORIGIN}/mcp`,
+        authorization_servers: [env.PLATFORM_API_ORIGIN],
+        scopes_supported: ['apps'],
+        bearer_methods_supported: ['header'],
+        resource_name: 'AI App Hosting',
+      },
+    });
+    providers.set(env.PLATFORM_API_ORIGIN, provider);
+  }
+  return provider;
+}
 
 export default {
   fetch(request, env, ctx) {
@@ -26,7 +66,7 @@ export default {
     } catch (error) {
       return errorResponse(toPlatformError(error));
     }
-    return app.fetch(request, env, ctx);
+    return providerFor(env).fetch(request, env, ctx);
   },
 
   async scheduled(controller, env) {

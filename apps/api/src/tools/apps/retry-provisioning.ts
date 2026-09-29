@@ -9,8 +9,8 @@ import { nextStepFor, waitForProvisioning } from './create-app';
 
 export const retryProvisioning = defineTool({
   name: 'retry_provisioning',
+  title: 'Retry app setup',
   description: 'Retries setting up an app whose setup failed (get_app shows provisioning "failed").',
-  public: false,
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({ app: z.string().describe('The app slug.') }),
   output: AppSummarySchema.extend({ next_step: z.string() }),

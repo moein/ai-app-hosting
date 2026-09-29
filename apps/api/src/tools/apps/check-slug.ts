@@ -5,9 +5,9 @@ import { defineTool } from '../../mcp/tool';
 
 export const checkSlug = defineTool({
   name: 'check_slug',
+  title: 'Check an app address',
   description:
     'Checks whether an app address (the subdomain part, e.g. "my-todo") is valid and still free, and suggests one if it isn\'t.',
-  public: false,
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({ slug: z.string().max(100).describe('The address to check, e.g. "my-todo".') }),
   output: z.object({

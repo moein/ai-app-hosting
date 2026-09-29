@@ -5,10 +5,16 @@ import { e2eEnv } from './env';
 
 export type ToolResult<T> = { ok: true; data: T } | { ok: false; error: PlatformErrorJson };
 
-/** A fresh MCP session against the dev API — the same path a real AI client uses (E2E-1.3). */
-export async function connect(name = 'e2e-harness'): Promise<Client> {
+/**
+ * A fresh MCP session against the dev API — the same path a real AI client uses (E2E-1.3). `/mcp` is an
+ * OAuth-protected resource (spec 02, AUTH-4); `accessToken` from `signIn()` is sent as a bearer token.
+ */
+export async function connect(accessToken: string, name = 'e2e-harness'): Promise<Client> {
   const client = new Client({ name, version: '1.0.0' });
-  await client.connect(new StreamableHTTPClientTransport(new URL('/mcp', e2eEnv().E2E_API_ORIGIN)));
+  const transport = new StreamableHTTPClientTransport(new URL('/mcp', e2eEnv().E2E_API_ORIGIN), {
+    requestInit: { headers: { authorization: `Bearer ${accessToken}` } },
+  });
+  await client.connect(transport);
   return client;
 }
 

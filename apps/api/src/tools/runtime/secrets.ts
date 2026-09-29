@@ -10,9 +10,9 @@ const iso = (ms: number) => new Date(ms).toISOString();
 
 export const setSecret = defineTool({
   name: 'set_secret',
+  title: 'Set a secret',
   description:
     'Stores a secret (e.g. an API key) for the app; the app reads it as env.<NAME>. Ask the user for the value — never put secrets in code. Takes effect immediately, no redeploy needed.',
-  public: false,
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({
     app: z.string().describe('The app slug.'),
@@ -53,8 +53,8 @@ export const setSecret = defineTool({
 
 export const listSecrets = defineTool({
   name: 'list_secrets',
+  title: 'List secrets',
   description: "Lists the names of the app's secrets (never their values).",
-  public: false,
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({ app: z.string().describe('The app slug.') }),
   output: z.object({ secrets: z.array(z.object({ name: z.string(), updated_at: z.string() })) }),
@@ -72,8 +72,8 @@ export const listSecrets = defineTool({
 
 export const deleteSecret = defineTool({
   name: 'delete_secret',
+  title: 'Delete a secret',
   description: "Deletes one of the app's secrets. Confirm with the user first; code that reads it will get undefined.",
-  public: false,
   annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
   input: z.object({ app: z.string().describe('The app slug.'), name: z.string().describe('The secret name.') }),
   output: z.object({ name: z.string(), deleted: z.boolean() }),

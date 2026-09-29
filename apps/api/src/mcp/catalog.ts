@@ -1,6 +1,6 @@
 import type { ToolAnnotations } from './tool';
 
-type CatalogEntry = { public: boolean; annotations: ToolAnnotations };
+type CatalogEntry = { title: string; annotations: ToolAnnotations };
 
 const annotations = (flags: string): ToolAnnotations => ({
   readOnlyHint: flags.includes('R'),
@@ -10,34 +10,31 @@ const annotations = (flags: string): ToolAnnotations => ({
 });
 
 /**
- * The tool catalog from specs/04-mcp-server/design.md (MCP-3.1): public flag and annotations
+ * The tool catalog from specs/04-mcp-server/design.md (MCP-3.1): titles and annotations
  * (R = readOnly, D = destructive, I = idempotent, O = openWorld). Registered tools must match it.
  */
 export const TOOL_CATALOG: Record<string, CatalogEntry> = {
-  get_platform_guide: { public: true, annotations: annotations('RI') },
-  request_login_code: { public: true, annotations: annotations('O') },
-  verify_login_code: { public: true, annotations: annotations('') },
-  whoami: { public: true, annotations: annotations('RI') },
-  logout: { public: false, annotations: annotations('I') },
-  get_usage: { public: false, annotations: annotations('RI') },
-  check_slug: { public: false, annotations: annotations('RI') },
-  create_app: { public: false, annotations: annotations('') },
-  retry_provisioning: { public: false, annotations: annotations('I') },
-  list_apps: { public: false, annotations: annotations('RI') },
-  get_app: { public: false, annotations: annotations('RI') },
-  delete_app: { public: false, annotations: annotations('D') },
-  list_files: { public: false, annotations: annotations('RI') },
-  read_file: { public: false, annotations: annotations('RI') },
-  write_files: { public: false, annotations: annotations('D') },
-  list_deployments: { public: false, annotations: annotations('RI') },
-  get_deployment: { public: false, annotations: annotations('RI') },
-  redeploy: { public: false, annotations: annotations('') },
-  rollback: { public: false, annotations: annotations('') },
-  get_logs: { public: false, annotations: annotations('RI') },
-  set_secret: { public: false, annotations: annotations('I') },
-  list_secrets: { public: false, annotations: annotations('RI') },
-  delete_secret: { public: false, annotations: annotations('DI') },
-  query_database: { public: false, annotations: annotations('D') },
+  get_platform_guide: { title: 'Read the platform guide', annotations: annotations('RI') },
+  whoami: { title: 'Who am I', annotations: annotations('RI') },
+  get_usage: { title: 'Show usage and quotas', annotations: annotations('RI') },
+  check_slug: { title: 'Check an app address', annotations: annotations('RI') },
+  create_app: { title: 'Create an app', annotations: annotations('') },
+  retry_provisioning: { title: 'Retry app setup', annotations: annotations('I') },
+  list_apps: { title: 'List my apps', annotations: annotations('RI') },
+  get_app: { title: 'Show an app', annotations: annotations('RI') },
+  delete_app: { title: 'Delete an app', annotations: annotations('D') },
+  list_files: { title: 'List app files', annotations: annotations('RI') },
+  read_file: { title: 'Read an app file', annotations: annotations('RI') },
+  write_files: { title: 'Write app files', annotations: annotations('D') },
+  list_deployments: { title: 'List deployments', annotations: annotations('RI') },
+  get_deployment: { title: 'Show a deployment', annotations: annotations('RI') },
+  redeploy: { title: 'Redeploy the app', annotations: annotations('') },
+  rollback: { title: 'Roll back to a deployment', annotations: annotations('') },
+  get_logs: { title: 'Show app logs', annotations: annotations('RI') },
+  set_secret: { title: 'Set a secret', annotations: annotations('I') },
+  list_secrets: { title: 'List secrets', annotations: annotations('RI') },
+  delete_secret: { title: 'Delete a secret', annotations: annotations('DI') },
+  query_database: { title: 'Query the app database', annotations: annotations('D') },
 };
 
 /** Rough budget for tools/list (descriptions + schemas), ~12k tokens at ~4 chars/token (MCP non-functional). */

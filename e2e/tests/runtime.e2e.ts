@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { appUrl, createReadyApp, deleteApps, waitForStatus } from '../src/apps';
-import { logIn } from '../src/auth';
+import { signIn } from '../src/auth';
 import { isImplemented } from '../src/catalog';
 import { fixtureFiles, writeAndDeploy } from '../src/deploy';
 import { e2eEnv } from '../src/env';
@@ -31,8 +31,7 @@ const post = (path: string, body: unknown) =>
 // Needs a live deployment (Workers Paid plan on the account); runs once F-RUN-1 is marked implemented.
 describe.skipIf(!isImplemented('F-RUN-1'))('app runtime', () => {
   beforeAll(async () => {
-    client = await connect();
-    await logIn(client, testEmail('runtime'));
+    client = await connect((await signIn(testEmail('runtime'))).accessToken);
     slug = (await createReadyApp(client, appName('runtime'))).slug;
     const deployment = await writeAndDeploy(client, slug, fixtureFiles(), 'Contract app');
     expect(deployment.status, JSON.stringify(deployment)).toBe('live');

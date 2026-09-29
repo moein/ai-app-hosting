@@ -7,8 +7,8 @@ const Daily = z.object({ used: z.number(), max: z.number(), resets_at: z.string(
 
 export const getUsage = defineTool({
   name: 'get_usage',
+  title: 'Show usage and quotas',
   description: 'Current usage against the account limits: apps, deployments today and emails today.',
-  public: false,
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({}),
   output: z.object({

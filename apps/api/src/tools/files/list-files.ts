@@ -12,9 +12,9 @@ export const Ref = z
 
 export const listFiles = defineTool({
   name: 'list_files',
+  title: 'List app files',
   description:
     "Lists the files in the app's code (paths and sizes), optionally under a folder prefix or at an older commit.",
-  public: false,
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({
     app: z.string().describe('The app slug.'),

@@ -27,8 +27,8 @@ apps/api (Worker, Hono — route groups mounted in src/http/app.ts, see 00 desig
 ```ts
 defineTool({
   name: 'get_app',
+  title: 'Get app details',
   description: '…',
-  public: false,                                   // true ⇒ allowed without login (AUTH-3.3)
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({ app: AppSlug }),
   output: AppDetail,

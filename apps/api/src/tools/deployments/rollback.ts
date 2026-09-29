@@ -14,9 +14,9 @@ const WARNING =
 
 export const rollback = defineTool({
   name: 'rollback',
+  title: 'Roll back to a deployment',
   description:
     'Restores a previously live version of the app (a "superseded" deployment from list_deployments) without rebuilding. Database migrations are not reverted.',
-  public: false,
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   input: z.object({
     app: z.string().describe('The app slug.'),

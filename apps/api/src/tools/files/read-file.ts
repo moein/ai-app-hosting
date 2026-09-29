@@ -8,9 +8,9 @@ import { Ref } from './list-files';
 
 export const readFile = defineTool({
   name: 'read_file',
+  title: 'Read an app file',
   description:
     "Reads one file of the app's code. Long files come in chunks: when truncated is true, call again with offset=next_offset.",
-  public: false,
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({
     app: z.string().describe('The app slug.'),

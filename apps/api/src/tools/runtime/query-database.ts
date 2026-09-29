@@ -9,9 +9,9 @@ const invalid = (message: string) =>
 
 export const queryDatabase = defineTool({
   name: 'query_database',
+  title: 'Query the app database',
   description:
     "Runs ONE SQL statement against the app's database. Read-only by default (SELECT, EXPLAIN, PRAGMA table_info…). To change data set allow_writes=true — ask the user first. See the schema with SELECT name, sql FROM sqlite_master.",
-  public: false,
   annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
   input: z.object({
     app: z.string().describe('The app slug.'),

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import type { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { afterAll, beforeAll, describe, expect } from 'vitest';
-import { logIn } from '../src/auth';
+import { signIn } from '../src/auth';
 import { analyticsSql, r2Sql } from '../src/cloudflare';
 import { flow, slowIt } from '../src/flows';
 import { callTool, connect } from '../src/mcp';
@@ -22,8 +22,7 @@ const until = async <T>(check: () => Promise<T | undefined>, timeoutMs: number):
 
 describe('event tracking', () => {
   beforeAll(async () => {
-    client = await connect();
-    await logIn(client, testEmail('events'));
+    client = await connect((await signIn(testEmail('events'))).accessToken);
   });
   afterAll(async () => {
     await client.close();

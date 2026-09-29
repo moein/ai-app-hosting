@@ -20,7 +20,7 @@ describe('login code email (MAIL-3, AUTH-1.8)', () => {
     for (const body of [text, html]) {
       expect(body).toContain('048213');
       expect(body).toContain('10 minutes');
-      expect(body).toContain('Only enter this code in an AI chat that you started yourself');
+      expect(body).toContain('Only enter this code on the AI App Hosting sign-in page you opened yourself');
       expect(body).toContain('ignore this email');
     }
   });

@@ -20,13 +20,14 @@ export function taggedFlowIds(testsDir: string): Set<string> {
   return tagged;
 }
 
-export type SpecTool = { name: string; public: boolean; flags: string };
+export type SpecTool = { name: string; title: string; flags: string };
 
-/** The tool table in specs/04-mcp-server/design.md: name, public flag and annotation letters (R, D, I, O). */
+/** The tool table in specs/04-mcp-server/design.md: name, title and annotation letters (R, D, I, O). Every
+ * tool requires the OAuth bearer token (spec 02, AUTH-4); there are no public tools any more. */
 export function specTools(designMarkdown: string): SpecTool[] {
-  return [...designMarkdown.matchAll(/^\| `([a-z_]+)` \| (✓?) *\| ([RDIO —]*?) *\|/gm)].map((match) => ({
+  return [...designMarkdown.matchAll(/^\| `([a-z_]+)` \| ([^|]+?) \| ([RDIO —]*) \|/gm)].map((match) => ({
     name: match[1] as string,
-    public: match[2] === '✓',
+    title: (match[2] ?? '').trim(),
     flags: (match[3] ?? '').replace(/[^RDIO]/g, ''),
   }));
 }

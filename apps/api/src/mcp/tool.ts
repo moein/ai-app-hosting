@@ -7,12 +7,10 @@ import type {
   McpEventRecord,
   Metrics,
   OrgId,
-  PlatformMailRpc,
   Random,
   UserId,
 } from '@repo/shared';
 import type { z } from 'zod';
-import type { SessionStore } from '../auth/session-store';
 import type { ArtifactStore, DeployParams } from '../builds/deploy';
 import type { Db } from '../db/client';
 import type { CloudflareClient } from '../integrations/cloudflare';
@@ -41,8 +39,6 @@ export type ToolContext = {
   random: Random;
   rateLimiter: RateLimiter;
   db: Db;
-  session: SessionStore;
-  mailer: PlatformMailRpc;
   emailJobs: JobQueue<EmailJob>;
   cloudflare: CloudflareClient;
   github: GitHubClient;
@@ -62,8 +58,10 @@ export type ToolContext = {
   waitUntil(promise: Promise<unknown>): void;
   /** The MCP client from the session's initialize request (EVT-1.2). */
   client: McpClientInfo | null;
+  /** The signed-in user, from the OAuth token (AUTH-4.7). */
   userId?: UserId;
   orgId?: OrgId;
+  email?: string;
   /** The app this call acted on, set by resolveApp / create_app for tracking (EVT-1.3). */
   app?: { id: string; slug: string } | undefined;
 };
@@ -71,8 +69,8 @@ export type ToolContext = {
 export type ToolDefinition<I extends z.ZodObject, O extends z.ZodObject> = {
   name: string;
   description: string;
-  /** Allowed without login (AUTH-3.3). */
-  public: boolean;
+  /** Human-readable name shown by clients (MCP-1.6). */
+  title: string;
   annotations: ToolAnnotations;
   input: I;
   output: O;

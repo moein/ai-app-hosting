@@ -224,10 +224,7 @@ describe('check_slug (SLUG-4.3) and slug uniqueness (SLUG-3)', () => {
   it('enforces uniqueness in the database and lets concurrent generated slugs both succeed', async () => {
     const { ctx } = await signedIn();
     const name = `Race ${unique()}`;
-    const [a, b] = await Promise.all([
-      create(ctx, { name }),
-      create(testContext({ ...ctx, session: ctx.session }), { name }),
-    ]);
+    const [a, b] = await Promise.all([create(ctx, { name }), create(testContext({ ...ctx }), { name })]);
     const slugs = [data<{ slug: string }>(a).slug, data<{ slug: string }>(b).slug];
     expect(new Set(slugs).size).toBe(2);
     const row = await ctx.db

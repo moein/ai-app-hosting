@@ -6,8 +6,8 @@ import { defineTool } from '../../mcp/tool';
 
 export const listApps = defineTool({
   name: 'list_apps',
+  title: 'List my apps',
   description: "Lists the user's apps (newest first) with their address, setup state and live deployment.",
-  public: false,
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({}),
   output: z.object({ apps: z.array(AppSummarySchema) }),

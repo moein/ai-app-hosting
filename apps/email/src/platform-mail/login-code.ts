@@ -13,7 +13,7 @@ const minutes = Math.round(LOGIN_CODE_TTL_MS / 60_000);
 /** Subject, text and HTML of the login-code email (AUTH-1.8). */
 export function loginCodeContent(code: string): { subject: string; text: string; html: string } {
   const warning =
-    'Only enter this code in an AI chat that you started yourself. Never share it with anyone else. If you did not ask for this code, you can ignore this email.';
+    'Only enter this code on the AI App Hosting sign-in page you opened yourself. Never share it with anyone else. If you did not ask for this code, you can ignore this email.';
   return {
     subject: `Your login code: ${code}`,
     text: `Your login code is: ${code}\n\nIt expires in ${minutes} minutes.\n\n${warning}\n`,

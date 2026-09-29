@@ -17,6 +17,7 @@ const jsonSchema = (schema: z.ZodType, io: 'input' | 'output'): JsonSchemaObject
 
 export const describeTool = (tool: AnyTool): Tool => ({
   name: tool.name,
+  title: tool.title,
   description: tool.description,
   inputSchema: jsonSchema(tool.input, 'input'),
   outputSchema: jsonSchema(tool.output, 'output'),

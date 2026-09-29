@@ -42,7 +42,7 @@ As an AI client, I want standard MCP authorization, so that I can connect withou
 - **AUTH-4.5** THE SYSTEM SHALL issue access tokens valid for `OAUTH_ACCESS_TOKEN_TTL_S` and refresh tokens valid for `OAUTH_REFRESH_TOKEN_TTL_S`, rotated on use (so an active connection stays signed in; one unused for 30 days has to sign in again).
 - **AUTH-4.6** THE SYSTEM SHALL store only hashes of tokens and codes; the token's identity (`userId`, `orgId`, `email`) is encrypted at rest.
 - **AUTH-4.7** WHEN an authenticated MCP call arrives THE SYSTEM SHALL take the user from the token, and IF the user no longer exists or is `blocked` THEN every tool SHALL return `ACCOUNT_BLOCKED` (or `AUTH_REQUIRED` for a missing user).
-- **AUTH-4.8** THE sign-in form posts SHALL be accepted only from the platform's own origin (`Origin` check) and only for a pending authorization created by `/authorize` within the last `OAUTH_PENDING_TTL_S`.
+- **AUTH-4.8** THE sign-in form posts SHALL be accepted only from the platform's own origin (`Origin` check, falling back to `Referer` when `Origin` is absent — some browsers omit it on a same-origin top-level form post) and only for a pending authorization created by `/authorize` within the last `OAUTH_PENDING_TTL_S`.
 
 ### AUTH-3 — Identity in tools
 - **AUTH-3.6** WHEN `whoami` is called THE SYSTEM SHALL return `{ email, member_since }` of the signed-in user.

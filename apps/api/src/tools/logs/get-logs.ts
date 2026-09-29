@@ -22,9 +22,9 @@ const EntrySchema = z.object({
 
 export const getLogs = defineTool({
   name: 'get_logs',
+  title: 'Show app logs',
   description:
     'Recent runtime logs of the live app, newest first: requests (method, path, status), console output and exceptions. Use it to debug what the user reports. Build errors are in get_deployment, not here.',
-  public: false,
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({
     app: z.string().describe('The app slug.'),

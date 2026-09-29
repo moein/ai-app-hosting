@@ -9,9 +9,9 @@ import { deleteRoute } from '../../runtime/routes';
 
 export const deleteApp = defineTool({
   name: 'delete_app',
+  title: 'Delete an app',
   description:
     "Takes an app offline by deleting its running Worker (and its secrets). The code and the database are kept. Always confirm with the user first, and pass the app's slug again as confirm_slug.",
-  public: false,
   annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
   input: z.object({
     app: z.string().describe('The app slug.'),

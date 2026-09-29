@@ -8,8 +8,8 @@ import { viewDeps } from './get-deployment';
 
 export const listDeployments = defineTool({
   name: 'list_deployments',
+  title: 'List deployments',
   description: "The app's deployments, newest first. Pass next_cursor as `before` to page back.",
-  public: false,
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({
     app: z.string().describe('The app slug.'),

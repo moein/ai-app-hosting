@@ -29,9 +29,9 @@ export const nextStepFor = (provisioning: string) =>
 
 export const createApp = defineTool({
   name: 'create_app',
+  title: 'Create an app',
   description:
     'Creates a new app: an empty code repository, a database and an address https://<slug>.<apps domain>. The platform writes no code — you write every file with write_files, following get_platform_guide.',
-  public: false,
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   input: z.object({
     name: z.string().describe('Human-readable app name, e.g. "Family Recipes".'),

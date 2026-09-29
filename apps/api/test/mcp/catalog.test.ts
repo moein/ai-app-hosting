@@ -17,7 +17,7 @@ describe('tool catalog conformance (MCP-3.1, MCP-1.4, MCP-1.5, MCP-1.6)', () => 
 
   it.each(TOOLS.map((tool) => [tool.name, tool] as const))('%s matches its catalog entry', (name, tool) => {
     const entry = TOOL_CATALOG[name];
-    expect(tool.public).toBe(entry?.public);
+    expect(tool.title).toBe(entry?.title);
     expect(tool.annotations).toEqual(entry?.annotations);
   });
 

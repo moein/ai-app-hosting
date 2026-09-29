@@ -17,9 +17,9 @@ export const viewDeps = (ctx: ToolContext) => ({
 
 export const getDeployment = defineTool({
   name: 'get_deployment',
+  title: 'Show a deployment',
   description:
     "Status of a deployment (default: the latest) — queued, building, deploying, live, superseded, failed or cancelled — with the build's errors when it failed. Pass wait_seconds (≤ 25) to wait for the status to change.",
-  public: false,
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({
     app: z.string().describe('The app slug.'),

@@ -12,8 +12,8 @@ import { viewDeps } from './get-deployment';
 
 export const redeploy = defineTool({
   name: 'redeploy',
+  title: 'Redeploy the app',
   description: "Rebuilds and deploys the app's current code (latest commit on main) without changing any file.",
-  public: false,
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   input: z.object({ app: z.string().describe('The app slug.') }),
   output: DeploymentViewSchema,

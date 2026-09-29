@@ -1,7 +1,7 @@
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createReadyApp, deleteApps } from '../src/apps';
-import { logIn } from '../src/auth';
+import { signIn } from '../src/auth';
 import { fixtureFiles, writeAndDeploy } from '../src/deploy';
 import { flow } from '../src/flows';
 import { connect } from '../src/mcp';
@@ -12,8 +12,7 @@ let slug = '';
 
 describe('failed builds', () => {
   beforeAll(async () => {
-    client = await connect();
-    await logIn(client, testEmail('build-fail'));
+    client = await connect((await signIn(testEmail('build-fail'))).accessToken);
     slug = (await createReadyApp(client, appName('build-fail'))).slug;
   });
 

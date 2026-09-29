@@ -6,8 +6,8 @@ import { defineTool } from '../../mcp/tool';
 
 export const getApp = defineTool({
   name: 'get_app',
+  title: 'Show an app',
   description: "Details of one app: address, setup state, live and latest deployment, and the code's latest commit.",
-  public: false,
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({ app: z.string().describe('The app slug.') }),
   output: AppSummarySchema.extend({
