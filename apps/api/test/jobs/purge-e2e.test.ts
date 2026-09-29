@@ -16,6 +16,7 @@ const purgeDeps = (ctx: TestContext): PurgeDeps => ({
   github: ctx.github,
   routes: ctx.routes,
   artifacts: ctx.artifacts,
+  r2Objects: ctx.r2Objects,
   appLogs: ctx.appLogs,
   emailJobs: ctx.emailJobs,
   appsDomain: 'motad.app',
@@ -36,6 +37,12 @@ async function userWithApp(email: string, ageMs: number) {
   await ctx
     .appLogs(app.id)
     .append([{ ts: ctx.clock.now(), kind: 'console', level: 'log', message: 'hi', invocation_id: 'i' }]);
+  ctx.fakes.r2Objects.put(app.r2BucketName as string, {
+    key: 'uploads/a.png',
+    size: 1,
+    uploadedAt: 'now',
+    etag: 'e1',
+  });
   return { ctx, userId, orgId, app };
 }
 
@@ -68,6 +75,8 @@ describe('dev e2e purge (E2E-4.2, E2E-4.3)', () => {
     expect(await ctx.db.select().from(apps).where(eq(apps.id, app.id)).get()).toBeUndefined();
     expect(ctx.fakes.cloudflare.scripts.has(app.scriptName)).toBe(false);
     expect([...ctx.fakes.cloudflare.databases.values()]).not.toContain(app.d1DatabaseId);
+    expect(ctx.fakes.cloudflare.buckets.has(app.r2BucketName as string)).toBe(false);
+    expect(ctx.fakes.r2Objects.buckets.get(app.r2BucketName as string)?.size ?? 0).toBe(0);
     expect(ctx.fakes.github.repos.has(app.repoName)).toBe(false);
     expect(await getRoute(ctx.routes, app.slug)).toBeNull();
     expect((await ctx.artifacts.list({ prefix: `artifacts/${app.id}/` })).objects).toEqual([]);
@@ -101,6 +110,47 @@ describe('dev e2e purge (E2E-4.2, E2E-4.3)', () => {
     ctx.fakes.cloudflare.clearFailures();
     await purgeE2eUsers(purgeDeps(ctx), { environment: 'dev', inboxAddress: INBOX, now: ctx.clock.now() });
     expect(await exists(ctx, userId)).toBe(false);
+  });
+
+  it('empties the bucket across multiple pages before deleting it', async () => {
+    const { ctx, userId, app } = await userWithApp(
+      `e2e+${Date.now().toString(36)}-paged@motad.app`,
+      E2E_PURGE_AFTER_MS + 1_000,
+    );
+    const pages = [
+      { objects: [{ key: 'a', size: 1, uploadedAt: 'now', etag: 'e' }], cursor: 'p2', truncated: true },
+      { objects: [{ key: 'b', size: 1, uploadedAt: 'now', etag: 'e' }], cursor: null, truncated: false },
+    ];
+    const deletedBatches: string[][] = [];
+    ctx.r2Objects = {
+      list: async () => pages.shift() ?? { objects: [], cursor: null, truncated: false },
+      deleteAll: async (_bucket, keys) => void deletedBatches.push(keys),
+    };
+    await purgeE2eUsers(purgeDeps(ctx), { environment: 'dev', inboxAddress: INBOX, now: ctx.clock.now() });
+    expect(deletedBatches).toEqual([['a'], ['b']]);
+    expect(ctx.fakes.cloudflare.buckets.has(app.r2BucketName as string)).toBe(false);
+    expect(await exists(ctx, userId)).toBe(false);
+  });
+
+  it('keeps the rows when emptying the bucket fails, so the next run retries', async () => {
+    const { ctx, userId, app } = await userWithApp(
+      `e2e+${Date.now().toString(36)}-r2retry@motad.app`,
+      E2E_PURGE_AFTER_MS + 1_000,
+    );
+    ctx.fakes.r2Objects.failNext('list', new Error('r2 down'));
+    const result = await purgeE2eUsers(purgeDeps(ctx), {
+      environment: 'dev',
+      inboxAddress: INBOX,
+      now: ctx.clock.now(),
+    });
+    expect(result.failed).toBeGreaterThanOrEqual(1);
+    expect(await exists(ctx, userId)).toBe(true);
+    expect(ctx.fakes.cloudflare.buckets.has(app.r2BucketName as string)).toBe(true);
+
+    ctx.fakes.r2Objects.clearFailures();
+    await purgeE2eUsers(purgeDeps(ctx), { environment: 'dev', inboxAddress: INBOX, now: ctx.clock.now() });
+    expect(await exists(ctx, userId)).toBe(false);
+    expect(ctx.fakes.cloudflare.buckets.has(app.r2BucketName as string)).toBe(false);
   });
 
   it('never runs in prod or without an inbox address', async () => {

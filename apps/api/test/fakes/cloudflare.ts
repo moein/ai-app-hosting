@@ -49,6 +49,10 @@ export function fakeCloudflare(options: { d1?: D1Database } = {}) {
       record('findR2', [name]);
       return buckets.has(name) ? { name } : null;
     },
+    async deleteR2(name) {
+      record('deleteR2', [name]);
+      return buckets.delete(name) ? 'deleted' : 'not_found';
+    },
     async d1Query(dbId, sql, params = []) {
       record('d1Query', [dbId, sql, params]);
       if (!options.d1) return [{ columns: [], rows: [], meta: { rows_read: 0, rows_written: 0, duration: 0 } }];

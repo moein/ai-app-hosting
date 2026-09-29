@@ -35,6 +35,8 @@ export interface CloudflareClient {
   /** The app's own R2 bucket (spec 15). Bucket name is its own identifier — no separate id. */
   createR2(name: string): Promise<{ name: string }>;
   findR2(name: string): Promise<{ name: string } | null>;
+  /** Only ever called from the dev e2e purge job; a bucket must be empty first (`R2ObjectClient.deleteAll`). */
+  deleteR2(name: string): Promise<'deleted' | 'not_found'>;
   /** Runs one or more statements; returns one raw result per statement. */
   d1Query(dbId: string, sql: string, params?: unknown[]): Promise<D1RawResult[]>;
   uploadScript(name: string, metadata: ScriptMetadata, modules: WorkerModule[]): Promise<void>;
@@ -137,6 +139,12 @@ export function createCloudflareClient(options: {
         },
       );
       return result === 'not_found' ? null : { name: result.name };
+    },
+    async deleteR2(name) {
+      const result = await call('DELETE', `${account}/r2/buckets/${encodeURIComponent(name)}`, undefined, {
+        allowNotFound: true,
+      });
+      return result === 'not_found' ? 'not_found' : 'deleted';
     },
     async d1Query(dbId, sql, params = []) {
       const results = unwrap(

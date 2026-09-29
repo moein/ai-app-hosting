@@ -16,6 +16,7 @@ import {
 } from '../db/schema';
 import type { CloudflareClient } from '../integrations/cloudflare';
 import type { GitHubClient } from '../integrations/github';
+import type { R2ObjectClient } from '../integrations/r2-objects';
 import { deleteRoute, type RouteStore } from '../runtime/routes';
 
 export type PurgeDeps = {
@@ -24,6 +25,8 @@ export type PurgeDeps = {
   github: GitHubClient;
   routes: RouteStore;
   artifacts: ArtifactStore;
+  /** The app's own R2 bucket (spec 15) must be emptied before `CloudflareClient.deleteR2` will remove it. */
+  r2Objects: R2ObjectClient;
   appLogs(appId: string): AppLogsRpc;
   emailJobs: { send(job: EmailJob): Promise<unknown> };
   appsDomain: string;
@@ -44,6 +47,20 @@ async function deleteArtifacts(artifacts: ArtifactStore, appId: string) {
     const page = await artifacts.list({ prefix: `artifacts/${appId}/`, ...(cursor ? { cursor } : {}) });
     if (page.objects.length > 0) await artifacts.delete(page.objects.map((o) => o.key));
     cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
+}
+
+/** Empties an app's own R2 bucket (spec 15) so `deleteR2` — which refuses a non-empty bucket — can remove it. */
+async function emptyR2Bucket(r2Objects: R2ObjectClient, bucket: string) {
+  let cursor: string | undefined;
+  do {
+    const page = await r2Objects.list(bucket, { ...(cursor ? { cursor } : {}) });
+    if (page.objects.length > 0)
+      await r2Objects.deleteAll(
+        bucket,
+        page.objects.map((o) => o.key),
+      );
+    cursor = page.truncated ? (page.cursor ?? undefined) : undefined;
   } while (cursor);
 }
 
@@ -77,6 +94,10 @@ export async function purgeE2eUsers(
         await deps.cloudflare.deleteScript(app.scriptName);
         await deleteRoute(deps.routes, app.slug);
         if (app.d1DatabaseId) await deps.cloudflare.deleteD1(app.d1DatabaseId);
+        if (app.r2BucketName) {
+          await emptyR2Bucket(deps.r2Objects, app.r2BucketName);
+          await deps.cloudflare.deleteR2(app.r2BucketName);
+        }
         await deps.github.deleteRepo(app.repoName);
         await deleteArtifacts(deps.artifacts, app.id);
         await deps.appLogs(app.id).purge();

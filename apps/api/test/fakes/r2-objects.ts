@@ -44,5 +44,6 @@ export function fakeR2Objects() {
     put: (bucketName: string, object: StoredObject) => bucketOf(bucketName).set(object.key, object),
     buckets,
     failNext: (method: keyof R2ObjectClient, error: Error) => failures.set(method, error),
+    clearFailures: () => failures.clear(),
   };
 }

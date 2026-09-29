@@ -22,9 +22,10 @@ Depends on: 03 (app provisioning steps, `apps` schema), 09 (bindings, `Cloudflar
   Satisfies: FILE-3.1, FILE-3.2, FILE-3.3
   Tests: lists objects under a prefix with pagination (`cursor`, `truncated`); empty bucket → empty list; unknown app → `NOT_FOUND`; bucket not yet provisioned → `NOT_FOUND` with a retry-provisioning hint; result shape has no content field.
 
-- [ ] **5. E2E purge empties and deletes the bucket** (`apps/api/src/jobs/purge-e2e.ts`)
+- [x] **5. E2E purge empties and deletes the bucket** (`apps/api/src/jobs/purge-e2e.ts`)
   `deleteR2` on `CloudflareClient`; the bucket-emptying step using `R2ObjectClient` before it.
   Satisfies: E2E-4.2 (extended)
+  Deployed and healthy on dev. Live verification of an actual purge is via the next natural hourly cron tick (no manual trigger — `wrangler dev` / forcing scheduled handlers isn't used per CLAUDE.md); unit tests cover pagination and the mid-empty-failure retry path.
   Tests: a purged app's bucket is emptied (paginated) then deleted; a bucket that's already gone (`findR2` → null path covered elsewhere) doesn't fail the purge; failure mid-empty retries the whole user next run, like every other purge resource.
 
 - [ ] **6. Usage metering: `r2_storage_bytes`, `r2_class_a_operations`, `r2_class_b_operations`**
