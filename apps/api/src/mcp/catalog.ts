@@ -35,6 +35,7 @@ export const TOOL_CATALOG: Record<string, CatalogEntry> = {
   list_secrets: { title: 'List secrets', annotations: annotations('RI') },
   delete_secret: { title: 'Delete a secret', annotations: annotations('DI') },
   query_database: { title: 'Query the app database', annotations: annotations('D') },
+  list_storage_objects: { title: 'List stored files', annotations: annotations('RI') },
 };
 
 /** Rough budget for tools/list (descriptions + schemas), ~12k tokens at ~4 chars/token (MCP non-functional). */

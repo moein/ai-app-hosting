@@ -21,6 +21,7 @@ import { appLogsFor } from '../../src/logs/app-logs';
 import { defineTool, type ToolContext } from '../../src/mcp/tool';
 import { fakeCloudflare } from '../fakes/cloudflare';
 import { fakeGitHub } from '../fakes/github';
+import { fakeR2Objects } from '../fakes/r2-objects';
 
 export const fakeClock = (start = Date.UTC(2026, 8, 26)) => {
   let now = start;
@@ -55,12 +56,17 @@ export type TestContext = ToolContext & {
   /** Background work handed to waitUntil (tracking); await `flush(ctx)` before asserting on it. */
   pending: Promise<unknown>[];
   emailJobs: ReturnType<typeof fakeQueue>;
-  fakes: { cloudflare: ReturnType<typeof fakeCloudflare>; github: ReturnType<typeof fakeGitHub> };
+  fakes: {
+    cloudflare: ReturnType<typeof fakeCloudflare>;
+    github: ReturnType<typeof fakeGitHub>;
+    r2Objects: ReturnType<typeof fakeR2Objects>;
+  };
 };
 
 export const testContext = (overrides: Partial<ToolContext> = {}): TestContext => {
   const cloudflare = fakeCloudflare({ d1: env.DB });
   const github = fakeGitHub();
+  const r2Objects = fakeR2Objects();
   const sentEvents: McpEventRecord[] = [];
   const pending: Promise<unknown>[] = [];
   const ctx = {
@@ -74,11 +80,12 @@ export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =
     emailJobs: fakeQueue(),
     cloudflare: cloudflare.client,
     github: github.client,
+    r2Objects: r2Objects.client,
     routes: env.APP_ROUTES,
     sleep: async () => {},
     artifacts: env.ARTIFACTS,
     appLogs: (appId: string) => appLogsFor(env as Env, appId),
-    fakes: { cloudflare, github },
+    fakes: { cloudflare, github, r2Objects },
     metrics: memoryMetrics(),
     client: { name: 'test-client', version: '1.0.0', protocolVersion: '2025-06-18' },
     sentEvents,

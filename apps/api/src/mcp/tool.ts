@@ -15,6 +15,7 @@ import type { ArtifactStore, DeployParams } from '../builds/deploy';
 import type { Db } from '../db/client';
 import type { CloudflareClient } from '../integrations/cloudflare';
 import type { GitHubClient } from '../integrations/github';
+import type { R2ObjectClient } from '../integrations/r2-objects';
 import type { RouteStore } from '../runtime/routes';
 
 export type ToolAnnotations = {
@@ -42,6 +43,8 @@ export type ToolContext = {
   emailJobs: JobQueue<EmailJob>;
   cloudflare: CloudflareClient;
   github: GitHubClient;
+  /** Object-level R2 access for the app's own bucket (spec 15). */
+  r2Objects: R2ObjectClient;
   routes: RouteStore;
   provisioner: Provisioner;
   artifacts: ArtifactStore;

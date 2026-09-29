@@ -78,6 +78,7 @@ Annotations: R = readOnly, D = destructive, I = idempotent, O = openWorld.
 | `list_secrets` | List secrets | R I | 09 | Secret names (never values) |
 | `delete_secret` | Delete a secret | D I | 09 | Remove a secret |
 | `query_database` | Query the app database | D | 09 | Run SQL against the app's D1 |
+| `list_storage_objects` | List stored files | R I | 15 | Keys, sizes and upload times in the app's R2 bucket |
 
 Every tool requires the OAuth bearer token (spec 02, AUTH-4); there are no public tools.
 

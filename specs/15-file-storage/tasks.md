@@ -18,7 +18,7 @@ Depends on: 03 (app provisioning steps, `apps` schema), 09 (bindings, `Cloudflar
   Tests: SigV4 request shape against a recorded fixture (same pattern as `SesClient`, spec 11 task 2); pagination (`IsTruncated`/`NextContinuationToken`) → `cursor`/`truncated`; 4xx/5xx → `UPSTREAM_ERROR`. A fake backs every other task's tests.
   Verified live: `R2ObjectClient.list`'s exact request signed and sent against the real `artifacts-dev` bucket with the dev token, confirming the S3 XML response shape before deploying; deployed, `/healthz` and `apps.e2e.ts` (create_app) both green. Open: create the prod R2 API token when prod is set up.
 
-- [ ] **4. `list_storage_objects` tool**
+- [x] **4. `list_storage_objects` tool**
   Satisfies: FILE-3.1, FILE-3.2, FILE-3.3
   Tests: lists objects under a prefix with pagination (`cursor`, `truncated`); empty bucket → empty list; unknown app → `NOT_FOUND`; bucket not yet provisioned → `NOT_FOUND` with a retry-provisioning hint; result shape has no content field.
 

@@ -10,6 +10,6 @@ The user is already signed in through the connector (whoami shows who).
 3. write_files to commit code. Every commit to main is built and deployed automatically.
 4. get_deployment with wait_seconds to follow the build. If it fails, read the errors, fix the
    files, and write again. When live, give the user the URL.
-5. Use get_logs, query_database, set_secret to debug and operate the app.
+5. Use get_logs, query_database, list_storage_objects, set_secret to debug and operate the app.
 Every error includes a \`hint\` telling you what to do next.`;
 }

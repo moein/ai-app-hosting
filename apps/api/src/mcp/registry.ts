@@ -15,6 +15,7 @@ import { readFile } from '../tools/files/read-file';
 import { writeFiles } from '../tools/files/write-files';
 import { getLogs } from '../tools/logs/get-logs';
 import { getPlatformGuide } from '../tools/platform-guide';
+import { listStorageObjects } from '../tools/runtime/list-storage-objects';
 import { queryDatabase } from '../tools/runtime/query-database';
 import { deleteSecret, listSecrets, setSecret } from '../tools/runtime/secrets';
 import type { AnyTool } from './tool';
@@ -41,5 +42,6 @@ export const TOOLS: AnyTool[] = [
   listSecrets,
   deleteSecret,
   queryDatabase,
+  listStorageObjects,
   getLogs,
 ];

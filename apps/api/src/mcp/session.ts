@@ -59,6 +59,7 @@ export class McpSession extends McpAgent<Env, unknown, SessionProps> {
       emailJobs: this.env.EMAIL_JOBS,
       cloudflare: platform.cloudflare,
       github: platform.github,
+      r2Objects: platform.r2Objects,
       routes: platform.routes,
       provisioner: {
         start: async (appId) => {

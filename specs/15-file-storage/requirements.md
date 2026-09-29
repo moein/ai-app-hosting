@@ -24,7 +24,7 @@ As an AI client, I want to see what's in the app's bucket, so that I can debug a
 
 - **FILE-3.1** WHEN `list_storage_objects({ app, prefix?, cursor? })` is called THE SYSTEM SHALL return up to `MAX_STORAGE_LIST_KEYS` objects (`key`, `size`, `uploaded_at`, `etag`) under `prefix` (default: all), plus a `cursor` for the next page when more exist.
 - **FILE-3.2** THE SYSTEM SHALL NOT return object contents through MCP (objects can be arbitrary binary data and are the app's own to serve); reading content is the app's job.
-- **FILE-3.3** IF the bucket is not yet provisioned (`apps.r2_bucket_name` is null — only possible if provisioning previously failed) THEN THE SYSTEM SHALL return `NOT_FOUND` with a hint to retry provisioning.
+- **FILE-3.3** THE SYSTEM SHALL require the app to be ready (`resolveApp` with `requireReady`, same as `list_files`/`query_database`) before listing its bucket: an unknown app → `NOT_FOUND`; one still provisioning or failed → `APP_NOT_READY`. Once `provisioning` is `ready` the `r2` step has already succeeded, so the bucket always exists by the time this runs.
 
 ## Non-functional requirements
 

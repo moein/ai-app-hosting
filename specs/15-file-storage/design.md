@@ -128,7 +128,7 @@ Egress is free on R2 (no metric needed).
 
 ## Error codes
 
-No new codes: `NOT_FOUND` (FILE-3.3, bucket not provisioned yet), `UPSTREAM_ERROR` (Cloudflare API failures), `INVALID_INPUT` (bad `cursor`) all already exist in the catalog.
+No new codes: `NOT_FOUND` / `APP_NOT_READY` (FILE-3.3, via `resolveApp`), `UPSTREAM_ERROR` (R2 API failures), `INVALID_INPUT` (bad `cursor`) all already exist in the catalog.
 
 ## Open questions
 
