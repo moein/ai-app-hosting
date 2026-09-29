@@ -11,6 +11,8 @@ const SECRETS = {
   api: {
     LOGIN_CODE_PEPPER: { key: 'LOGIN_CODE_PEPPER', generate: true },
     CF_API_TOKEN: { key: 'CF_API_TOKEN' },
+    R2_ACCESS_KEY: { key: 'R2_ACCESS_KEY' }, // R2 API token for object-level ops (spec 15)
+    R2_SECRET_ACCESS_KEY: { key: 'R2_SECRET_ACCESS_KEY' },
     GITHUB_APP_ID: { key: 'GITHUB_APP_ID' },
     GITHUB_INSTALLATION_ID: { key: 'GITHUB_INSTALLATION_ID' },
     GITHUB_APP_PRIVATE_KEY: { key: 'GITHUB_APP_PRIVATE_KEY' },

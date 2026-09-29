@@ -36,6 +36,8 @@ export default defineConfig({
           TEST_MIGRATIONS: await readD1Migrations('./migrations'),
           LOGIN_CODE_PEPPER: 'test-pepper-0123456789abcdef0123456789abcdef',
           CF_API_TOKEN: 'test-cf-token',
+          R2_ACCESS_KEY: 'test-r2-access-key',
+          R2_SECRET_ACCESS_KEY: 'test-r2-secret-key',
           GITHUB_APP_ID: '1',
           GITHUB_INSTALLATION_ID: '1',
           GITHUB_APP_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\\ntest\\n-----END PRIVATE KEY-----',

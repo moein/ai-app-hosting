@@ -17,6 +17,7 @@
     "@repo/http": "workspace:*",
     "@repo/shared": "workspace:*",
     "agents": "0.24.0",
+    "aws4fetch": "1.0.20",
     "drizzle-orm": "0.45.3",
     "hono": "4.13.9",
     "zod": "4.6.5"

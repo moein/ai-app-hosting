@@ -5,6 +5,7 @@ import { createDb } from './db/client';
 import { createCloudflareClient } from './integrations/cloudflare';
 import { createCloudflareAnalyticsClient } from './integrations/cloudflare-analytics';
 import { createGitHubClient } from './integrations/github';
+import { createR2ObjectClient } from './integrations/r2-objects';
 
 export type Environment = 'dev' | 'prod';
 
@@ -20,6 +21,11 @@ export function createPlatform(env: Env) {
       dispatchNamespace: dispatchNamespaceFor(environment),
     }),
     analytics: createCloudflareAnalyticsClient({ apiToken: env.CF_API_TOKEN, accountId: env.CF_ACCOUNT_ID }),
+    r2Objects: createR2ObjectClient({
+      accountId: env.CF_ACCOUNT_ID,
+      accessKeyId: env.R2_ACCESS_KEY,
+      secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+    }),
     github: createGitHubClient({
       appId: env.GITHUB_APP_ID,
       privateKey: env.GITHUB_APP_PRIVATE_KEY,

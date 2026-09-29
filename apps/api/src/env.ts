@@ -11,6 +11,9 @@ export const parseEnv = createEnvParser(
     GITHUB_ORG: z.string().min(1),
     LOGIN_CODE_PEPPER: z.string().min(32),
     CF_API_TOKEN: z.string().min(1),
+    /** R2's S3-compatible API for object-level operations (spec 15): CF_API_TOKEN only reaches bucket lifecycle. */
+    R2_ACCESS_KEY: z.string().min(1),
+    R2_SECRET_ACCESS_KEY: z.string().min(1),
     GITHUB_APP_ID: z.string().min(1),
     GITHUB_INSTALLATION_ID: z.string().min(1),
     GITHUB_APP_PRIVATE_KEY: z.string().includes('PRIVATE KEY'),

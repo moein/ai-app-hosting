@@ -2,6 +2,9 @@
 interface PlatformSecrets {
   LOGIN_CODE_PEPPER: string;
   CF_API_TOKEN: string;
+  /** R2's S3-compatible API for object-level operations (spec 15): CF_API_TOKEN only reaches bucket lifecycle. */
+  R2_ACCESS_KEY: string;
+  R2_SECRET_ACCESS_KEY: string;
   GITHUB_APP_ID: string;
   GITHUB_INSTALLATION_ID: string;
   GITHUB_APP_PRIVATE_KEY: string;
