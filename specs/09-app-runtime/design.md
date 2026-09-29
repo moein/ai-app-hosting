@@ -14,7 +14,7 @@ Visitor ─▶ https://todo.APPS_DOMAIN/api/items
            throw        → 502 page + console.error({ appId, error })
             ▼
        dispatch namespace apps-<env> (untrusted)
-         script "todo"  bindings: DB → D1 app-todo-<env>, ASSETS, EMAIL → email-<env>/AppMail{props}, vars, secrets
+         script "todo"  bindings: DB → D1 app-todo-<env>, FILES → R2 app-todo-<env>, ASSETS, EMAIL → email-<env>/AppMail{props}, vars, secrets
                         tail_consumers: tail-<env>   (spec 10)
 ```
 
@@ -50,6 +50,7 @@ KV value: `{ "appId": "app_…", "scriptName": "todo", "state": "live" | "not_de
 ```json
 [
   { "type": "d1", "name": "DB", "id": "<apps.d1_database_id>" },
+  { "type": "r2_bucket", "name": "FILES", "bucket_name": "<apps.r2_bucket_name>" },
   { "type": "assets", "name": "ASSETS" },
   { "type": "service", "name": "EMAIL", "service": "email-<env>", "entrypoint": "AppMail",
     "props": { "appId": "app_…", "orgId": "org_…", "slug": "todo" } },
@@ -80,6 +81,8 @@ interface CloudflareClient {
 ```
 
 All calls go to `https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT_ID}/…` (dispatch namespace endpoints for scripts/secrets/assets). 429/5xx → `UPSTREAM_ERROR` (retryable). A fake is used in tests.
+
+`createR2`/`findR2` (the app's bucket, spec 15) follow the same shape and error handling; see spec 15's design for their signatures.
 
 ## Data model
 

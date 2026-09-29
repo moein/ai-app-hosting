@@ -8,6 +8,8 @@ api hourly cron ──▶ collectUsage(days = [yesterday, today])
    │     workersAssetsRequestsAdaptiveGroups (by hostname <slug>.APPS_DOMAIN)                → asset_requests
    │     d1AnalyticsAdaptiveGroups   (by databaseId)                                        → d1_rows_read, d1_rows_written
    │     d1StorageAdaptiveGroups     (by databaseId, max of day)                            → d1_storage_bytes
+   │     r2StorageAdaptiveGroups     (by bucketName, max of day, spec 15)                    → r2_storage_bytes
+   │     r2OperationsAdaptiveGroups  (by bucketName, spec 15)                                → r2_class_a/b_operations
    ├─ AppLogBuffer.usage(days) RPC for apps that can have traffic                          → requests, cpu_ms, log_entries, log_bytes
    ├─ platform D1: deployments                                                              → builds, build_ms, deploys
    │                 retained artifacts (artifact_key not null)                             → artifact_bytes
@@ -15,7 +17,7 @@ api hourly cron ──▶ collectUsage(days = [yesterday, today])
    └─ upsert app_usage_daily (replace)               AppMail.send ──▶ app_usage_daily emails += recipients
 ```
 
-All metrics are keyed by `app_id`. Attribution: D1 id → `apps.d1_database_id`; hostname → `<apps.slug>.APPS_DOMAIN`; Worker invocations by the app id in each trace event's script tags (the tail Worker). GraphQL's `workersInvocationsAdaptive` reports Workers for Platforms user scripts as `scriptName = __unknown__` (only `scriptVersion` is visible), so it can't attribute requests or CPU; the tail Worker sees every invocation with its exact `cpuTime` instead. Rows for scripts, databases and hosts that match no app (platform resources) are ignored. Apps are matched regardless of status, so deleted apps keep reporting storage (USG-1.6).
+All metrics are keyed by `app_id`. Attribution: D1 id → `apps.d1_database_id`; R2 bucket name → `apps.r2_bucket_name` (spec 15); hostname → `<apps.slug>.APPS_DOMAIN`; Worker invocations by the app id in each trace event's script tags (the tail Worker). GraphQL's `workersInvocationsAdaptive` reports Workers for Platforms user scripts as `scriptName = __unknown__` (only `scriptVersion` is visible), so it can't attribute requests or CPU; the tail Worker sees every invocation with its exact `cpuTime` instead. Rows for scripts, databases, buckets and hosts that match no app (platform resources) are ignored. Apps are matched regardless of status, so deleted apps keep reporting storage (USG-1.6) — D1 and R2 alike, since deleting an app never deletes its data (APP-4, FILE-1.4).
 
 ## Metric catalog (`packages/shared/src/usage.ts`)
 
@@ -27,6 +29,9 @@ All metrics are keyed by `app_id`. Attribution: D1 id → `apps.d1_database_id`;
 | `d1_rows_read` | rows | GraphQL `d1AnalyticsAdaptiveGroups.sum.rowsRead` | replace |
 | `d1_rows_written` | rows | GraphQL `sum.rowsWritten` | replace |
 | `d1_storage_bytes` | bytes (max of day) | GraphQL `d1StorageAdaptiveGroups.max.databaseSizeBytes` | replace |
+| `r2_storage_bytes` | bytes (max of day) | GraphQL `r2StorageAdaptiveGroups`, spec 15 | replace |
+| `r2_class_a_operations` | operations | GraphQL `r2OperationsAdaptiveGroups`, spec 15 | replace |
+| `r2_class_b_operations` | operations | GraphQL `r2OperationsAdaptiveGroups`, spec 15 | replace |
 | `emails` | recipients sent | `AppMail.send` success | add |
 | `log_entries` | entries received | AppLogBuffer daily counter | replace |
 | `log_bytes` | bytes of message + stack | AppLogBuffer daily counter | replace |
@@ -60,7 +65,7 @@ The replace upsert is `INSERT … ON CONFLICT (app_id, day, metric) DO UPDATE SE
 
 ### Cloudflare GraphQL Analytics (`apps/api/src/integrations/cloudflare-analytics.ts`)
 
-`CloudflareAnalyticsClient` with `assets(day)`, `d1(day)`, `d1Storage(day)`, each one query with `limit: 10000` and `date_geq = date_leq = day`, returning rows keyed by hostname or database id. It uses `CF_API_TOKEN` (needs *Account Analytics: Read*). GraphQL `errors` or a non-200 → `UPSTREAM_ERROR`. A fake backs tests.
+`CloudflareAnalyticsClient` with `assets(day)`, `d1(day)`, `d1Storage(day)`, `r2Storage(day)`, `r2Operations(day)` (spec 15), each one query with `limit: 10000` and `date_geq = date_leq = day`, returning rows keyed by hostname, database id or bucket name. It uses `CF_API_TOKEN` (needs *Account Analytics: Read*). GraphQL `errors` or a non-200 → `UPSTREAM_ERROR`. A fake backs tests.
 
 ### AppLogBuffer counters (spec 10)
 
@@ -77,7 +82,9 @@ export const PRICES = {
   asOf: '2026-09-27',
   perUnitUsd: { requests: 0.30e-6, cpu_ms: 0.02e-6, d1_rows_read: 0.001e-6, d1_rows_written: 1.0e-6,
                 d1_storage_bytes_month: 0.75 / 1e9, emails: 0.10e-3, build_ms: 0.008 / 60_000,
-                artifact_bytes_month: 0.015 / 1e9, log_entries: …, asset_requests: 0, … },
+                artifact_bytes_month: 0.015 / 1e9, r2_storage_bytes_month: 0.015 / 1e9,
+                r2_class_a_operations: 4.5 / 1e6, r2_class_b_operations: 0.36 / 1e6,
+                log_entries: …, asset_requests: 0, … },
   perRequestOverheadUsd: …,   // dispatcher invocation + CPU, KV route read, tail invocation, log DO request
 };
 export function estimateCostUsd(quantities: Partial<Record<UsageMetric, number>>, days: number): number;

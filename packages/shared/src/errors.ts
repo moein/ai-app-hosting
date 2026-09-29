@@ -14,7 +14,7 @@ export const ERROR_CATALOG = {
   },
   AUTH_REQUIRED: {
     message: 'You need to log in first.',
-    hint: 'Ask the user for their email address, then call `request_login_code`.',
+    hint: 'Tell the user to reconnect this connector — it will open the sign-in page again.',
     retryable: false,
   },
   RATE_LIMITED: {
@@ -56,17 +56,17 @@ export const ERROR_CATALOG = {
   // spec 02 — identity & auth
   CODE_INVALID: {
     message: 'The login code is wrong.',
-    hint: 'Ask the user to re-check the latest email (`details.attempts_remaining` tries left). If 0, call `request_login_code` again.',
+    hint: 'Shown on the sign-in page; re-check the latest email (`details.attempts_remaining` tries left). If 0, send a new code from the page.',
     retryable: false,
   },
   CODE_EXPIRED: {
     message: 'The login code has expired.',
-    hint: 'Call `request_login_code` again and ask the user for the new code.',
+    hint: 'Shown on the sign-in page; send a new code from the page.',
     retryable: false,
   },
   CODE_ATTEMPTS_EXCEEDED: {
     message: 'Too many wrong login codes.',
-    hint: 'Call `request_login_code` to send a new code.',
+    hint: 'Shown on the sign-in page; send a new code from the page.',
     retryable: false,
   },
   EMAIL_UNDELIVERABLE: {

@@ -10,7 +10,7 @@ Implement roughly in this order; later specs depend on earlier ones.
 |---|---|---|---|
 | 00 | [foundation](00-foundation/) | `FND` | Monorepo, dev/prod environments, `wrangler.jsonc` per worker, D1 migrations, IDs, errors, CI |
 | 01 | [slugs](01-slugs/) | `SLUG` | Subdomain-safe unique slugs for orgs and apps |
-| 02 | [identity-and-auth](02-identity-and-auth/) | `AUTH` | Email-code login via MCP tools, MCP session binding, signup → personal org |
+| 02 | [identity-and-auth](02-identity-and-auth/) | `AUTH` | OAuth 2.1 sign-in (own authorization server in front of `/mcp`; email + emailed code on the sign-in page), signup → personal org |
 | 03 | [organizations-and-apps](03-organizations-and-apps/) | `APP` | Org/app model, app provisioning, delete (Worker only), quotas |
 | 04 | [mcp-server](04-mcp-server/) | `MCP` | Tool catalog, server instructions, platform guide, result/error contract |
 | 05 | [event-tracking-and-metrics](05-event-tracking-and-metrics/) | `EVT` | Every MCP action → Pipeline → R2; metrics → Analytics Engine |
@@ -24,6 +24,8 @@ Implement roughly in this order; later specs depend on earlier ones.
 | 13 | [usage-metering](13-usage-metering/) | `USG` | Per-app daily usage of everything that costs us (Workers, D1, email, logs, builds, storage), cost estimates |
 
 | 14 | [website](14-website/) | `WEB` | Homepage on the `APPS_DOMAIN` apex: pick your AI, connect it (screenshots), describe your app, get the prompt |
+| 15 | [file-storage](15-file-storage/) | `FILE` | Per-app R2 bucket (`FILES` binding), like the per-app D1 database; usage-tracked |
+
 Deferred work: [backlog.md](backlog.md).
 
 ## Architecture overview
@@ -47,7 +49,7 @@ Deferred work: [backlog.md](backlog.md).
                                                                           validate → build → upload artifact
             ┌──────────────────── *.APPS_DOMAIN ─────────────────────┐
  Visitor ──▶│ apps/dispatcher ──▶ dispatch namespace `apps-<env>`     │
-            │                      └─ user Worker <slug>              │──bindings──▶ DB (per-app D1), ASSETS, EMAIL (apps/email AppMail)
+            │                      └─ user Worker <slug>              │──bindings──▶ DB (per-app D1), FILES (per-app R2), ASSETS, EMAIL (apps/email AppMail)
             └─────────────────────────────────────────────────────────┘
                                    │ tail events
                                    ▼

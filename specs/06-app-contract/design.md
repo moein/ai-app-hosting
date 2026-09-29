@@ -36,7 +36,7 @@ The API serves the bundled validator at `GET /v1/contract/validator/<version>.mj
 └── src/
     ├── api/
     │   ├── index.ts         # export default app (Hono), routes under /api/*
-    │   └── env.ts           # interface Env { DB: D1Database; ASSETS: Fetcher; EMAIL: AppEmail }
+    │   └── env.ts           # interface Env { DB: D1Database; FILES: R2Bucket; ASSETS: Fetcher; EMAIL: AppEmail }
     └── web/
         ├── main.tsx         # createRoot(document.getElementById('root')!).render(<App />)
         └── …                # React components, CSS
@@ -62,7 +62,7 @@ The API serves the bundled validator at `GET /v1/contract/validator/<version>.mj
 }
 ```
 
-At deploy time the platform ignores `name`, `database_name`, `database_id` and injects the real script name, the app's D1 UUID, `ASSETS`, `EMAIL`, secrets and the tail consumer (spec 08/09). Values above make `vite build` work in CI without Cloudflare credentials.
+At deploy time the platform ignores `name`, `database_name`, `database_id` and injects the real script name, the app's D1 UUID, `FILES` (spec 15), `ASSETS`, `EMAIL`, secrets and the tail consumer (spec 08/09). Values above make `vite build` work in CI without Cloudflare credentials.
 
 ### Required `vite.config.ts`
 
@@ -95,7 +95,7 @@ Build output (from `@cloudflare/vite-plugin`): `dist/client/` (static assets) an
 | `CON-R07` | `compatibility_date` outside supported window | Use a date between `<min>` and `<max>`. |
 | `CON-R08` | `assets` config wrong | Copy the `assets` block from the contract. |
 | `CON-R09` | D1 binding missing / not named `DB` / more than one | Exactly one `d1_databases` entry with `binding: "DB"`. |
-| `CON-R10` | Reserved binding declared (`EMAIL`, `ASSETS` as binding) | Remove it; the platform injects it. |
+| `CON-R10` | Reserved binding declared (`EMAIL`, `ASSETS`, `FILES` as binding) | Remove it; the platform injects it. |
 | `CON-R11` | Unsupported `wrangler.jsonc` key (CON-3.3) | Remove `<key>`; `<feature>` isn't available yet. |
 | `CON-R12` | Invalid `vars` (non-string or reserved name) | Use string values; rename `<name>`. |
 | `CON-R13` | Migration filename invalid or duplicate prefix | Rename to `NNNN_description.sql`. |

@@ -7,12 +7,12 @@ Every app costs the platform money when it's used: Worker requests and CPU, D1 r
 ### USG-1 — Collect every cost-driving quantity per app and day
 As the operator, I want each app's usage recorded daily, so that I know what every app and org costs us.
 
-- **USG-1.1** THE SYSTEM SHALL record, per app and UTC day, every metric in the design's metric catalog (Workers requests and CPU time, static asset requests, D1 rows read/written and storage, emails, runtime log entries and bytes, builds and build minutes, deployments, artifact storage).
-- **USG-1.2** WHEN the api worker's hourly cron runs THE SYSTEM SHALL pull Cloudflare-measured metrics (D1, static assets) for the current and the previous UTC day from the Cloudflare GraphQL Analytics API, attribute them to apps (D1 database id, hostname), and store each as that day's total, replacing the previous value.
+- **USG-1.1** THE SYSTEM SHALL record, per app and UTC day, every metric in the design's metric catalog (Workers requests and CPU time, static asset requests, D1 rows read/written and storage, R2 storage and operations, emails, runtime log entries and bytes, builds and build minutes, deployments, artifact storage).
+- **USG-1.2** WHEN the api worker's hourly cron runs THE SYSTEM SHALL pull Cloudflare-measured metrics (D1, R2, static assets) for the current and the previous UTC day from the Cloudflare GraphQL Analytics API, attribute them to apps (D1 database id, R2 bucket name, hostname), and store each as that day's total, replacing the previous value.
 - **USG-1.3** WHEN the hourly cron runs THE SYSTEM SHALL also recompute platform-measured day totals (Worker invocations and CPU time counted by the tail Worker from every trace event, log entries and bytes — all kept in each app's log buffer — builds and build minutes, deployments, artifact storage) for the current and the previous UTC day, replacing the previous value.
 - **USG-1.4** WHEN `AppMail.send` succeeds THE SYSTEM SHALL add the number of recipients sent to the app's `emails` total for the day.
 - **USG-1.5** THE SYSTEM SHALL make collection idempotent: running the job again for the same day SHALL yield the same totals.
-- **USG-1.6** THE SYSTEM SHALL keep collecting storage metrics (D1 storage, artifact storage) for deleted apps as long as those resources exist, because they still cost us.
+- **USG-1.6** THE SYSTEM SHALL keep collecting storage metrics (D1 storage, R2 storage, artifact storage) for deleted apps as long as those resources exist, because they still cost us.
 - **USG-1.7** IF one data source fails THEN THE SYSTEM SHALL still collect the others, log the failure, and write a `usage_collection_failed` metric with the source name.
 - **USG-1.8** WHEN a deployment that ran a GitHub Actions build reaches a terminal state THE SYSTEM SHALL fetch the run's billable build time from GitHub once and store it on the deployment.
 

@@ -20,8 +20,8 @@ As a user, I want my app reachable at `https://<slug>.APPS_DOMAIN`, so that I ca
 ### RUN-2 — Bindings and isolation
 As the platform, I want each app to reach only its own resources, so that apps can't interfere with each other or with the platform.
 
-- **RUN-2.1** THE SYSTEM SHALL give every deployed app script exactly these bindings: `DB` (the app's own D1 database), `ASSETS` (its static assets), `EMAIL` (service binding to `email-<env>` entrypoint `AppMail` with props `{ appId, orgId, slug }`), its string `vars`, and its secrets.
-- **RUN-2.2** THE SYSTEM SHALL NOT give app scripts any binding to platform resources (platform D1, KV, R2, queues, other apps' databases).
+- **RUN-2.1** THE SYSTEM SHALL give every deployed app script exactly these bindings: `DB` (the app's own D1 database), `FILES` (the app's own R2 bucket, spec 15), `ASSETS` (its static assets), `EMAIL` (service binding to `email-<env>` entrypoint `AppMail` with props `{ appId, orgId, slug }`), its string `vars`, and its secrets.
+- **RUN-2.2** THE SYSTEM SHALL NOT give app scripts any binding to platform resources or another app's resources (platform D1/R2/KV, queues, other apps' databases or buckets).
 - **RUN-2.3** THE SYSTEM SHALL run the dispatch namespace in untrusted mode (per-script cache isolation, no `request.cf` sharing across scripts beyond defaults).
 - **RUN-2.4** WHEN an app is provisioned THE SYSTEM SHALL upload a placeholder script (no bindings) that returns the 503 "being built" page, so secrets can be set before the first deployment.
 - **RUN-2.5** THE SYSTEM SHALL register `APPS_DOMAIN` on the Public Suffix List (operational task) so browsers isolate cookies per app subdomain, and SHALL host user apps on a registrable domain different from the platform API's (`PLATFORM_API_ORIGIN`).
@@ -67,4 +67,4 @@ As a user, I want other apps on the platform unable to tamper with my app's cook
 - Custom domains for apps.
 - Per-org configurable CPU/subrequest limits, outbound Worker (egress filtering/metering).
 - Suspending apps for abuse (see open questions).
-- Cron triggers, queues, KV/R2/Durable Objects for apps.
+- Cron triggers, queues, KV/Durable Objects for apps. (R2: see spec 15.)
