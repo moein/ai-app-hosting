@@ -12,11 +12,11 @@ Depends on: 03 (app provisioning steps, `apps` schema), 09 (bindings, `Cloudflar
   Satisfies: FILE-2.1, FILE-2.2
   Tests: deployed script bindings include `{ type: "r2_bucket", name: "FILES", bucket_name }`; `vars.FILES` in `wrangler.jsonc` → `CON-R10`; an `r2_buckets` key in `wrangler.jsonc` → `CON-R11` (already covered by the existing unsupported-key rule — add a fixture case).
 
-- [ ] **3. R2 API token + `R2ObjectClient` (aws4fetch, SigV4)**
+- [x] **3. R2 API token + `R2ObjectClient` (aws4fetch, SigV4)**
   Provision an R2 API token (Object Read & Write, Admin, all buckets) in dev and prod; `R2_ACCESS_KEY`/`R2_SECRET_ACCESS_KEY` in `.env.example` and uploaded via `pnpm secrets:dev`/`:prod`; `apps/api/src/integrations/r2-objects.ts` with `list(bucket, { prefix?, cursor? })` and `deleteAll(bucket, keys)` against R2's S3-compatible API.
   Satisfies: (infrastructure for FILE-3 and the e2e purge step below)
   Tests: SigV4 request shape against a recorded fixture (same pattern as `SesClient`, spec 11 task 2); pagination (`IsTruncated`/`NextContinuationToken`) → `cursor`/`truncated`; 4xx/5xx → `UPSTREAM_ERROR`. A fake backs every other task's tests.
-  Status: code + tests done, wired into `platform.ts`; `R2_ACCESS_KEY`/`R2_SECRET_ACCESS_KEY` are now *required* env vars (`parseEnv` runs before every request), so **do not deploy `api` until the token is created and `pnpm secrets:<env>` has uploaded it** — deploying first would 500 the whole worker, not just this feature. Open: create the dev (and later prod) R2 API token per `docs/runbook.md`.
+  Verified live: `R2ObjectClient.list`'s exact request signed and sent against the real `artifacts-dev` bucket with the dev token, confirming the S3 XML response shape before deploying; deployed, `/healthz` and `apps.e2e.ts` (create_app) both green. Open: create the prod R2 API token when prod is set up.
 
 - [ ] **4. `list_storage_objects` tool**
   Satisfies: FILE-3.1, FILE-3.2, FILE-3.3
