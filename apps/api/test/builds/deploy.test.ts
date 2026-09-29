@@ -80,7 +80,13 @@ describe('DeployApp (DEP-2.9 – 2.11)', () => {
         config: { not_found_handling: 'single-page-application', run_worker_first: ['/api/*'] },
       },
     });
-    expect((metadata.bindings as { name: string }[]).map((b) => b.name)).toEqual(['DB', 'ASSETS', 'EMAIL', 'GREETING']);
+    expect((metadata.bindings as { name: string }[]).map((b) => b.name)).toEqual([
+      'DB',
+      'FILES',
+      'ASSETS',
+      'EMAIL',
+      'GREETING',
+    ]);
     expect(modules.map((m) => m.name).sort()).toEqual(['chunk.js', 'index.js']);
 
     const manifest = ctx.fakes.cloudflare.callsTo('createAssetsUploadSession')[0]?.args[1] as Record<

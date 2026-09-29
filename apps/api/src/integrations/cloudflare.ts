@@ -4,6 +4,7 @@ export type WorkerModule = { name: string; content: string | Uint8Array; type: '
 
 export type WorkerBinding =
   | { type: 'd1'; name: string; id: string }
+  | { type: 'r2_bucket'; name: string; bucket_name: string }
   | { type: 'assets'; name: string }
   | { type: 'service'; name: string; service: string; entrypoint?: string; props?: Record<string, unknown> }
   | { type: 'plain_text'; name: string; text: string };

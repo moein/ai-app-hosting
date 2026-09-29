@@ -3,12 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { buildBindings } from '../../src/runtime/bindings';
 import { beingBuiltResponse, PLACEHOLDER_MODULE, placeholderMetadata } from '../../src/runtime/placeholder';
 
-const app = { appId: 'app_abc', orgId: 'org_def', slug: 'todo', d1DatabaseId: 'db-1' };
+const app = { appId: 'app_abc', orgId: 'org_def', slug: 'todo', d1DatabaseId: 'db-1', r2BucketName: 'app-todo-dev' };
 
 describe('app script bindings (RUN-2.1, RUN-2.2)', () => {
-  it('are exactly DB, ASSETS, EMAIL (with platform props) and string vars', () => {
+  it('are exactly DB, FILES, ASSETS, EMAIL (with platform props) and string vars', () => {
     expect(buildBindings(app, { environment: 'dev', assets: true, vars: { GREETING: 'hi' } })).toEqual([
       { type: 'd1', name: 'DB', id: 'db-1' },
+      { type: 'r2_bucket', name: 'FILES', bucket_name: 'app-todo-dev' },
       { type: 'assets', name: 'ASSETS' },
       {
         type: 'service',
@@ -23,7 +24,7 @@ describe('app script bindings (RUN-2.1, RUN-2.2)', () => {
 
   it('never include platform resources', () => {
     const names = buildBindings(app, { environment: 'prod', assets: true }).map((b) => b.name);
-    expect(names).toEqual(['DB', 'ASSETS', 'EMAIL']);
+    expect(names).toEqual(['DB', 'FILES', 'ASSETS', 'EMAIL']);
   });
 });
 

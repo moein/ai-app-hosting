@@ -5,7 +5,7 @@ import { deployments } from '../db/schema';
 import type { ToolContext } from '../mcp/tool';
 
 export const SECRET_NAME = /^[A-Z][A-Z0-9_]{0,63}$/;
-export const RESERVED_NAMES = new Set(['DB', 'ASSETS', 'EMAIL']);
+export const RESERVED_NAMES = new Set(['DB', 'FILES', 'ASSETS', 'EMAIL']);
 
 /** Names of the app's plain `vars` in its live deployment (a secret can't reuse one, RUN-3.2). */
 export async function liveVarNames(ctx: ToolContext, app: AppRow): Promise<string[]> {

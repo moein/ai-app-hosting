@@ -106,7 +106,13 @@ export function deploySteps(deps: DeployDeps, params: DeployParams) {
             date >= COMPAT_MIN && date <= PLATFORM_COMPATIBILITY_DATE ? date : PLATFORM_COMPATIBILITY_DATE,
           compatibility_flags: artifact.config.compatibility_flags,
           bindings: buildBindings(
-            { appId: app.id, orgId: app.orgId, slug: app.slug, d1DatabaseId: app.d1DatabaseId as string },
+            {
+              appId: app.id,
+              orgId: app.orgId,
+              slug: app.slug,
+              d1DatabaseId: app.d1DatabaseId as string,
+              r2BucketName: app.r2BucketName as string,
+            },
             { environment: deps.environment, vars: artifact.config.vars, assets: true },
           ),
           keep_bindings: ['secret_text'],

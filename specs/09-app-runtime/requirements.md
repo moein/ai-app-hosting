@@ -30,7 +30,7 @@ As the platform, I want each app to reach only its own resources, so that apps c
 As a user, I want the AI to store API keys safely, so that my app can call other services without keys in the code.
 
 - **RUN-3.1** WHEN `set_secret({ app, name, value })` is called THE SYSTEM SHALL store the value as a `secret_text` binding on the app's script via the Workers for Platforms secrets API and upsert `{ name, updated_at }` in `app_secrets`.
-- **RUN-3.2** IF `name` doesn't match `^[A-Z][A-Z0-9_]{0,63}$`, or equals a reserved binding (`DB`, `ASSETS`, `EMAIL`) or one of the app's `vars` THEN THE SYSTEM SHALL return `SECRET_NAME_INVALID`.
+- **RUN-3.2** IF `name` doesn't match `^[A-Z][A-Z0-9_]{0,63}$`, or equals a reserved binding (`DB`, `FILES`, `ASSETS`, `EMAIL`) or one of the app's `vars` THEN THE SYSTEM SHALL return `SECRET_NAME_INVALID`.
 - **RUN-3.3** IF `value` is empty or exceeds `MAX_SECRET_BYTES` THEN THE SYSTEM SHALL return `INVALID_INPUT`.
 - **RUN-3.4** WHEN `list_secrets({ app })` is called THE SYSTEM SHALL return names and `updated_at` only — never values.
 - **RUN-3.5** WHEN `delete_secret({ app, name })` is called THE SYSTEM SHALL remove the secret from the script and from `app_secrets`; deleting a non-existent secret SHALL succeed (idempotent).

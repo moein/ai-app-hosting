@@ -7,7 +7,7 @@ Depends on: 03 (app provisioning steps, `apps` schema), 09 (bindings, `Cloudflar
   Satisfies: FILE-1.1, FILE-1.2, FILE-1.3, FILE-1.4
   Tests: creates a bucket named `app-<slug>-<env>`; idempotent re-run when the bucket already exists (both "we created it" and "found by `findR2`" paths); `retry_provisioning` re-runs it like any other step; `delete_app` does not touch `r2_bucket_name` or the bucket.
 
-- [ ] **2. `FILES` binding**
+- [x] **2. `FILES` binding**
   `buildBindings` adds the `r2_bucket` binding; contract validator's `RESERVED_BINDINGS` gains `FILES`.
   Satisfies: FILE-2.1, FILE-2.2
   Tests: deployed script bindings include `{ type: "r2_bucket", name: "FILES", bucket_name }`; `vars.FILES` in `wrangler.jsonc` → `CON-R10`; an `r2_buckets` key in `wrangler.jsonc` → `CON-R11` (already covered by the existing unsupported-key rule — add a fixture case).

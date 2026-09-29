@@ -164,7 +164,7 @@ describe('validate — forbidden content (CON-3, CON-4.6)', () => {
     'sub/.env',
   ])('rejects %s (CON-R14)', (path) => expect(rulesOf(withChanges({ [path]: 'x' }))).toContain('CON-R14'));
 
-  it.each(['routes', 'kv_namespaces', 'durable_objects', 'env', 'triggers', 'services', 'limits'])(
+  it.each(['routes', 'kv_namespaces', 'durable_objects', 'env', 'triggers', 'services', 'limits', 'r2_buckets'])(
     'rejects wrangler key %s (CON-R11)',
     (key) => {
       expect(rulesOf(withChanges({ 'wrangler.jsonc': editJson('wrangler.jsonc', (w) => (w[key] = [])) }))).toContain(
@@ -179,6 +179,9 @@ describe('validate — forbidden content (CON-3, CON-4.6)', () => {
     ).toContain('CON-R12');
     expect(
       rulesOf(withChanges({ 'wrangler.jsonc': editJson('wrangler.jsonc', (w) => (w.vars = { EMAIL: 'x' })) })),
+    ).toContain('CON-R10');
+    expect(
+      rulesOf(withChanges({ 'wrangler.jsonc': editJson('wrangler.jsonc', (w) => (w.vars = { FILES: 'x' })) })),
     ).toContain('CON-R10');
     expect(
       rulesOf(withChanges({ 'wrangler.jsonc': editJson('wrangler.jsonc', (w) => (w.vars = { GREETING: 'hi' })) })),

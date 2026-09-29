@@ -41,8 +41,8 @@ export const RULES: ContractRule[] = [
   },
   {
     id: 'CON-R10',
-    rule: '`EMAIL` and `ASSETS` are injected by the platform and must not be declared as bindings.',
-    fix: 'Remove them from `wrangler.jsonc`; use `env.EMAIL` / assets as documented.',
+    rule: '`EMAIL`, `ASSETS` and `FILES` are injected by the platform and must not be declared as bindings.',
+    fix: 'Remove them from `wrangler.jsonc`; use `env.EMAIL` / assets / `env.FILES` as documented.',
   },
   {
     id: 'CON-R11',
@@ -51,7 +51,7 @@ export const RULES: ContractRule[] = [
   },
   {
     id: 'CON-R12',
-    rule: '`vars` must be string values and must not reuse reserved names (`DB`, `ASSETS`, `EMAIL`) or secret names.',
+    rule: '`vars` must be string values and must not reuse reserved names (`DB`, `FILES`, `ASSETS`, `EMAIL`) or secret names.',
     fix: 'Use string values and rename the variable.',
   },
   {

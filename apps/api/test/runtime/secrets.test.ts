@@ -67,7 +67,7 @@ describe('set_secret / list_secrets / delete_secret (RUN-3)', () => {
     expect(data<{ secrets: unknown[] }>(await runTool(listSecrets, { app: slug }, ctx)).secrets).toEqual([]);
   });
 
-  it.each(['lower', 'A-B', '1ABC', `A${'B'.repeat(64)}`, 'DB', 'ASSETS', 'EMAIL'])(
+  it.each(['lower', 'A-B', '1ABC', `A${'B'.repeat(64)}`, 'DB', 'FILES', 'ASSETS', 'EMAIL'])(
     'rejects the name %s with SECRET_NAME_INVALID',
     async (name) => {
       const { ctx, slug } = await readyApp();

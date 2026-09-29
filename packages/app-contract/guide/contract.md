@@ -77,6 +77,7 @@ export default app;
 ## Bindings (`src/api/env.ts`)
 The platform provides exactly these at runtime; declare them in your `Env` interface:
 - `DB: D1Database` — your app's database.
+- `FILES: R2Bucket` — your app's file storage (see the `storage` topic; injected, don't declare it in `wrangler.jsonc`).
 - `ASSETS: Fetcher` — the built SPA (injected; don't declare it in `wrangler.jsonc`).
 - `EMAIL` — send email (see the `email` topic; injected, don't declare it in `wrangler.jsonc`).
 - Your string `vars` and your secrets (see the `secrets` topic).

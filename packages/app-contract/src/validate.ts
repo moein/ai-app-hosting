@@ -44,7 +44,7 @@ const ALLOWED_WRANGLER_KEYS = new Set([
   'd1_databases',
   'vars',
 ]);
-const RESERVED_BINDINGS = new Set(['DB', 'ASSETS', 'EMAIL']);
+const RESERVED_BINDINGS = new Set(['DB', 'FILES', 'ASSETS', 'EMAIL']);
 
 const defaultFix = (rule: RuleId) =>
   (RULES.find((r) => r.id === rule)?.fix ?? '')
