@@ -10,7 +10,7 @@ As a user, I want my app able to store files from the moment it's created, so th
 - **FILE-1.1** WHEN an app is provisioned THE SYSTEM SHALL create an R2 bucket named `app-<slug>-<environment>` and store its name in `apps.r2_bucket_name`.
 - **FILE-1.2** THE SYSTEM SHALL make bucket provisioning idempotent (an existing bucket of that name counts as success), following the same step shape as `d1` in `provisionSteps` (spec 03, APP-2.3).
 - **FILE-1.3** IF bucket creation fails after the workflow's retries THEN provisioning SHALL fail with the same `provisioning_failed` handling as any other step (APP-2.5).
-- **FILE-1.4** Deleting an app SHALL NOT delete its bucket (APP-4: only the Worker is removed, mirroring D1 and the email identity).
+- **FILE-1.4** `delete_app` SHALL NOT delete the app's bucket (APP-4: only the Worker is removed, mirroring D1 and the email identity). The dev-only e2e purge job is the one exception, exactly as it already is for D1 (E2E-4.2, amended by this spec to also empty and delete the bucket).
 
 ### FILE-2 — Runtime binding
 As an AI client, I want a storage binding just like the database binding, so that app code can read and write files without extra setup.

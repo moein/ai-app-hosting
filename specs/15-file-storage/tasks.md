@@ -1,6 +1,6 @@
 # 15 — File Storage: Tasks
 
-Depends on: 03 (app provisioning steps, `apps` schema), 09 (bindings, `CloudflareClient`, contract validator), 13 (usage collector, pricing) for tasks 4–5.
+Depends on: 03 (app provisioning steps, `apps` schema), 09 (bindings, `CloudflareClient`, contract validator), 11 (`aws4fetch` SigV4 precedent, task 3), 12 (e2e purge job, task 5), 13 (usage collector, pricing, task 6).
 
 - [ ] **1. `CloudflareClient.createR2` / `findR2` + schema + provisioning step**
   `apps.r2_bucket_name`, `appResourceNames.r2BucketName`, the `r2` `provisionSteps` entry.
@@ -12,20 +12,30 @@ Depends on: 03 (app provisioning steps, `apps` schema), 09 (bindings, `Cloudflar
   Satisfies: FILE-2.1, FILE-2.2
   Tests: deployed script bindings include `{ type: "r2_bucket", name: "FILES", bucket_name }`; `vars.FILES` in `wrangler.jsonc` → `CON-R10`; an `r2_buckets` key in `wrangler.jsonc` → `CON-R11` (already covered by the existing unsupported-key rule — add a fixture case).
 
-- [ ] **3. `list_storage_objects` tool**
+- [ ] **3. R2 API token + `R2ObjectClient` (aws4fetch, SigV4)**
+  Provision an R2 API token (Object Read & Write, Admin, all buckets) in dev and prod; `R2_ACCESS_KEY`/`R2_SECRET_ACCESS_KEY` in `.env.example` and uploaded via `pnpm secrets:dev`/`:prod`; `apps/api/src/integrations/r2-objects.ts` with `list(bucket, { prefix?, cursor? })` and `deleteAll(bucket, keys)` against R2's S3-compatible API.
+  Satisfies: (infrastructure for FILE-3 and the e2e purge step below)
+  Tests: SigV4 request shape against a recorded fixture (same pattern as `SesClient`, spec 11 task 2); pagination (`IsTruncated`/`NextContinuationToken`) → `cursor`/`truncated`; 4xx/5xx → `UPSTREAM_ERROR`. A fake backs every other task's tests.
+
+- [ ] **4. `list_storage_objects` tool**
   Satisfies: FILE-3.1, FILE-3.2, FILE-3.3
   Tests: lists objects under a prefix with pagination (`cursor`, `truncated`); empty bucket → empty list; unknown app → `NOT_FOUND`; bucket not yet provisioned → `NOT_FOUND` with a retry-provisioning hint; result shape has no content field.
 
-- [ ] **4. Usage metering: `r2_storage_bytes`, `r2_class_a_operations`, `r2_class_b_operations`**
+- [ ] **5. E2E purge empties and deletes the bucket** (`apps/api/src/jobs/purge-e2e.ts`)
+  `deleteR2` on `CloudflareClient`; the bucket-emptying step using `R2ObjectClient` before it.
+  Satisfies: E2E-4.2 (extended)
+  Tests: a purged app's bucket is emptied (paginated) then deleted; a bucket that's already gone (`findR2` → null path covered elsewhere) doesn't fail the purge; failure mid-empty retries the whole user next run, like every other purge resource.
+
+- [ ] **6. Usage metering: `r2_storage_bytes`, `r2_class_a_operations`, `r2_class_b_operations`**
   `CloudflareAnalyticsClient.r2Storage`/`r2Operations` (confirm exact GraphQL field names against Cloudflare's schema first), `collectUsage` wiring, pricing entries.
   Satisfies: (spec 13 USG-1, extended)
   Tests: GraphQL query shape (fixture response → parsed rows, matching the `d1`/`d1Storage` test pattern); attribution by `r2_bucket_name`; snapshot vs flow write modes in `app_usage_daily`; `estimateCostUsd` includes the three metrics.
 
-- [ ] **5. Guide: `env.FILES`**
+- [ ] **7. Guide: `env.FILES`**
   `contract.md`'s injected-bindings list gains `FILES: R2Bucket`; a storage section (new topic or folded into `database.md`) covering `put`/`get`/`delete`/`list`, serving files by proxying through the app's own routes, and storing the key scheme in D1 if the app needs to query uploads.
   Satisfies: MCP-2.2 (storage guidance)
   Tests: guide contains the binding name and basic R2Bucket usage; contract fixture app exercises `env.FILES` in at least one route.
 
-- [ ] **6. E2E on dev** (spec 12)
+- [ ] **8. E2E on dev** (spec 12)
   Flow: `F-FILE-1`.
   Satisfies: E2E-3.3
