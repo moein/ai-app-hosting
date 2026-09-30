@@ -7,13 +7,13 @@ import { createApp } from '../../src/tools/apps/create-app';
 import { writeFiles } from '../../src/tools/files/write-files';
 import { deleteSecret, listSecrets, setSecret } from '../../src/tools/runtime/secrets';
 import { artifactFiles, gzip, makeTar } from '../builds/tar';
-import { signIn, type TestContext, testContext } from '../mcp/helpers';
+import { errorJson, signIn, type TestContext, testContext } from '../mcp/helpers';
 
 const data = <T>(r: Awaited<ReturnType<typeof runTool>>) => {
   expect(r.isError, JSON.stringify(r.structuredContent)).toBeUndefined();
   return r.structuredContent as T;
 };
-const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => (r.structuredContent as { error: { code: string } }).error;
+const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => errorJson(r);
 
 async function readyApp(): Promise<{ ctx: TestContext; slug: string; script: string }> {
   const ctx = testContext();

@@ -9,10 +9,9 @@ import { createApp } from '../../src/tools/apps/create-app';
 import { listFiles } from '../../src/tools/files/list-files';
 import { readFile } from '../../src/tools/files/read-file';
 import { writeFiles } from '../../src/tools/files/write-files';
-import { signIn, type TestContext, testContext } from '../mcp/helpers';
+import { errorJson, signIn, type TestContext, testContext } from '../mcp/helpers';
 
-type ErrorJson = { code: string; details?: Record<string, unknown> };
-const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => (r.structuredContent as { error: ErrorJson }).error;
+const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => errorJson(r);
 const data = <T = Record<string, unknown>>(r: Awaited<ReturnType<typeof runTool>>) => {
   expect(r.isError, JSON.stringify(r.structuredContent)).toBeUndefined();
   return r.structuredContent as T;

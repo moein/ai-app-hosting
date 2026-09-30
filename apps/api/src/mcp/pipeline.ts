@@ -56,12 +56,19 @@ async function execute(call: ToolCall, middleware: ToolMiddleware[]): Promise<To
   return dispatch(0);
 }
 
+/** Size of the JSON a result carries (its structured content, or the error text). */
+const resultBytes = (result: CallToolResult) =>
+  new TextEncoder().encode(
+    JSON.stringify(result.structuredContent ?? (result.content[0] as { text?: string } | undefined)?.text ?? ''),
+  ).byteLength;
+
 function serialize(outcome: ToolOutcome): CallToolResult {
   if (outcome.ok) {
     return { structuredContent: outcome.output, content: [{ type: 'text', text: JSON.stringify(outcome.output) }] };
   }
   const error = outcome.error.toJSON();
-  return { isError: true, structuredContent: { error }, content: [{ type: 'text', text: JSON.stringify({ error }) }] };
+  // No structuredContent on errors (MCP-3.3): SDK clients validate it against the tool's outputSchema.
+  return { isError: true, content: [{ type: 'text', text: JSON.stringify({ error }) }] };
 }
 
 /** One tool call through the full chain, serialized for MCP with the size cap (MCP-3.3, MCP-3.6). */
@@ -78,7 +85,7 @@ export async function runTool(
     ctx.logger.error('tool failed', { tool: tool.name, error: outcome.error.cause ?? outcome.error });
   }
   let result = serialize(outcome);
-  const bytes = new TextEncoder().encode(JSON.stringify(result.structuredContent)).byteLength;
+  const bytes = resultBytes(result);
   if (bytes > TOOL_RESULT_MAX_BYTES) {
     ctx.logger.error('tool result over size cap', { tool: tool.name, bytes });
     outcome = { ok: false, error: new PlatformError('INTERNAL') };
@@ -89,10 +96,7 @@ export async function runTool(
     args,
     outcome,
     durationMs: ctx.clock.now() - started,
-    resultBytes:
-      bytes > TOOL_RESULT_MAX_BYTES
-        ? new TextEncoder().encode(JSON.stringify(result.structuredContent)).byteLength
-        : bytes,
+    resultBytes: bytes > TOOL_RESULT_MAX_BYTES ? resultBytes(result) : bytes,
   });
   return result;
 }

@@ -46,8 +46,8 @@ validateIn  — Zod parse → INVALID_INPUT {issues}
 handler
 validateOut — Zod parse of output → INTERNAL on failure (MCP-3.9)
 serialize   — { structuredContent: out, content: [{ type:'text', text: JSON.stringify(out) }] }
-              or on PlatformError: { isError: true, content: [{ type:'text', text: JSON.stringify({ error }) }],
-                                     structuredContent: { error } }
+              or on PlatformError: { isError: true, content: [{ type:'text', text: JSON.stringify({ error }) }] }
+                                     (no structuredContent — SDK clients would validate it against the outputSchema)
               + 100 KB cap check (MCP-3.6): an oversized result becomes INTERNAL and is logged (tools must truncate their own fields)
 ```
 

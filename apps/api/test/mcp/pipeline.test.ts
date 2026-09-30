@@ -3,10 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { MIDDLEWARE, runTool } from '../../src/mcp/pipeline';
 import { defineTool } from '../../src/mcp/tool';
-import { echoTool, privateEcho, signedInContext, signIn, testContext } from './helpers';
+import { echoTool, errorJson, privateEcho, signedInContext, signIn, testContext } from './helpers';
 
-const errorOf = (result: Awaited<ReturnType<typeof runTool>>) =>
-  (result.structuredContent as { error: { code: string; hint: string; details?: Record<string, unknown> } }).error;
+const errorOf = (result: Awaited<ReturnType<typeof runTool>>) => errorJson(result);
 
 describe('runTool (MCP-3)', () => {
   afterEach(() => vi.restoreAllMocks());

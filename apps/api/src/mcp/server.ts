@@ -43,17 +43,16 @@ export function createMcpServer(options: {
         message: `Unknown tool "${request.params.name}".`,
         hint: 'Call tools/list to see the available tools.',
       });
-      const error = notFound.toJSON();
-      const structuredContent = { error };
+      const text = JSON.stringify({ error: notFound.toJSON() });
       // EVT-1.1: unknown tools are tracked too (the name is capped; arguments are not recorded).
       trackToolCall(ctx, {
         tool: request.params.name.slice(0, 64),
         args: undefined,
         outcome: { ok: false, error: notFound },
         durationMs: 0,
-        resultBytes: new TextEncoder().encode(JSON.stringify(structuredContent)).byteLength,
+        resultBytes: new TextEncoder().encode(text).byteLength,
       });
-      return { isError: true, structuredContent, content: [{ type: 'text', text: JSON.stringify(structuredContent) }] };
+      return { isError: true, content: [{ type: 'text', text }] };
     }
     return runTool(tool, request.params.arguments, ctx);
   });

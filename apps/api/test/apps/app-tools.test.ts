@@ -12,10 +12,9 @@ import { getApp } from '../../src/tools/apps/get-app';
 import { getUsage } from '../../src/tools/apps/get-usage';
 import { listApps } from '../../src/tools/apps/list-apps';
 import { retryProvisioning } from '../../src/tools/apps/retry-provisioning';
-import { signIn, type TestContext, testContext } from '../mcp/helpers';
+import { errorJson, signIn, type TestContext, testContext } from '../mcp/helpers';
 
-type ErrorJson = { code: string; details?: Record<string, unknown> };
-const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => (r.structuredContent as { error: ErrorJson }).error;
+const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => errorJson(r);
 const data = <T = Record<string, unknown>>(r: Awaited<ReturnType<typeof runTool>>) => {
   expect(r.isError, JSON.stringify(r.structuredContent)).toBeUndefined();
   return r.structuredContent as T;

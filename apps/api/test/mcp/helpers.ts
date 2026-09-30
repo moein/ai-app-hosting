@@ -135,6 +135,18 @@ export const testContext = (overrides: Partial<ToolContext> = {}): TestContext =
   return ctx;
 };
 
+/** The PlatformError JSON of an error result (its text content; error results have no structuredContent). */
+export function errorJson(result: { content: unknown }): {
+  code: string;
+  message: string;
+  hint: string;
+  retryable: boolean;
+  details?: Record<string, unknown> & { issues?: { path: string[]; message: string }[] };
+} {
+  const text = (result.content as { type: string; text: string }[])[0]?.text ?? '{}';
+  return (JSON.parse(text) as { error: ReturnType<typeof errorJson> }).error;
+}
+
 /** Waits for all background work (tracking) handed to waitUntil so far. */
 export async function flush(ctx: TestContext): Promise<void> {
   while (ctx.pending.length > 0) await Promise.all(ctx.pending.splice(0));

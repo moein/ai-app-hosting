@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { users } from '../../src/db/schema';
 import { runTool } from '../../src/mcp/pipeline';
 import { whoami } from '../../src/tools/auth/whoami';
-import { privateEcho, signIn, testContext } from '../mcp/helpers';
+import { errorJson, privateEcho, signIn, testContext } from '../mcp/helpers';
 
-const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => (r.structuredContent as { error: { code: string } }).error;
+const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => errorJson(r);
 
 describe('identity from the token (AUTH-3.6, AUTH-4.7)', () => {
   it('whoami returns the signed-in email and member_since', async () => {

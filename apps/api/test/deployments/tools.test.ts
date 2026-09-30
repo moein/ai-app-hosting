@@ -10,7 +10,7 @@ import { redeploy } from '../../src/tools/deployments/redeploy';
 import { rollback } from '../../src/tools/deployments/rollback';
 import { writeFiles } from '../../src/tools/files/write-files';
 import { artifactFiles, gzip, makeTar } from '../builds/tar';
-import { signIn, type TestContext, testContext } from '../mcp/helpers';
+import { errorJson, signIn, type TestContext, testContext } from '../mcp/helpers';
 
 type View = {
   id: string;
@@ -24,7 +24,7 @@ const data = <T = View>(r: Awaited<ReturnType<typeof runTool>>) => {
   expect(r.isError, JSON.stringify(r.structuredContent)).toBeUndefined();
   return r.structuredContent as T;
 };
-const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => (r.structuredContent as { error: { code: string } }).error;
+const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => errorJson(r);
 
 async function appWithDeploy(): Promise<{ ctx: TestContext; slug: string; depId: string }> {
   const ctx = testContext();

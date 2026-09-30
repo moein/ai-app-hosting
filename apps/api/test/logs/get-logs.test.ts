@@ -6,14 +6,14 @@ import { parseTimeArg } from '../../src/logs/time';
 import { runTool } from '../../src/mcp/pipeline';
 import { createApp } from '../../src/tools/apps/create-app';
 import { getLogs } from '../../src/tools/logs/get-logs';
-import { signIn, type TestContext, testContext } from '../mcp/helpers';
+import { errorJson, signIn, type TestContext, testContext } from '../mcp/helpers';
 
 type Page = { entries: (Omit<LogEntry, 'ts'> & { ts: string })[]; next_cursor: string | null; next_step?: string };
 const data = <T = Page>(r: Awaited<ReturnType<typeof runTool>>) => {
   expect(r.isError, JSON.stringify(r.structuredContent)).toBeUndefined();
   return r.structuredContent as T;
 };
-const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => (r.structuredContent as { error: { code: string } }).error;
+const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => errorJson(r);
 
 async function appWithLogs(live = true): Promise<{ ctx: TestContext; slug: string; appId: string; now: number }> {
   const ctx = testContext();

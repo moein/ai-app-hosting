@@ -4,7 +4,7 @@ import { apps } from '../../src/db/schema';
 import { runTool } from '../../src/mcp/pipeline';
 import { createApp } from '../../src/tools/apps/create-app';
 import { listStorageObjects } from '../../src/tools/runtime/list-storage-objects';
-import { signIn, type TestContext, testContext } from '../mcp/helpers';
+import { errorJson, signIn, type TestContext, testContext } from '../mcp/helpers';
 
 type Result = {
   objects: { key: string; size: number; uploaded_at: string; etag: string }[];
@@ -15,7 +15,7 @@ const data = (r: Awaited<ReturnType<typeof runTool>>) => {
   expect(r.isError, JSON.stringify(r.structuredContent)).toBeUndefined();
   return r.structuredContent as Result;
 };
-const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => (r.structuredContent as { error: { code: string } }).error;
+const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => errorJson(r);
 
 async function readyApp(): Promise<{ ctx: TestContext; slug: string }> {
   const ctx = testContext();

@@ -3,15 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { runTool } from '../../src/mcp/pipeline';
 import { createApp } from '../../src/tools/apps/create-app';
 import { queryDatabase } from '../../src/tools/runtime/query-database';
-import { signIn, type TestContext, testContext } from '../mcp/helpers';
+import { errorJson, signIn, type TestContext, testContext } from '../mcp/helpers';
 
 type Result = { columns: string[]; rows: unknown[][]; row_count: number; truncated: boolean; meta: object };
 const data = <T = Result>(r: Awaited<ReturnType<typeof runTool>>) => {
   expect(r.isError, JSON.stringify(r.structuredContent)).toBeUndefined();
   return r.structuredContent as T;
 };
-const errorOf = (r: Awaited<ReturnType<typeof runTool>>) =>
-  (r.structuredContent as { error: { code: string; message: string; details?: { message?: string } } }).error;
+const errorOf = (r: Awaited<ReturnType<typeof runTool>>) => errorJson(r);
 
 // The fake runs app SQL against the test D1, so each test uses its own table.
 async function setup(): Promise<{ ctx: TestContext; slug: string; table: string }> {

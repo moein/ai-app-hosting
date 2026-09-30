@@ -4,6 +4,7 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { afterEach, describe, expect, it } from 'vitest';
 import { McpSession } from '../../src/mcp/session';
+import { errorJson } from './helpers';
 
 const clients: Client[] = [];
 // Talks to the McpSession Durable Object directly, bypassing the OAuthProvider gate in front of /mcp in
@@ -50,11 +51,23 @@ describe('MCP endpoint (MCP-1.1)', () => {
     expect(Array.isArray(tools)).toBe(true);
   });
 
+  it('tool errors reach SDK clients that validated tools/list output schemas (MCP-3.3)', async () => {
+    const { client } = await connect();
+    await client.listTools(); // makes the SDK validate structuredContent against each tool's outputSchema
+    // No OAuth props on this session, so the guard answers AUTH_REQUIRED: an error result of a tool that has an outputSchema.
+    const result = await client.callTool({ name: 'get_platform_guide', arguments: { topic: 'all' } });
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toBeUndefined();
+    const error = errorJson(result as { content: unknown });
+    expect(error.code).toBe('AUTH_REQUIRED');
+    expect(error.hint.length).toBeGreaterThan(0);
+  });
+
   it('unknown tools return a NOT_FOUND tool error', async () => {
     const { client } = await connect();
     const result = await client.callTool({ name: 'does_not_exist', arguments: {} });
     expect(result.isError).toBe(true);
-    expect((result.structuredContent as { error: { code: string } }).error.code).toBe('NOT_FOUND');
+    expect(errorJson(result as { content: unknown }).code).toBe('NOT_FOUND');
   });
 
   it('gives separate sessions separate ids', async () => {

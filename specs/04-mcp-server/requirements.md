@@ -28,7 +28,7 @@ As an AI client, I want consistent, recoverable tool behavior, so that I can dri
 
 - **MCP-3.1** THE SYSTEM SHALL expose exactly the tool catalog in design.md.
 - **MCP-3.2** WHEN tool input fails schema validation THE SYSTEM SHALL return `INVALID_INPUT` with `details.issues: [{ path, message }]`.
-- **MCP-3.3** WHEN a tool fails THE SYSTEM SHALL return a tool result with `isError: true` whose content is the `PlatformError` JSON (`code`, `message`, `hint`, `retryable`, `details`) — not a JSON-RPC protocol error.
+- **MCP-3.3** WHEN a tool fails THE SYSTEM SHALL return a tool result with `isError: true` whose content is the `PlatformError` JSON (`code`, `message`, `hint`, `retryable`, `details`) — not a JSON-RPC protocol error. The error result carries the JSON as a text content block only, with no `structuredContent`: MCP client SDKs validate `structuredContent` against the tool's `outputSchema` even for error results, so an error envelope there would surface as a protocol error and hide the `hint`.
 - **MCP-3.4** WHEN a successful result implies a follow-up action THE SYSTEM SHALL include a `next_step` string describing it.
 - **MCP-3.5** THE SYSTEM SHALL complete every tool call within 30 seconds; operations that take longer SHALL return current state plus a `next_step` to poll.
 - **MCP-3.6** THE SYSTEM SHALL cap every tool result at 100 KB of JSON; truncated fields SHALL be marked (`truncated: true`) with guidance on how to fetch the rest.

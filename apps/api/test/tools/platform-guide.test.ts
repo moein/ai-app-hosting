@@ -3,7 +3,7 @@ import { TOOL_RESULT_MAX_BYTES } from '@repo/shared';
 import { describe, expect, it } from 'vitest';
 import { runTool } from '../../src/mcp/pipeline';
 import { getPlatformGuide } from '../../src/tools/platform-guide';
-import { signedInContext } from '../mcp/helpers';
+import { errorJson, signedInContext } from '../mcp/helpers';
 
 const ctx = () => signedInContext();
 type Guide = { contract_version: string; topic: string; markdown: string };
@@ -28,9 +28,8 @@ describe('get_platform_guide (MCP-2.2)', () => {
   it('rejects unknown topics with INVALID_INPUT', async () => {
     const result = await runTool(getPlatformGuide, { topic: 'recipes' }, await ctx());
     expect(result.isError).toBe(true);
-    const error = (result.structuredContent as { error: { code: string; details: { issues: { path: string[] }[] } } })
-      .error;
+    const error = errorJson(result);
     expect(error.code).toBe('INVALID_INPUT');
-    expect(error.details.issues[0]?.path).toEqual(['topic']);
+    expect(error.details?.issues?.[0]?.path).toEqual(['topic']);
   });
 });
