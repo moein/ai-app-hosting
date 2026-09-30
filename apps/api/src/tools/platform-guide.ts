@@ -8,7 +8,7 @@ export const getPlatformGuide = defineTool({
   name: 'get_platform_guide',
   title: 'Read the platform guide',
   description:
-    'How to build and ship an app on this platform: the workflow, the exact app contract (files, wrangler.jsonc, dependencies, rules), database, email, secrets, limits and troubleshooting. You write all of the app\'s code, so read this (topic "all") before writing any file.',
+    'How to build and ship an app on this platform: the workflow, the exact app contract (files, wrangler.jsonc, dependencies, rules), database, file storage, email, secrets, limits and troubleshooting. You write all of the app\'s code, so read this (topic "all") before writing any file.',
   annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   input: z.object({
     topic: z.enum(TOPICS).default('all').describe('One section of the guide, or "all" (default) for everything.'),

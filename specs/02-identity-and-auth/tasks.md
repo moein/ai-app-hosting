@@ -53,6 +53,6 @@ Depends on: 00 (tasks 1–7), 01 (tasks 1–3), 04 (task 1–2: McpSession + too
   Satisfies: AUTH-3.6, AUTH-4.7
   Tests: tools see `userId`/`orgId` from props; blocked user → `ACCOUNT_BLOCKED`; `whoami` shape; catalog no longer has the login tools; tracking carries the user.
 
-- [ ] **13. E2E on dev** (spec 12) — harness signs in through OAuth (register, authorize page, emailed code, token).
+- [x] **13. E2E on dev** (spec 12) — harness signs in through OAuth (register, authorize page, emailed code, token).
   Flows: `F-AUTH-1`…`F-AUTH-5` (updated), `F-MCP-1`…`F-MCP-3`.
   Satisfies: E2E-3.3

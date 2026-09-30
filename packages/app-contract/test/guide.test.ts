@@ -46,6 +46,23 @@ describe('platform guide (MCP-2, CON-1)', () => {
     expect(email).toContain('hello@mail.<slug>.apps.example');
   });
 
+  it('documents env.FILES and the storage tool (spec 15 task 7)', () => {
+    const contract = render('contract');
+    expect(contract).toContain('`FILES: R2Bucket`');
+    const storage = render('storage');
+    for (const text of [
+      'env.FILES',
+      'FILES.put(',
+      'FILES.get(',
+      'FILES.delete(',
+      'never public',
+      'list_storage_objects',
+    ]) {
+      expect(storage).toContain(text);
+    }
+    expect(storage).toContain(`up to ${limits.MAX_STORAGE_LIST_KEYS} per call`);
+  });
+
   it('explains per-app cookies (RUN-5.5)', () => {
     const contract = render('contract');
     expect(contract).toContain('## Cookies');

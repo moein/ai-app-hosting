@@ -12,10 +12,10 @@
       "workers_dev": false,
       "preview_urls": false,
       "routes": [
-        // The apex belongs to the website worker (spec 14); www. redirects there.
-        { "pattern": "*.motad.app/*", "zone_name": "motad.app" }
+        { "pattern": "*.motad.app/*", "zone_name": "motad.app" },
+        { "pattern": "motad.app/*", "zone_name": "motad.app" }
       ],
-      "vars": { "ENVIRONMENT": "dev", "APPS_DOMAIN": "motad.app", "PLATFORM_WEBSITE_URL": "https://motad.app" },
+      "vars": { "ENVIRONMENT": "dev", "APPS_DOMAIN": "motad.app", "PLATFORM_WEBSITE_URL": "" },
       "kv_namespaces": [{ "binding": "APP_ROUTES", "id": "4acad1cfc1ea43d9b25f6f2f10e5055f" }],
       "dispatch_namespaces": [{ "binding": "DISPATCHER", "namespace": "apps-dev" }]
     },

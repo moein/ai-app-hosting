@@ -95,6 +95,34 @@ describe.skipIf(!isImplemented('F-RUN-1'))('app runtime', () => {
     expect(await fromSibling.json()).toEqual({ received: null });
   });
 
+  it(
+    flow('F-FILE-1', 'the app stores a file in its bucket, list_storage_objects sees it, the app serves it back'),
+    async () => {
+      const key = `hello-${runId}.txt`;
+      const body = `hello from e2e ${runId}`;
+      const put = await api(`/api/files/${key}`, { method: 'PUT', headers: { 'content-type': 'text/plain' }, body });
+      expect(put.status).toBe(200);
+      const back = await api(`/api/files/${key}`);
+      expect(back.status).toBe(200);
+      expect(back.headers.get('content-type')).toContain('text/plain');
+      expect(await back.text()).toBe(body);
+      expect((await api('/api/files/does-not-exist.txt')).status).toBe(404);
+
+      type Objects = {
+        objects: { key: string; size: number; uploaded_at: string; etag: string }[];
+        cursor: string | null;
+      };
+      const listed = await callTool<Objects>(client, 'list_storage_objects', { app: slug });
+      expect(listed.ok, JSON.stringify(listed)).toBe(true);
+      if (!listed.ok) return;
+      expect(listed.data.objects).toEqual(
+        expect.arrayContaining([expect.objectContaining({ key, size: new TextEncoder().encode(body).byteLength })]),
+      );
+      const prefixed = await callTool<Objects>(client, 'list_storage_objects', { app: slug, prefix: 'nope-' });
+      expect(prefixed.ok && prefixed.data.objects).toEqual([]);
+    },
+  );
+
   it(flow('F-LOG-1', 'get_logs shows the request, console output and the exception'), async () => {
     const marker = `m${runId}${Date.now()}`;
     expect((await post('/api/log', { marker, fail: true })).status).toBe(500);

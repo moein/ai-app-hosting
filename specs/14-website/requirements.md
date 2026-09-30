@@ -1,5 +1,7 @@
 # 14 — Website: Requirements
 
+> **Descoped 2026-09-30:** built as its own project outside this repository. Kept here only as the brief for it (see tasks.md).
+
 The public homepage at `PLATFORM_WEBSITE_URL` (the `APPS_DOMAIN` apex) is where a non-technical person starts. It walks them through connecting their AI to the platform and hands them a ready-made prompt for the app they want. The platform still writes no code: the prompt tells *their* AI what to build.
 
 ## Stories & acceptance criteria

@@ -33,6 +33,22 @@ app.post('/api/log', async (c) => {
   return c.json({ ok: true });
 });
 
+/** Stores a file in the app's bucket and reads it back (F-FILE-1). */
+app.put('/api/files/:key', async (c) => {
+  const key = c.req.param('key');
+  await c.env.FILES.put(key, await c.req.arrayBuffer(), {
+    httpMetadata: { contentType: c.req.header('content-type') ?? 'application/octet-stream' },
+  });
+  return c.json({ ok: true, key });
+});
+app.get('/api/files/:key', async (c) => {
+  const object = await c.env.FILES.get(c.req.param('key'));
+  if (!object) return c.notFound();
+  return new Response(object.body, {
+    headers: { 'content-type': object.httpMetadata?.contentType ?? 'application/octet-stream' },
+  });
+});
+
 /** Tries to set a cookie for the whole domain and echoes the cookies it received (F-RUN-4). */
 app.get('/api/cookies', (c) => {
   const parent = new URL(c.req.url).hostname.split('.').slice(1).join('.');

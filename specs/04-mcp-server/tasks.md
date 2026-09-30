@@ -24,11 +24,11 @@ Depends on: 00. Feature tools are implemented in their own specs; this spec prov
   Satisfies: MCP-1.2, MCP-1.4, MCP-1.5, MCP-3.1, MCP-3.4
   Tests: registered tools ⊆ catalog (`src/mcp/catalog.ts`, mirrored from the design table) and match its public flag/annotations — equality with the full catalog is asserted by `F-MCP-1` once every feature is implemented; all snake_case; descriptions don't contain "Claude"/"ChatGPT"/"OpenAI"/"Anthropic"; no `org` keys in schemas; annotations match table; total `tools/list` payload under token budget (approx. chars/4 < 12k); `initialize` advertises only the `tools` capability (no resources/prompts required); every tool whose output schema declares `next_step` returns it in its tests.
 
-- [ ] **6. Client compatibility check (manual, before launch)**
+- [x] **6. Client compatibility check (manual, before launch)**
   Connect via MCP Inspector, Claude, ChatGPT; run the full journey (login → create → write → deploy → logs).
   Satisfies: MCP non-functional
   Tests: checklist recorded in `docs/connect.md`.
-  Status: MCP Inspector done (2026-09-28); Claude and ChatGPT runs are manual — steps and starter prompt in `docs/connect.md`.
+  Status: done — MCP Inspector (2026-09-28); Claude and ChatGPT verified manually by the operator (2026-09-30), both work through the OAuth connector flow. Steps in `docs/connect.md`.
 
 - [x] **7. E2E on dev** — `F-MCP-1` re-asserts full catalog equality once every feature has landed (spec 12)
   Flows: `F-MCP-1`, `F-MCP-2`, `F-MCP-3`.

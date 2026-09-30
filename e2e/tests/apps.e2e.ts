@@ -84,13 +84,12 @@ describe('apps', () => {
     expect(slug.ok && slug.data.available).toBe(false);
   });
 
-  it(flow('F-RUN-3', 'unknown apps get the 404 page; www redirects to the homepage'), async () => {
+  it(flow('F-RUN-3', 'unknown apps and the apex get the 404 page'), async () => {
     const domain = e2eEnv().E2E_APPS_DOMAIN;
-    const missing = await fetch(`https://e2e-${runId}-missing.${domain}/`, { redirect: 'manual' });
-    expect(missing.status).toBe(404);
-    expect(await missing.text()).toContain("There's no app at this address");
-    const www = await fetch(`https://www.${domain}/`, { redirect: 'manual' });
-    expect(www.status).toBe(302);
-    expect(www.headers.get('location')).toBe(`https://${domain}/`);
+    for (const url of [`https://e2e-${runId}-missing.${domain}/`, `https://${domain}/`]) {
+      const res = await fetch(url, { redirect: 'manual' });
+      expect(res.status, url).toBe(404);
+      expect(await res.text()).toContain("There's no app at this address");
+    }
   });
 });

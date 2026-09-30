@@ -66,12 +66,10 @@ export const MAX_EMAIL_BYTES = 256_000;
 // spec 12 — dev e2e purge: e2e users older than this are hard-purged hourly (E2E-4.2)
 export const E2E_PURGE_AFTER_MS = 60 * 60 * 1000;
 
-// spec 14 — website
-export const WEBSITE_APP_DESCRIPTION_MAX_CHARS = 2_000;
-
 // spec 02 — OAuth sign-in (AUTH-1.6, AUTH-4)
 export const LOGIN_CODES_PER_SIGN_IN = 3;
-export const LOGIN_PAGE_REQUESTS_PER_MINUTE = 10;
+// Generous on purpose: many people share one IP (offices, mobile carriers); per-email and per-sign-in limits bound the email volume.
+export const LOGIN_PAGE_REQUESTS_PER_MINUTE = 30;
 
 // spec 15 — file storage
 export const MAX_STORAGE_LIST_KEYS = 200;

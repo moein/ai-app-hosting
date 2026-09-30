@@ -3,7 +3,16 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-export const TOPIC_ORDER = ['workflow', 'contract', 'database', 'email', 'secrets', 'limits', 'troubleshooting'];
+export const TOPIC_ORDER = [
+  'workflow',
+  'contract',
+  'database',
+  'storage',
+  'email',
+  'secrets',
+  'limits',
+  'troubleshooting',
+];
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 export const OUTPUT = `${root}src/guide-sources.generated.ts`;

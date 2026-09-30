@@ -95,12 +95,11 @@ The deploy-related tests write `fixtures/contract-app` (repo root, spec 06) thro
 | `F-DEP-5` | New migration applied; editing an applied migration → `MIGRATION_FAILED`, previous stays live | 08 |
 | `F-RUN-1` | `set_secret` → `/api/secret-hash` matches; `list_secrets` has no values; `delete_secret` removes it | 09 |
 | `F-RUN-2` | `query_database` read works; write rejected without `allow_writes`, succeeds with it | 09 |
-| `F-RUN-3` | Unknown slug → 404 page; `www.` → redirect to `PLATFORM_WEBSITE_URL` | 09 |
+| `F-RUN-3` | Unknown slug → 404 page; apex → 404 page (or redirect when `PLATFORM_WEBSITE_URL` set) | 09 |
 | `F-RUN-4` | App cookies come back host-only as `__Host-…`; only those reach the app (prefix stripped); same-site requests arrive without cookies | 09 |
 | `F-LOG-1` | Request to `/api/log` (log + throw) → `get_logs` returns request, console and exception entries | 10 |
 | `F-MAIL-1` | App sends email via `env.EMAIL` → arrives in e2e inbox from `hello@mail.<slug>.APPS_DOMAIN` | 11 |
 | `F-FILE-1` | App writes a file via `env.FILES` → `list_storage_objects` sees it → app serves it back, content matches | 15 |
-| `F-WEB-1` | Homepage on the apex serves the app with security headers; `/api/config` has the MCP URL; `www.` redirects to it | 14 |
 | `F-EVT-1` (slow) | A tool call's event appears in the R2 `mcp_events` table and a `tool_call` data point in Analytics Engine | 05 |
 | `F-USG-1` (slow) | Traffic, a D1 query and an email of a deployed app show up in its `app_usage_daily` rows after collection | 13 |
 

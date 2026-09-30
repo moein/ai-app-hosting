@@ -5,6 +5,7 @@ export type AppEmailResult =
 
 export interface Env {
   DB: D1Database;
+  FILES: R2Bucket;
   ASSETS: Fetcher;
   EMAIL: { send(message: AppEmailMessage): Promise<AppEmailResult> };
 }

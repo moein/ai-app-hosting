@@ -52,7 +52,7 @@ I'm not technical: make the technical decisions yourself and only ask me about w
 
 | Constant | Value |
 |---|---|
-| `WEBSITE_APP_DESCRIPTION_MAX_CHARS` | 2_000 |
+| `WEBSITE_APP_DESCRIPTION_MAX_CHARS` | 2_000 (constant removed from `limits.ts`; define it in the homepage project) |
 
 ## Open questions
 

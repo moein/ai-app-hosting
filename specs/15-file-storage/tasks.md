@@ -34,11 +34,11 @@ Depends on: 03 (app provisioning steps, `apps` schema), 09 (bindings, `Cloudflar
   Tests: GraphQL query shape (fixture response → parsed rows, matching the `d1`/`d1Storage` test pattern); attribution by `r2_bucket_name`; snapshot vs flow write modes in `app_usage_daily`; `estimateCostUsd` includes the three metrics.
   Confirmed the real schema by introspection against the live dev token before writing any code: types are `AccountR2StorageAdaptiveGroups` (fields `dimensions.bucketName`, `max.payloadSize`) and `AccountR2OperationsAdaptiveGroups` (`dimensions.{bucketName,actionType}`, `sum.requests`) — query field names are the type name lower-cased, confirmed against `d1`'s already-working query. `actionType` has no class field or enum (plain string); Class A/B lists came from Cloudflare's pricing docs and were checked against real recorded actionType values pulled live (PutBucket, HeadBucket, ListObjects, PutObject, CreateMultipartUpload, GetObject, UploadPart, CompleteMultipartUpload, deletes). Two aliased groups (`classA`/`classB`) filtered server-side via `actionType_in`, in one GraphQL call. Deployed; `/healthz` green. Live confirmation of an actual collection run is deferred to the next hourly cron tick, same as task 5 — no way to force-trigger it outside `wrangler dev` (not used here).
 
-- [ ] **7. Guide: `env.FILES`**
+- [x] **7. Guide: `env.FILES`**
   `contract.md`'s injected-bindings list gains `FILES: R2Bucket`; a storage section (new topic or folded into `database.md`) covering `put`/`get`/`delete`/`list`, serving files by proxying through the app's own routes, and storing the key scheme in D1 if the app needs to query uploads.
   Satisfies: MCP-2.2 (storage guidance)
   Tests: guide contains the binding name and basic R2Bucket usage; contract fixture app exercises `env.FILES` in at least one route.
 
-- [ ] **8. E2E on dev** (spec 12)
+- [x] **8. E2E on dev** (spec 12)
   Flow: `F-FILE-1`.
   Satisfies: E2E-3.3

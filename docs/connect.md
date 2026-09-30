@@ -50,5 +50,5 @@ Run the starter prompt in each client and tick: OAuth sign-in completes (browser
 | Client | Result |
 |---|---|
 | MCP Inspector 2.8.0 (CLI, Streamable HTTP) | pre-OAuth: tools/list (24 tools) and `whoami` OK — 2026-09-28; _re-run against the OAuth flow pending_ |
-| Claude | _to run_ |
-| ChatGPT | _to run_ |
+| Claude | OAuth connector flow, full journey — verified by the operator 2026-09-30 |
+| ChatGPT | OAuth connector flow, full journey — verified by the operator 2026-09-30 |

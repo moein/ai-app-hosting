@@ -40,7 +40,7 @@ It stores clients, grants and token hashes in the `OAUTH_KV` namespace (props en
 | `POST /authorize/code` | Origin check; load pending (must have an email); verify (algorithm below); signup or `last_login_at`; `completeAuthorization({ request: oauthReq, userId, scope, metadata: { label: email }, props: { userId, orgId, email } })`; delete the pending record; `302` to the returned `redirectTo`. |
 | `POST /authorize/resend`, `POST /authorize/restart` | Resend a code to the same email (limits apply) / back to the email form. |
 
-Pages share the website's look (inline CSS), send `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'`, and `Cache-Control: no-store`. No `form-action`: some browsers' CSP matching for it is unreliable even naming the exact origin (seen with a Thorium build), and it would only be defense-in-depth here — no `script-src` is allowed at all, so no script can run on these pages regardless. Errors are shown in plain language on the same form.
+Pages use one small inline stylesheet, send `Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'`, and `Cache-Control: no-store`. No `form-action`: some browsers' CSP matching for it is unreliable even naming the exact origin (seen with a Thorium build), and it would only be defense-in-depth here — no `script-src` is allowed at all, so no script can run on these pages regardless. Errors are shown in plain language on the same form.
 
 The login-code service (`src/auth/login-codes.ts`: `issueLoginCode`, `verifyLoginCode`) holds the rules of AUTH-1/AUTH-2 and is used only by these pages.
 

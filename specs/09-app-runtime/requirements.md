@@ -8,7 +8,7 @@ User apps run as Worker scripts in a Workers for Platforms dispatch namespace. A
 As a user, I want my app reachable at `https://<slug>.APPS_DOMAIN`, so that I can share it right away.
 
 - **RUN-1.1** THE SYSTEM SHALL route all requests for `*.APPS_DOMAIN/*` to the dispatcher Worker.
-- **RUN-1.2** WHEN a request's host is exactly `<label>.APPS_DOMAIN` THE SYSTEM SHALL treat `<label>` as the app slug; requests to deeper subdomains SHALL get the 404 page; the apex `APPS_DOMAIN` is the homepage (served by the `website` worker, spec 14) and `www.APPS_DOMAIN` SHALL redirect (302) to `PLATFORM_WEBSITE_URL` (the 404 page if it isn't configured).
+- **RUN-1.2** WHEN a request's host is exactly `<label>.APPS_DOMAIN` THE SYSTEM SHALL treat `<label>` as the app slug; requests to deeper subdomains SHALL get the 404 page; requests to the apex `APPS_DOMAIN` (and `www.`) SHALL redirect (302) to `PLATFORM_WEBSITE_URL` when it is configured, and otherwise get the 404 page.
 - **RUN-1.3** THE SYSTEM SHALL resolve the slug through the `APP_ROUTES` KV entry `{ appId, scriptName, state }`.
 - **RUN-1.4** WHEN the route state is `live` THE SYSTEM SHALL dispatch the request to `scriptName` in the dispatch namespace with custom limits `cpuMs = APP_CPU_MS_PER_REQUEST` and `subRequests = APP_SUBREQUESTS_PER_REQUEST`.
 - **RUN-1.5** WHEN the route state is `not_deployed` THE SYSTEM SHALL return a 503 HTML page saying the app is being built.
