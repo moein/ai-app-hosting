@@ -20,7 +20,7 @@ As a user, I want my app reachable at `https://<slug>.APPS_DOMAIN`, so that I ca
 ### RUN-2 — Bindings and isolation
 As the platform, I want each app to reach only its own resources, so that apps can't interfere with each other or with the platform.
 
-- **RUN-2.1** THE SYSTEM SHALL give every deployed app script exactly these bindings: `DB` (the app's own D1 database), `FILES` (the app's own R2 bucket, spec 15), `ASSETS` (its static assets), `EMAIL` (service binding to `email-<env>` entrypoint `AppMail` with props `{ appId, orgId, slug }`), its string `vars`, and its secrets.
+- **RUN-2.1** THE SYSTEM SHALL give every deployed app script exactly these bindings: `DB` (the app's own D1 database), `FILES` (the app's own R2 bucket, spec 15), `ASSETS` (its static assets), `EMAIL` (service binding to `email-<env>` entrypoint `AppMail` with props `{ appId, orgId, slug }`), `AUTH` (`email-<env>` entrypoint `AppAuth`, spec 16), `AI` (`ai-<env>` entrypoint `AppAi`, spec 18), `REALTIME` (`realtime-<env>` entrypoint `AppRealtime`, spec 21), all three with the same props, its string `vars`, and its secrets.
 - **RUN-2.2** THE SYSTEM SHALL NOT give app scripts any binding to platform resources or another app's resources (platform D1/R2/KV, queues, other apps' databases or buckets).
 - **RUN-2.3** THE SYSTEM SHALL run the dispatch namespace in untrusted mode (per-script cache isolation, no `request.cf` sharing across scripts beyond defaults).
 - **RUN-2.4** WHEN an app is provisioned THE SYSTEM SHALL upload a placeholder script (no bindings) that returns the 503 "being built" page, so secrets can be set before the first deployment.
@@ -30,7 +30,7 @@ As the platform, I want each app to reach only its own resources, so that apps c
 As a user, I want the AI to store API keys safely, so that my app can call other services without keys in the code.
 
 - **RUN-3.1** WHEN `set_secret({ app, name, value })` is called THE SYSTEM SHALL store the value as a `secret_text` binding on the app's script via the Workers for Platforms secrets API and upsert `{ name, updated_at }` in `app_secrets`.
-- **RUN-3.2** IF `name` doesn't match `^[A-Z][A-Z0-9_]{0,63}$`, or equals a reserved binding (`DB`, `FILES`, `ASSETS`, `EMAIL`) or one of the app's `vars` THEN THE SYSTEM SHALL return `SECRET_NAME_INVALID`.
+- **RUN-3.2** IF `name` doesn't match `^[A-Z][A-Z0-9_]{0,63}$`, or equals a reserved binding (`DB`, `FILES`, `ASSETS`, `EMAIL`, `AUTH`, `AI`, `REALTIME`) or one of the app's `vars` THEN THE SYSTEM SHALL return `SECRET_NAME_INVALID`.
 - **RUN-3.3** IF `value` is empty or exceeds `MAX_SECRET_BYTES` THEN THE SYSTEM SHALL return `INVALID_INPUT`.
 - **RUN-3.4** WHEN `list_secrets({ app })` is called THE SYSTEM SHALL return names and `updated_at` only — never values.
 - **RUN-3.5** WHEN `delete_secret({ app, name })` is called THE SYSTEM SHALL remove the secret from the script and from `app_secrets`; deleting a non-existent secret SHALL succeed (idempotent).

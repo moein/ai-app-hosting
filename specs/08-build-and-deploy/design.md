@@ -154,6 +154,8 @@ on failure       : deployment failed (MIGRATION_FAILED | BUILD_FAILED | DEPLOY_F
 
 Workers for Platforms deploys are atomic per script upload, so the previous version serves until the new upload succeeds.
 
+Extended by later specs: the `migrate` step records the database bookmark before applying migrations (spec 19, `deployments.db_bookmark_before`), and the `activate` step replaces the app's cron schedules from the artifact's `triggers.crons` (spec 17).
+
 Errors across step boundaries (also `ProvisionApp`): Workflows hand back only an error's message, prefixed with its class name (`NonRetryableError: …`). So step bodies throw every `PlatformError` with its JSON as the message — as `NonRetryableError` when not retryable, so retries stop — and the final failure is parsed back from the first `{` of the message (`src/workflows/step-errors.ts`). Anything else becomes `DEPLOY_FAILED` (deploy) or `INTERNAL` (provisioning).
 
 ## MCP tool contracts

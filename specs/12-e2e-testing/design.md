@@ -100,10 +100,21 @@ The deploy-related tests write `fixtures/contract-app` (repo root, spec 06) thro
 | `F-LOG-1` | Request to `/api/log` (log + throw) → `get_logs` returns request, console and exception entries | 10 |
 | `F-MAIL-1` | App sends email via `env.EMAIL` → arrives in e2e inbox from `hello@mail.<slug>.APPS_DOMAIN` | 11 |
 | `F-FILE-1` | App writes a file via `env.FILES` → `list_storage_objects` sees it → app serves it back, content matches | 15 |
+| `F-UAUTH-1` | Fixture app: `env.AUTH.startLogin` → real email in the e2e inbox from `hello@mail.<slug>.APPS_DOMAIN` → `finishLogin` → `/api/me` returns the user; logout ends the session | 16 |
+| `F-UAUTH-2` | Allowlist mode: a non-listed address gets no email; `list_app_users` shows the user; `delete_app_user` → `/api/me` 401 | 16 |
+| `F-CRON-1` | Fixture app with `*/5 * * * *`: `list_schedules` shows it with a next run; `run_schedule` succeeds and its effect is visible; a public request carrying `x-platform-cron` is anonymous | 17 |
+| `F-CRON-2` (slow) | An automatic scheduled run appears within 7 minutes | 17 |
+| `F-AI-1` | Fixture route calls `env.AI.chat` and `env.AI.embed`; usage rows appear; an oversized input returns `too_large` | 18 |
+| `F-BKUP-1` | `query_database` write returns `restore_point`; after deleting rows, `restore_database` brings them back, and restoring to the undo point re-deletes them | 19 |
+| `F-BKUP-2` | Deploy a migration; `restore_database({ before_deployment })` removes its effect | 19 |
+| `F-BKUP-3` | `export_database` → an object under `_platform/exports/` appears in `list_storage_objects` and contains the table | 19 |
+| `F-ANLY-1` (slow) | Page and API requests with a referrer and a 404 path → `get_app_analytics` shows them; raw rows contain no IP address | 20 |
+| `F-LIVE-1` | Two WebSocket clients in a room: messages relay, history and presence work, a viewer can't send | 21 |
+| `F-LIVE-2` | The `publish` route reaches connected clients; `list_realtime_rooms` shows them; usage rows appear | 21 |
 | `F-EVT-1` (slow) | A tool call's event appears in the R2 `mcp_events` table and a `tool_call` data point in Analytics Engine | 05 |
 | `F-USG-1` (slow) | Traffic, a D1 query and an email of a deployed app show up in its `app_usage_daily` rows after collection | 13 |
 
-`F-EVT-1` and `F-USG-1` need `E2E_CF_API_TOKEN` (read-only: Account Analytics, D1, R2 Data Catalog; falls back to `CF_API_TOKEN` from `.env.dev`) and run only with `E2E_INCLUDE_SLOW=1`.
+`F-EVT-1` and `F-USG-1` need `E2E_CF_API_TOKEN` (read-only: Account Analytics, D1, R2 Data Catalog; falls back to `CF_API_TOKEN` from `.env.dev`) and run only with `E2E_INCLUDE_SLOW=1`. `F-CRON-2` and `F-ANLY-1` are slow too (they wait minutes for a schedule tick / Analytics Engine ingestion) and also run only with `E2E_INCLUDE_SLOW=1`, but need no extra token.
 
 ## Coverage check (E2E-3.2)
 

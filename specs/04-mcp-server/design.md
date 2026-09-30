@@ -79,8 +79,17 @@ Annotations: R = readOnly, D = destructive, I = idempotent, O = openWorld.
 | `delete_secret` | Delete a secret | D I | 09 | Remove a secret |
 | `query_database` | Query the app database | D | 09 | Run SQL against the app's D1 |
 | `list_storage_objects` | List stored files | R I | 15 | Keys, sizes and upload times in the app's R2 bucket |
+| `set_auth_policy` | Choose who can sign in to the app | I | 16 | Open or allowlist (emails/domains) for the app's own users |
+| `list_app_users` | List the app's users | R I | 16 | Users who signed in to the app, newest first |
+| `delete_app_user` | Delete an app user | D I | 16 | Remove one of the app's users and their sessions |
+| `list_schedules` | List scheduled jobs | R I | 17 | Cron schedules with next run and recent runs |
+| `run_schedule` | Run a scheduled job now | — | 17 | Manually run one schedule and return the result |
+| `restore_database` | Restore the app database | D I | 19 | Point-in-time restore of the app's D1; returns an undo point |
+| `export_database` | Export the app database | — | 19 | SQL dump into the app's bucket under `_platform/exports/` |
+| `get_app_analytics` | Show app traffic | R I | 20 | Page views, visitors, top pages/referrers, errors |
+| `list_realtime_rooms` | List live rooms | R I | 21 | Rooms with connections and the caps |
 
-Every tool requires the OAuth bearer token (spec 02, AUTH-4); there are no public tools.
+Every tool requires the OAuth bearer token (spec 02, AUTH-4); there are no public tools. Specs 16–21 add nine tools (the rows from `set_auth_policy` down); each spec's tasks include catalog conformance, and `TOOLS_LIST_MAX_CHARS` (`apps/api/src/mcp/catalog.ts`) is re-checked against the larger list when the first of them lands (raise it deliberately, keeping descriptions short).
 
 `write_files`, `delete_app`, `delete_secret`, `query_database` descriptions tell the AI when to confirm with the user.
 

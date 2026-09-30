@@ -70,6 +70,8 @@ apps/dispatcher     Routes *.APPS_DOMAIN to user Workers in the dispatch namespa
 apps/tail           Tail consumer for user Workers; hosts the AppLogBuffer Durable Object
 apps/email          PlatformMail (Resend) + AppMail (SES) RPC entrypoints; SES tenant queue consumer
 apps/e2e-inbox      Dev-only: receives e2e test emails via Email Routing (spec 12)
+apps/ai             (spec 18, planned) AppAi entrypoint: Workers AI behind the app's `AI` binding
+apps/realtime       (spec 21, planned) Room Durable Objects + AppRealtime entrypoint (the `REALTIME` binding)
 packages/shared     IDs, error codes, limits, Logger, env validation, Zod schemas, slugs
 packages/http       Hono helpers shared by workers (requestId, errorHandler, notFoundHandler, errorResponse)
 packages/app-contract  Guide text, contract validator, managed deploy.yml + platform.json

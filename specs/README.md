@@ -25,6 +25,14 @@ Implement roughly in this order; later specs depend on earlier ones.
 
 | 14 | [website](14-website/) | `WEB` | _Descoped_ — the homepage is a separate project; spec kept as its brief |
 | 15 | [file-storage](15-file-storage/) | `FILE` | Per-app R2 bucket (`FILES` binding), like the per-app D1 database; usage-tracked |
+| 16 | [app-auth](16-app-auth/) | `UAUTH` | Sign-in for an app's own users (`AUTH` binding: emailed codes, sessions, allowlists) |
+| 17 | [scheduled-jobs](17-scheduled-jobs/) | `CRON` | `triggers.crons` run by the platform over HTTP (`/api/__cron`), list/run tools |
+| 18 | [app-ai](18-app-ai/) | `APPAI` | `AI` binding: text generation and embeddings on Workers AI with quotas and metering |
+| 19 | [database-backups](19-database-backups/) | `BKUP` | Restore points, one-call point-in-time restore with undo, SQL exports into the app's bucket |
+| 20 | [app-analytics](20-app-analytics/) | `ANLY` | Privacy-friendly traffic analytics collected by the dispatcher, `get_app_analytics` |
+| 21 | [realtime](21-realtime/) | `LIVE` | `REALTIME` binding: WebSocket rooms, presence, history, server publish |
+
+Specs 16–21 (added 2026-09-30) are independent of each other except where they mention one another. Suggested build order, cheapest and most self-contained first: **19 → 17 → 20 → 16 → 18 → 21** (backups reuse existing pieces; cron and analytics touch the dispatcher and deploy path; auth builds on the email path; AI adds a worker; realtime carries the one feasibility spike).
 
 Deferred work: [backlog.md](backlog.md).
 
@@ -77,6 +85,9 @@ Deferred work: [backlog.md](backlog.md).
 | **Dispatch namespace** | Workers for Platforms namespace holding all user Workers (`apps-dev`, `apps-prod`). |
 | **MCP session** | One Streamable-HTTP MCP session (`Mcp-Session-Id`), backed by a `McpSession` Durable Object. Login is bound to it. |
 | **SES tenant** | AWS SES v2 tenant isolating an org's sending reputation. |
+| **App user (end user)** | A person who signs in to *an app* (spec 16), as opposed to a platform *user*, who owns apps. |
+| **Restore point** | A D1 Time Travel bookmark (spec 19) the AI can restore the database to. |
+| **Room** | A named live channel of an app (spec 21) that connected WebSocket clients share. |
 
 ## Placeholders
 
@@ -130,3 +141,9 @@ Specs never contain concrete domains or account names. They use placeholders (`P
 | 30 | A homepage walks non-technical people to a ready-made prompt for their AI | separate project (spec 14 kept as its brief) |
 | 29 | Apps can't tamper with each other's cookies despite sharing `APPS_DOMAIN` | 09 (`RUN-5`) |
 | 28 | Each app sends email from its own domain `mail.<slug>.APPS_DOMAIN` | 11 (`MAIL-1.5`–`MAIL-1.8`, `MAIL-2.3`) |
+| 31 | Apps can sign in their own users without building passwords | 16 (`UAUTH-1`–`UAUTH-5`) |
+| 32 | Apps can run jobs on a schedule | 17 (`CRON-1`–`CRON-3`) |
+| 33 | Apps can use AI models without keys or setup | 18 (`APPAI-1`–`APPAI-4`) |
+| 34 | The AI can undo mistakes in an app's data and export it | 19 (`BKUP-1`–`BKUP-3`) |
+| 35 | Owners can see how their app is used | 20 (`ANLY-1`–`ANLY-3`) |
+| 36 | Apps can offer live updates (chat, shared boards) | 21 (`LIVE-1`–`LIVE-5`) |

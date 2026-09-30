@@ -40,6 +40,8 @@ All metrics are keyed by `app_id`. Attribution: D1 id → `apps.d1_database_id`;
 | `deploys` | successful deployments | deployments `succeeded` with `finished_at` that day | replace |
 | `artifact_bytes` | bytes stored (snapshot) | sum of `artifact_bytes` of deployments whose artifact is still kept | replace |
 
+Later specs extend the catalog (each adds the metric, its price and its collection): `ai_requests`, `ai_neurons` (spec 18), `realtime_messages`, `realtime_connection_minutes` (spec 21); spec 20 raises the routed-request overhead price for its Analytics Engine writes.
+
 Only non-zero quantities are stored. "Replace" metrics are recomputed for today and yesterday on every run; "add" metrics are only ever incremented.
 
 ## Data model

@@ -21,7 +21,7 @@ As the platform, I want every app to have the same shape, so that one build pipe
 - **CON-2.2** THE SYSTEM SHALL require `package.json` to have `"type": "module"`, `"private": true`, and a `scripts.build` equal to `vite build`; `scripts.typecheck`, if present, SHALL be run during the build.
 - **CON-2.3** THE SYSTEM SHALL require these dependencies at or above these versions: `react` 19.3.0, `react-dom` 19.3.0, `hono` 4.13.0 (dependencies); `vite` 8.0.0, `@cloudflare/vite-plugin` 1.60.0, `@vitejs/plugin-react`, `typescript`, `@cloudflare/workers-types` (devDependencies). `drizzle-orm` is the only supported ORM and is optional.
 - **CON-2.4** THE SYSTEM SHALL require `wrangler.jsonc` to have `name: "app"`, `main: "src/api/index.ts"`, a `compatibility_date` within the platform's supported window, `assets.not_found_handling: "single-page-application"`, `assets.run_worker_first` containing `"/api/*"`, and exactly one D1 binding named `DB`.
-- **CON-2.5** THE SYSTEM SHALL reserve binding names `DB` (D1), `FILES` (the app's R2 bucket, spec 15), `ASSETS` (static assets) and `EMAIL` (email service); the app SHALL NOT declare `FILES`, `EMAIL` or `ASSETS` itself — the platform injects them at deploy time.
+- **CON-2.5** THE SYSTEM SHALL reserve binding names `DB` (D1), `FILES` (the app's R2 bucket, spec 15), `ASSETS` (static assets) and `EMAIL` (email service), `AUTH` (sign-in for the app's users, spec 16), `AI` (Workers AI, spec 18) and `REALTIME` (live rooms, spec 21); the app SHALL NOT declare any of `FILES`, `EMAIL`, `ASSETS`, `AUTH`, `AI` or `REALTIME` itself — the platform injects them at deploy time.
 - **CON-2.6** THE SYSTEM SHALL require D1 migrations to live in `migrations/` with filenames matching `^\d{4}_[a-z0-9_]+\.sql$` and unique numeric prefixes.
 - **CON-2.7** THE SYSTEM SHALL require `src/api/index.ts` to default-export an object with a `fetch` handler (e.g. a Hono app) that serves API routes under `/api/`.
 - **CON-2.8** THE SYSTEM SHALL require `index.html` at the repo root referencing `/src/web/main.tsx` as a module script.
@@ -31,7 +31,7 @@ As the platform, I want to reject code that can't run or is unsafe, so that fail
 
 - **CON-3.1** THE SYSTEM SHALL reject repos containing `wrangler.toml`, `wrangler.json`, `node_modules/`, `dist/`, `.dev.vars`, `.env` or `.env.*`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lockb` or `bun.lock`.
 - **CON-3.2** THE SYSTEM SHALL reject dependencies on the denylist in design.md (Node-only or unsupported packages), each violation naming the recommended alternative.
-- **CON-3.3** THE SYSTEM SHALL reject `wrangler.jsonc` keys that the platform doesn't support in v1 (any binding type other than `d1_databases`; `routes`, `route`, `triggers`, `env`, `workers_dev`, `durable_objects`, `migrations`, `tail_consumers`, `services`, `observability`, `limits`), each violation explaining that the feature isn't available yet.
+- **CON-3.3** THE SYSTEM SHALL reject `wrangler.jsonc` keys that the platform doesn't support in v1 (any binding type other than `d1_databases`; `routes`, `route`, `env`, `workers_dev`, `durable_objects`, `migrations`, `tail_consumers`, `services`, `observability`, `limits`), each violation explaining that the feature isn't available yet. `triggers` is allowed with `crons` only (spec 17, CON-R19).
 - **CON-3.4** THE SYSTEM SHALL allow `vars` in `wrangler.jsonc` only as string values, and SHALL reject names that collide with reserved bindings or secrets.
 
 ### CON-4 — Validator

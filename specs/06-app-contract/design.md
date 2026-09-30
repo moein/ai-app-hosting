@@ -95,7 +95,7 @@ Build output (from `@cloudflare/vite-plugin`): `dist/client/` (static assets) an
 | `CON-R07` | `compatibility_date` outside supported window | Use a date between `<min>` and `<max>`. |
 | `CON-R08` | `assets` config wrong | Copy the `assets` block from the contract. |
 | `CON-R09` | D1 binding missing / not named `DB` / more than one | Exactly one `d1_databases` entry with `binding: "DB"`. |
-| `CON-R10` | Reserved binding declared (`EMAIL`, `ASSETS`, `FILES` as binding) | Remove it; the platform injects it. |
+| `CON-R10` | Reserved binding declared (`EMAIL`, `ASSETS`, `FILES`, `AUTH`, `AI`, `REALTIME` as binding or var) | Remove it; the platform injects it. |
 | `CON-R11` | Unsupported `wrangler.jsonc` key (CON-3.3) | Remove `<key>`; `<feature>` isn't available yet. |
 | `CON-R12` | Invalid `vars` (non-string or reserved name) | Use string values; rename `<name>`. |
 | `CON-R13` | Migration filename invalid or duplicate prefix | Rename to `NNNN_description.sql`. |
@@ -104,6 +104,7 @@ Build output (from `@cloudflare/vite-plugin`): `dist/client/` (static assets) an
 | `CON-R16` | `index.html` doesn't load `/src/web/main.tsx` | Add `<script type="module" src="/src/web/main.tsx"></script>`. |
 | `CON-R17` | Unsupported `contract_version` | Do not edit `platform.json`; call `redeploy` or contact support. |
 | `CON-R18` | `vite.config.ts` missing `cloudflare()` or `react()` plugin | Use the contract's `vite.config.ts`. |
+| `CON-R19` | `triggers.crons` invalid: not a list of valid 5-field UTC cron expressions, duplicates, more than `MAX_SCHEDULES_PER_APP`, or firing more often than every `CRON_MIN_INTERVAL_MINUTES` (spec 17) | Fix the expression / remove entries; see the `schedules` guide topic. |
 
 `CON-R16` and `CON-R18` are static text checks (regex), not execution. `CON-2.7` (default export with `fetch`) is verified by the build (spec 08) rather than statically.
 

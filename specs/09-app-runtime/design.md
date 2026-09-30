@@ -14,7 +14,7 @@ Visitor ─▶ https://todo.APPS_DOMAIN/api/items
            throw        → 502 page + console.error({ appId, error })
             ▼
        dispatch namespace apps-<env> (untrusted)
-         script "todo"  bindings: DB → D1 app-todo-<env>, FILES → R2 app-todo-<env>, ASSETS, EMAIL → email-<env>/AppMail{props}, vars, secrets
+         script "todo"  bindings: DB → D1 app-todo-<env>, FILES → R2 app-todo-<env>, ASSETS, EMAIL → email-<env>/AppMail{props}, AUTH → email-<env>/AppAuth{props} (spec 16), AI → ai-<env>/AppAi{props} (spec 18), REALTIME → realtime-<env>/AppRealtime{props} (spec 21), vars, secrets
                         tail_consumers: tail-<env>   (spec 10)
 ```
 

@@ -36,6 +36,17 @@ export const FLOW_CATALOG: Record<FlowId, { implemented: boolean }> = {
   'F-EVT-1': { implemented: true },
   'F-USG-1': { implemented: true },
   'F-FILE-1': { implemented: true },
+  'F-UAUTH-1': { implemented: false },
+  'F-UAUTH-2': { implemented: false },
+  'F-CRON-1': { implemented: false },
+  'F-CRON-2': { implemented: false },
+  'F-AI-1': { implemented: false },
+  'F-BKUP-1': { implemented: false },
+  'F-BKUP-2': { implemented: false },
+  'F-BKUP-3': { implemented: false },
+  'F-ANLY-1': { implemented: false },
+  'F-LIVE-1': { implemented: false },
+  'F-LIVE-2': { implemented: false },
 };
 
 /** Tests of flows not marked implemented are skipped, so a blocked feature doesn't fail every deploy. */
